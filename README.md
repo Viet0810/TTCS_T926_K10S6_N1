@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+
 # HỆ THỐNG QUẢN LÝ THỰC TẬP SINH
 
 ## 1. Tổng quan dự án
