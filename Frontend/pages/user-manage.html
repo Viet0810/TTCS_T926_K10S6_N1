@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quản lý Tài Khoản</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header>
+        <h2>Hệ Thống Quản Lý Tài Khoản</h2>
+        <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
+      </header>
+
+      <main>
+        <!-- Form Tạo tài khoản -->
+        <section class="card">
+          <h3>Tạo Tài Khoản Mới</h3>
+          <form id="createUserForm">
+            <input type="text" id="fullName" placeholder="Họ và tên" required />
+            <input type="email" id="email" placeholder="Email" required />
+            <select id="role">
+              <option value="HR">HR</option>
+              <option value="MENTOR">Mentor</option>
+              <option value="INTERN">Thực tập sinh</option>
+            </select>
+            <button type="submit" class="btn-success">Tạo tài khoản</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h3>Danh sách tài khoản</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Họ và tên</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/user-manage.js"></script>
+  </body>
+</html>
