@@ -1,23 +1,46 @@
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+document
+  .getElementById("loginForm")
+  .addEventListener("submit", async function (event) {
+    event.preventDefault();
 
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+    const username = document.getElementById("username").value.trim();
 
-  try {
-    const data = await API.login({ username, password });
+    const password = document.getElementById("password").value;
 
-    if (data.token) {
+    try {
+      const data = await API.login({
+        username,
+        password,
+      });
+
+      const role = data.user.role.toUpperCase();
+
       localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user.role);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert("Đăng nhập thành công!");
-      window.location.href = "pages/user-manage.html";
-    } else {
-      alert(data.message || "Đăng nhập thất bại!");
+      switch (role) {
+        case "ADMIN":
+          window.location.href = "pages/admin.html";
+          break;
+
+        case "HR":
+          window.location.href = "pages/hr.html";
+          break;
+
+        case "MENTOR":
+          window.location.href = "pages/mentor.html";
+          break;
+
+        case "INTERN":
+          window.location.href = "pages/intern.html";
+          break;
+
+        default:
+          alert("Vai trò tài khoản không hợp lệ!");
+          localStorage.clear();
+      }
+    } catch (error) {
+      alert(error.message);
     }
-  } catch (err) {
-    console.error("Lỗi đăng nhập:", err);
-    alert("Không thể kết nối tới Server Backend!");
-  }
-});
+  });

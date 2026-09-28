@@ -1,47 +1,62 @@
-// Thay đổi URL Backend của bạn tại đây
 const BASE_URL = "http://localhost:5024/api";
 
-// Hàm lấy Token đã lưu sau khi đăng nhập
 function getAuthHeader() {
   const token = localStorage.getItem("token");
+
   return {
     "Content-Type": "application/json",
     Authorization: token ? `Bearer ${token}` : "",
   };
 }
 
+async function handleResponse(response) {
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || `Lỗi HTTP ${response.status}`);
+  }
+
+  return data;
+}
+
 const API = {
   login: async (credentials) => {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(credentials),
     });
-    return res.json();
+
+    return handleResponse(response);
   },
 
   getUsers: async () => {
-    const res = await fetch(`${BASE_URL}/users`, {
+    const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",
       headers: getAuthHeader(),
     });
-    return res.json();
+
+    return handleResponse(response);
   },
 
   createUser: async (userData) => {
-    const res = await fetch(`${BASE_URL}/users`, {
+    const response = await fetch(`${BASE_URL}/users`, {
       method: "POST",
       headers: getAuthHeader(),
       body: JSON.stringify(userData),
     });
-    return res.json();
+
+    return handleResponse(response);
   },
 
   deleteUser: async (userId) => {
-    const res = await fetch(`${BASE_URL}/users/${userId}`, {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, {
       method: "DELETE",
       headers: getAuthHeader(),
     });
-    return res.json();
+
+    return handleResponse(response);
   },
 };
