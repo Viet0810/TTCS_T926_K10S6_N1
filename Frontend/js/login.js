@@ -1,3 +1,17 @@
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+
+togglePassword.addEventListener("click", () => {
+  const isVisible = passwordInput.type === "text";
+  passwordInput.type = isVisible ? "password" : "text";
+  togglePassword.classList.toggle("is-visible", !isVisible);
+  togglePassword.setAttribute("aria-pressed", String(!isVisible));
+  togglePassword.setAttribute(
+    "aria-label",
+    isVisible ? "Hiển thị mật khẩu" : "Ẩn mật khẩu",
+  );
+});
+
 document
   .getElementById("loginForm")
   .addEventListener("submit", async function (event) {
