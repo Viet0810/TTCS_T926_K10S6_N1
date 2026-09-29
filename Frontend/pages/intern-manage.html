@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Quản lý thực tập sinh | Intern Management System</title>
+
+    <link rel="stylesheet" href="../css/intern.css" />
+  </head>
+
+  <body>
+    <div class="page-container">
+
+      <!-- HEADER -->
+      <header class="header">
+        <div class="brand">
+          <div class="brand-logo">IM</div>
+
+          <div>
+            <p class="brand-subtitle">INTERN MANAGEMENT SYSTEM</p>
+            <h1>Hệ thống quản lý Thực tập sinh</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <span class="user-role">HR</span>
+          <button id="logoutBtn" class="btn-logout">
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+
+      <!-- MAIN -->
+      <main>
+
+        <!-- TIÊU ĐỀ -->
+        <section class="page-heading">
+          <div>
+            <h2>Quản lý thực tập sinh</h2>
+            <p>Quản lý và lưu trữ hồ sơ thực tập sinh.</p>
+          </div>
+
+          <button id="openFormBtn" class="btn-primary">
+            + Thêm hồ sơ
+          </button>
+        </section>
+
+        <!-- THÔNG BÁO -->
+        <div id="messageBox" class="message-box"></div>
+
+        <!-- FORM THÊM HỒ SƠ -->
+        <section id="internFormSection" class="card form-card hidden">
+
+          <div class="card-header">
+            <div>
+              <h3>Thêm hồ sơ thực tập sinh</h3>
+              <p>Nhập thông tin của thực tập sinh.</p>
+            </div>
+
+            <button
+              id="closeFormBtn"
+              type="button"
+              class="btn-close"
+              aria-label="Đóng"
+            >
+              ×
+            </button>
+          </div>
+
+          <form id="createInternForm">
+
+            <div class="form-grid">
+
+              <!-- HỌ TÊN -->
+              <div class="form-group">
+                <label for="fullName">
+                  Họ và tên <span>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  placeholder="Nhập họ và tên"
+                  required
+                />
+
+                <small class="error-message" id="fullNameError"></small>
+              </div>
+
+              <!-- EMAIL -->
+              <div class="form-group">
+                <label for="email">
+                  Email <span>*</span>
+                </label>
+
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="example@email.com"
+                  required
+                />
+
+                <small class="error-message" id="emailError"></small>
+              </div>
+
+              <!-- SỐ ĐIỆN THOẠI -->
+              <div class="form-group">
+                <label for="phone">
+                  Số điện thoại <span>*</span>
+                </label>
+
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  placeholder="Nhập số điện thoại"
+                  required
+                />
+
+                <small class="error-message" id="phoneError"></small>
+              </div>
+
+              <!-- TRƯỜNG -->
+              <div class="form-group">
+                <label for="school">
+                  Trường <span>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  id="school"
+                  name="school"
+                  placeholder="Nhập tên trường"
+                  required
+                />
+
+                <small class="error-message" id="schoolError"></small>
+              </div>
+
+              <!-- CHUYÊN NGÀNH -->
+              <div class="form-group full-width">
+                <label for="major">
+                  Chuyên ngành <span>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  id="major"
+                  name="major"
+                  placeholder="Nhập chuyên ngành"
+                  required
+                />
+
+                <small class="error-message" id="majorError"></small>
+              </div>
+
+            </div>
+
+            <!-- BUTTON -->
+            <div class="form-actions">
+
+              <button
+                type="button"
+                id="cancelBtn"
+                class="btn-secondary"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="submit"
+                class="btn-primary"
+              >
+                Thêm hồ sơ
+              </button>
+
+            </div>
+
+          </form>
+        </section>
+
+        <!-- DANH SÁCH -->
+        <section class="card">
+
+          <div class="list-header">
+
+            <div>
+              <h3>Danh sách thực tập sinh</h3>
+              <p>Danh sách hồ sơ hiện có trong hệ thống.</p>
+            </div>
+
+            <div class="search-box">
+              <input
+                type="search"
+                id="searchInput"
+                placeholder="Tìm theo tên hoặc email..."
+              />
+            </div>
+
+          </div>
+
+          <!-- TABLE -->
+          <div class="table-wrapper">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th>Số điện thoại</th>
+                  <th>Trường</th>
+                  <th>Chuyên ngành</th>
+                </tr>
+              </thead>
+
+              <tbody id="internTableBody">
+
+                <tr id="emptyRow">
+                  <td colspan="5" class="empty-state">
+                    Chưa có hồ sơ thực tập sinh.
+                  </td>
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </section>
+
+      </main>
+
+      <!-- FOOTER -->
+      <footer>
+        © 2026 Intern Management System
+      </footer>
+
+    </div>
+
+    <script src="../js/intern.js"></script>
+  </body>
+</html>
