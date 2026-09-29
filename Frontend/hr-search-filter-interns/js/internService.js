@@ -150,32 +150,117 @@ const InternService = {
     };
   },
 
-  exportCSV(interns) {
-    const headers = ["ID", "Họ và Tên", "MSSV", "Email", "Số điện thoại", "Trường đào tạo", "Chuyên ngành", "Vị trí", "Đợt thực tập", "Người hướng dẫn", "Trạng thái", "Tiến độ (%)", "Điểm GPA"];
-    const rows = interns.map(i => [
-      i.id,
-      `"${i.name}"`,
-      `"${i.mssv}"`,
-      `"${i.email}"`,
-      `"${i.phone}"`,
-      `"${i.school}"`,
-      `"${i.major}"`,
-      `"${i.role}"`,
-      `"${i.batch}"`,
-      `"${i.mentor || ''}"`,
-      `"${i.status}"`,
-      i.progress,
-      `"${i.gpa}"`
-    ]);
+  exportExcel(interns) {
+    const exportDate = new Date().toLocaleDateString("vi-VN");
 
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const tableHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Thực Tập Sinh</x:Name>
+                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; }
+          table { border-collapse: collapse; width: 100%; }
+          .title-row { font-size: 16pt; font-weight: bold; color: #1e1b4b; text-align: center; height: 45px; }
+          .subtitle-row { font-size: 10pt; color: #64748b; font-style: italic; text-align: center; height: 25px; }
+          th {
+            background-color: #4338ca;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #312e81;
+            padding: 10px 8px;
+            height: 35px;
+            font-size: 11pt;
+          }
+          td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            font-size: 10pt;
+            vertical-align: middle;
+          }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          .text-format { mso-number-format: "\\@"; } /* Giữ nguyên số 0 đầu cho SĐT và MSSV */
+          .row-even { background-color: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <td colspan="13" class="title-row" style="border:none; text-align:center;">
+              BÁO CÁO DANH SÁCH THỰC TẬP SINH
+            </td>
+          </tr>
+          <tr>
+            <td colspan="13" class="subtitle-row" style="border:none; text-align:center;">
+              Ngày xuất: ${exportDate} &bull; Tổng số: ${interns.length} thực tập sinh
+            </td>
+          </tr>
+          <tr><td colspan="13" style="border:none; height:10px;"></td></tr>
+          <thead>
+            <tr>
+              <th style="width: 50px;">STT</th>
+              <th style="width: 180px;">Họ và Tên</th>
+              <th style="width: 120px;">Mã số SV</th>
+              <th style="width: 230px;">Email</th>
+              <th style="width: 120px;">Số điện thoại</th>
+              <th style="width: 250px;">Trường đào tạo</th>
+              <th style="width: 180px;">Chuyên ngành</th>
+              <th style="width: 160px;">Vị trí thực tập</th>
+              <th style="width: 160px;">Đợt thực tập</th>
+              <th style="width: 150px;">Người hướng dẫn</th>
+              <th style="width: 130px;">Trạng thái</th>
+              <th style="width: 90px;">Tiến độ</th>
+              <th style="width: 90px;">Điểm GPA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${interns.map((i, idx) => `
+              <tr class="${idx % 2 === 1 ? 'row-even' : ''}">
+                <td class="center bold">${idx + 1}</td>
+                <td class="bold">${i.name}</td>
+                <td class="center text-format">${i.mssv}</td>
+                <td>${i.email}</td>
+                <td class="center text-format">${i.phone}</td>
+                <td>${i.school}</td>
+                <td>${i.major}</td>
+                <td>${i.role}</td>
+                <td class="center">${i.batch}</td>
+                <td>${i.mentor || 'Chưa phân công'}</td>
+                <td class="center">${i.status}</td>
+                <td class="center bold">${i.progress}%</td>
+                <td class="center bold">${i.gpa}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(["\uFEFF" + tableHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Danh_sach_thuc_tap_sinh_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Danh_sach_thuc_tap_sinh_${new Date().toISOString().slice(0, 10)}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  },
+
+  exportCSV(interns) {
+    this.exportExcel(interns);
   }
 };

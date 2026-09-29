@@ -30,29 +30,47 @@ function initDropdownOptions() {
   const filterMentor = document.getElementById("filter-mentor");
   const filterBatch = document.getElementById("filter-batch");
 
+  // Modal thêm mới
   const modalSchool = document.getElementById("modal-school");
   const modalMajor = document.getElementById("modal-major");
   const modalMentor = document.getElementById("modal-mentor");
   const modalBatch = document.getElementById("modal-batch");
 
+  // Modal chỉnh sửa
+  const editSchool = document.getElementById("edit-school");
+  const editMajor = document.getElementById("edit-major");
+  const editMentor = document.getElementById("edit-mentor");
+
+  // Xóa options cũ (nếu có) và nạp danh mục đồng bộ
+  if (editSchool) editSchool.innerHTML = `<option value="">-- Chọn trường đại học --</option>`;
+  if (editMajor) editMajor.innerHTML = `<option value="">-- Chọn chuyên ngành --</option>`;
+  if (editMentor) editMentor.innerHTML = `<option value="">Chưa gán Mentor</option>`;
+
   MOCK_UNIVERSITIES.forEach(u => {
-    if (filterSchool) filterSchool.innerHTML += `<option value="${u.name}">${u.name} (${u.shortName})</option>`;
-    if (modalSchool) modalSchool.innerHTML += `<option value="${u.name}">${u.name} (${u.shortName})</option>`;
+    const opt = `<option value="${u.name}">${u.name} (${u.shortName})</option>`;
+    if (filterSchool) filterSchool.innerHTML += opt;
+    if (modalSchool) modalSchool.innerHTML += opt;
+    if (editSchool) editSchool.innerHTML += opt;
   });
 
   MOCK_MAJORS.forEach(m => {
-    if (filterMajor) filterMajor.innerHTML += `<option value="${m}">${m}</option>`;
-    if (modalMajor) modalMajor.innerHTML += `<option value="${m}">${m}</option>`;
+    const opt = `<option value="${m}">${m}</option>`;
+    if (filterMajor) filterMajor.innerHTML += opt;
+    if (modalMajor) modalMajor.innerHTML += opt;
+    if (editMajor) editMajor.innerHTML += opt;
   });
 
   MOCK_MENTORS.forEach(m => {
-    if (filterMentor) filterMentor.innerHTML += `<option value="${m.name}">${m.name} (${m.role})</option>`;
-    if (modalMentor) modalMentor.innerHTML += `<option value="${m.name}">${m.name} (${m.role})</option>`;
+    const opt = `<option value="${m.name}">${m.name} (${m.role})</option>`;
+    if (filterMentor) filterMentor.innerHTML += opt;
+    if (modalMentor) modalMentor.innerHTML += opt;
+    if (editMentor) editMentor.innerHTML += opt;
   });
 
   MOCK_BATCHES.forEach(b => {
-    if (filterBatch) filterBatch.innerHTML += `<option value="${b}">${b}</option>`;
-    if (modalBatch) modalBatch.innerHTML += `<option value="${b}">${b}</option>`;
+    const opt = `<option value="${b}">${b}</option>`;
+    if (filterBatch) filterBatch.innerHTML += opt;
+    if (modalBatch) modalBatch.innerHTML += opt;
   });
 }
 
@@ -89,6 +107,7 @@ async function renderApp() {
   const filteredList = await InternService.getInterns(AppState.filters);
   renderKPIs();
   renderCounters(filteredList.length);
+  renderPagination(filteredList.length);
   renderActiveFilterChips();
 
   if (AppState.viewMode === "table") {
@@ -267,8 +286,60 @@ function renderCounters(totalCount) {
   document.getElementById("total-badge").textContent = `${totalCount} hồ sơ`;
   document.getElementById("result-count").textContent = totalCount;
   document.getElementById("page-total").textContent = totalCount;
-  document.getElementById("page-start").textContent = totalCount > 0 ? 1 : 0;
-  document.getElementById("page-end").textContent = Math.min(totalCount, AppState.pageSize);
+
+  if (totalCount === 0) {
+    document.getElementById("page-start").textContent = 0;
+    document.getElementById("page-end").textContent = 0;
+  } else {
+    const start = (AppState.currentPage - 1) * AppState.pageSize + 1;
+    const end = Math.min(AppState.currentPage * AppState.pageSize, totalCount);
+    document.getElementById("page-start").textContent = start;
+    document.getElementById("page-end").textContent = end;
+  }
+}
+
+/**
+ * Điều khiển phân trang động (Dynamic Pagination)
+ */
+function renderPagination(totalCount) {
+  const container = document.getElementById("pagination-controls");
+  if (!container) return;
+
+  const totalPages = Math.ceil(totalCount / AppState.pageSize) || 1;
+  let html = "";
+
+  // Nút Trước
+  const prevDisabled = AppState.currentPage <= 1;
+  html += `
+    <button onclick="goToPage(${AppState.currentPage - 1})" ${prevDisabled ? 'disabled' : ''} class="px-2.5 py-1.5 rounded border border-slate-200 ${prevDisabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 hover:bg-slate-100 cursor-pointer'} transition">
+      Trước
+    </button>
+  `;
+
+  // Các nút số trang
+  for (let i = 1; i <= totalPages; i++) {
+    const isActive = i === AppState.currentPage;
+    html += `
+      <button onclick="goToPage(${i})" class="px-3 py-1.5 rounded border ${isActive ? 'border-indigo-600 bg-indigo-600 text-white font-medium' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'} transition cursor-pointer">
+        ${i}
+      </button>
+    `;
+  }
+
+  // Nút Sau
+  const nextDisabled = AppState.currentPage >= totalPages;
+  html += `
+    <button onclick="goToPage(${AppState.currentPage + 1})" ${nextDisabled ? 'disabled' : ''} class="px-2.5 py-1.5 rounded border border-slate-200 ${nextDisabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-700 hover:bg-slate-100 cursor-pointer'} transition">
+      Sau
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function goToPage(page) {
+  AppState.currentPage = page;
+  renderApp();
 }
 
 function renderActiveFilterChips() {
@@ -364,13 +435,13 @@ function setViewMode(mode) {
   if (mode === "table") {
     tableBox.classList.remove("hidden");
     gridBox.classList.add("hidden");
-    btnTable.className = "p-1.5 rounded-md bg-white text-indigo-600 shadow-xs";
-    btnGrid.className = "p-1.5 rounded-md text-slate-500 hover:text-slate-900";
+    btnTable.className = "p-1.5 rounded-md bg-white text-indigo-600 shadow-xs cursor-pointer";
+    btnGrid.className = "p-1.5 rounded-md text-slate-500 hover:text-slate-900 cursor-pointer";
   } else {
     tableBox.classList.add("hidden");
     gridBox.classList.remove("hidden");
-    btnGrid.className = "p-1.5 rounded-md bg-white text-indigo-600 shadow-xs";
-    btnTable.className = "p-1.5 rounded-md text-slate-500 hover:text-slate-900";
+    btnGrid.className = "p-1.5 rounded-md bg-white text-indigo-600 shadow-xs cursor-pointer";
+    btnTable.className = "p-1.5 rounded-md text-slate-500 hover:text-slate-900 cursor-pointer";
   }
   renderApp();
 }
@@ -457,7 +528,9 @@ async function openDetailDrawer(id) {
   document.getElementById("drawer-notes").textContent = intern.notes || "Chưa có ghi chú.";
 
   const badgeEl = document.getElementById("drawer-status-badge");
-  badgeEl.outerHTML = `<span id="drawer-status-badge">${getStatusBadge(intern.status)}</span>`;
+  if (badgeEl) {
+    badgeEl.innerHTML = getStatusBadge(intern.status);
+  }
 
   document.getElementById("detail-drawer").classList.remove("hidden");
 }
@@ -572,8 +645,8 @@ async function handleExportExcel() {
     showToast("Không có thực tập sinh nào phù hợp để xuất file!");
     return;
   }
-  InternService.exportCSV(list);
-  showToast(`Đã tải xuống danh sách ${list.length} thực tập sinh (.csv)!`);
+  InternService.exportExcel(list);
+  showToast(`Đã xuất file Excel (${list.length} thực tập sinh) định dạng bảng đẹp!`);
 }
 
 function getStatusBadge(status) {
