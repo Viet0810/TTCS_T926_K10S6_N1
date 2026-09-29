@@ -645,8 +645,8 @@ async function handleExportExcel() {
     showToast("Không có thực tập sinh nào phù hợp để xuất file!");
     return;
   }
-  InternService.exportCSV(list);
-  showToast(`Đã tải xuống danh sách ${list.length} thực tập sinh (.csv)!`);
+  InternService.exportExcel(list);
+  showToast(`Đã xuất file Excel (${list.length} thực tập sinh) định dạng bảng đẹp!`);
 }
 
 function getStatusBadge(status) {
