@@ -631,4 +631,334 @@ footer {
     width: 100%;
   }
 
+}/* =============================================
+   CHỈNH SỬA HỒ SƠ THỰC TẬP SINH
+============================================= */
+
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.edit-modal.hidden {
+  display: none;
+}
+
+/* Lớp nền tối phía sau */
+.edit-modal-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+/* Khung chỉnh sửa */
+.edit-modal-content {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+}
+
+/* Header */
+.edit-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+  margin-bottom: 25px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.edit-label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #3970df;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+.edit-modal-header h2 {
+  margin: 0 0 7px;
+
+  color: #10213d;
+
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.edit-modal-header p {
+  margin: 0;
+
+  color: #8491a6;
+
+  font-size: 13px;
+}
+
+/* Nút X */
+.edit-close-btn {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #f1f5f9;
+
+  color: #64748b;
+
+  font-size: 25px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.edit-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* =============================
+   FORM
+============================= */
+
+#editInternForm .form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+#editInternForm .form-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+#editInternForm .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+#editInternForm label {
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#editInternForm input {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe3ef;
+  border-radius: 9px;
+
+  color: #1e293b;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition: 0.2s;
+}
+
+#editInternForm input:focus {
+  border-color: #3970df;
+
+  box-shadow:
+    0 0 0 3px rgba(57, 112, 223, 0.1);
+}
+
+/* =============================
+   BUTTON
+============================= */
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 9px;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+
+  color: #475569;
+}
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-save {
+  background:
+    linear-gradient(
+      135deg,
+      #2861df,
+      #477ff0
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 18px rgba(37, 99, 235, 0.2);
+}
+
+.btn-save:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 9px 22px rgba(37, 99, 235, 0.3);
+}
+
+/* =============================
+   NÚT CHỈNH SỬA TRONG BẢNG
+============================= */
+
+.btn-edit {
+  padding: 8px 14px;
+
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-edit:hover {
+  background: #dbeafe;
+
+  border-color: #93c5fd;
+}
+
+/* =============================
+   THÔNG BÁO
+============================= */
+
+.edit-message {
+  display: none;
+
+  margin-top: 20px;
+
+  padding: 12px 15px;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+}
+
+.edit-message.success {
+  display: block;
+
+  background: #ecfdf5;
+
+  border: 1px solid #a7f3d0;
+
+  color: #047857;
+}
+
+.edit-message.error {
+  display: block;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #b91c1c;
+}
+
+/* =============================
+   RESPONSIVE
+============================= */
+
+@media (max-width: 768px) {
+
+  .edit-modal-content {
+    padding: 20px;
+  }
+
+  #editInternForm .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #editInternForm .form-group.full-width {
+    grid-column: auto;
+  }
+
+  .edit-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .edit-actions {
+    flex-direction: column-reverse;
+  }
+
+  .edit-actions button {
+    width: 100%;
+  }
 }

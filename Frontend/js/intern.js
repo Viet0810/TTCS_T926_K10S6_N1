@@ -383,25 +383,33 @@ function renderInterns(data) {
   data.forEach((intern) => {
 
     const row =
-      document.createElement("tr");
+  document.createElement("tr");
 
+row.innerHTML = `
+  <td>${escapeHtml(intern.fullName)}</td>
+  <td>${escapeHtml(intern.email)}</td>
+  <td>${escapeHtml(intern.phone)}</td>
+  <td>${escapeHtml(intern.school)}</td>
+  <td>${escapeHtml(intern.major)}</td>
 
-    row.innerHTML = `
+  <td>
+    <button
+      type="button"
+      class="btn-edit"
+      data-id="${intern.id}"
+    >
+      Chỉnh sửa
+    </button>
+  </td>
+`;
 
-      <td>${escapeHtml(intern.fullName)}</td>
+const editBtn = row.querySelector(".btn-edit");
 
-      <td>${escapeHtml(intern.email)}</td>
+editBtn.addEventListener("click", function () {
+  openEditIntern(intern.id);
+});
 
-      <td>${escapeHtml(intern.phone)}</td>
-
-      <td>${escapeHtml(intern.school)}</td>
-
-      <td>${escapeHtml(intern.major)}</td>
-
-    `;
-
-
-    tableBody.appendChild(row);
+tableBody.appendChild(row);
 
   });
 
@@ -517,3 +525,85 @@ KHỞI TẠO
 */
 
 renderInterns(interns);
+// ========================================
+// CHỈNH SỬA HỒ SƠ THỰC TẬP SINH
+// ========================================
+
+function openEditIntern(id) {
+    // Tìm thực tập sinh theo id
+    const intern = interns.find(function (item) {
+        return item.id == id;
+    });
+
+    if (!intern) {
+        alert("Không tìm thấy hồ sơ thực tập sinh.");
+        return;
+    }
+
+    // Đưa dữ liệu hiện tại vào form chỉnh sửa
+    document.getElementById("editInternId").value = intern.id;
+    document.getElementById("editFullName").value = intern.fullName;
+    document.getElementById("editEmail").value = intern.email;
+    document.getElementById("editPhone").value = intern.phone;
+    document.getElementById("editSchool").value = intern.school;
+    document.getElementById("editMajor").value = intern.major;
+
+    // Hiển thị modal
+    const modal = document.getElementById("editInternModal");
+
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+}
+// ========================================
+// LƯU THAY ĐỔI HỒ SƠ THỰC TẬP SINH
+// ========================================
+
+const editInternForm = document.getElementById("editInternForm");
+
+if (editInternForm) {
+    editInternForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        // Lấy ID thực tập sinh đang chỉnh sửa
+        const id = document.getElementById("editInternId").value;
+
+        // Tìm vị trí thực tập sinh trong mảng
+        const index = interns.findIndex(function (item) {
+            return item.id == id;
+        });
+
+        if (index === -1) {
+            alert("Không tìm thấy hồ sơ thực tập sinh.");
+            return;
+        }
+
+        // Cập nhật thông tin
+        interns[index].fullName =
+            document.getElementById("editFullName").value.trim();
+
+        interns[index].email =
+            document.getElementById("editEmail").value.trim();
+
+        interns[index].phone =
+            document.getElementById("editPhone").value.trim();
+
+        interns[index].school =
+            document.getElementById("editSchool").value.trim();
+
+        interns[index].major =
+            document.getElementById("editMajor").value.trim();
+
+        // Render lại bảng
+        renderInterns(interns);
+
+        // Đóng modal
+        const modal = document.getElementById("editInternModal");
+
+        if (modal) {
+            modal.classList.add("hidden");
+        }
+
+        alert("Cập nhật hồ sơ thành công!");
+    });
+}

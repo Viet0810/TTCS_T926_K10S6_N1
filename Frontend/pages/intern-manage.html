@@ -214,13 +214,14 @@
                   <th>Số điện thoại</th>
                   <th>Trường</th>
                   <th>Chuyên ngành</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
 
               <tbody id="internTableBody">
 
                 <tr id="emptyRow">
-                  <td colspan="5" class="empty-state">
+                  <td colspan="6" class="empty-state">
                     Chưa có hồ sơ thực tập sinh.
                   </td>
                 </tr>
@@ -242,6 +243,182 @@
 
     </div>
 
+    <!-- ============================= -->
+    <!-- MODAL CHỈNH SỬA THỰC TẬP SINH -->
+    <!-- ============================= -->
+
+    <div id="editInternModal" class="edit-modal hidden">
+
+      <!-- Lớp nền tối -->
+      <div
+        class="edit-modal-overlay"
+        id="editModalOverlay"
+      ></div>
+
+      <!-- Nội dung Modal -->
+      <div class="edit-modal-content">
+
+        <!-- Header -->
+        <div class="edit-modal-header">
+
+          <div>
+            <span class="edit-label">
+              INTERN MANAGEMENT SYSTEM
+            </span>
+
+            <h2>Chỉnh sửa hồ sơ thực tập sinh</h2>
+
+            <p>
+              Cập nhật những thông tin đã thay đổi.
+            </p>
+          </div>
+
+          
+          <button
+            type="button"
+            id="closeEditModal"
+            class="edit-close-btn"
+          >
+            &times;
+          </button>
+
+        </div>
+
+
+        <!-- Form chỉnh sửa -->
+        <form id="editInternForm">
+
+          <!-- Lưu ID của thực tập sinh -->
+          <input
+            type="hidden"
+            id="editInternId"
+          />
+
+
+          <div class="form-grid">
+
+            <!-- Họ tên -->
+            <div class="form-group">
+
+              <label for="editFullName">
+                Họ và tên *
+              </label>
+
+              <input
+                type="text"
+                id="editFullName"
+                placeholder="Nhập họ và tên"
+                required
+              />
+
+            </div>
+
+
+            <!-- Email -->
+            <div class="form-group">
+
+              <label for="editEmail">
+                Email *
+              </label>
+
+              <input
+                type="email"
+                id="editEmail"
+                placeholder="Nhập email"
+                required
+              />
+
+            </div>
+
+
+            <!-- Số điện thoại -->
+            <div class="form-group">
+
+              <label for="editPhone">
+                Số điện thoại
+              </label>
+
+              <input
+                type="text"
+                id="editPhone"
+                placeholder="Nhập số điện thoại"
+              />
+
+            </div>
+
+
+            <!-- Trường -->
+            <div class="form-group">
+
+              <label for="editSchool">
+                Trường
+              </label>
+
+              <input
+                type="text"
+                id="editSchool"
+                placeholder="Nhập tên trường"
+              />
+
+            </div>
+
+
+            <!-- Chuyên ngành -->
+            <div class="form-group full-width">
+
+              <label for="editMajor">
+                Chuyên ngành
+              </label>
+
+              <input
+                type="text"
+                id="editMajor"
+                placeholder="Nhập chuyên ngành"
+              />
+
+            </div>
+
+          </div>
+
+
+          <!-- Thông báo -->
+          <div
+            id="editMessage"
+            class="edit-message"
+          ></div>
+
+
+          <!-- Các nút -->
+          <div class="edit-actions">
+
+            <button
+              type="button"
+              id="cancelEditBtn"
+              class="btn-cancel"
+            >
+              Hủy
+            </button>
+
+            <button
+              type="submit"
+              class="btn-save"
+            >
+              Lưu thay đổi
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+
+    <!-- JavaScript -->
     <script src="../js/intern.js"></script>
+
   </body>
 </html>
+
+ 
