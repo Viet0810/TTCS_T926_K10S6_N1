@@ -1,0 +1,964 @@
+/* ==================================================
+   INTERN MANAGEMENT
+   Đồng bộ giao diện với trang đăng nhập
+================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top left, #dbeafe 0, transparent 30%),
+    radial-gradient(circle at bottom right, #dcfce7 0, transparent 25%),
+    #f5f8fd;
+
+  color: #10213d;
+}
+
+/* ==================================================
+   PAGE CONTAINER
+================================================== */
+
+.page-container {
+  width: 92%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 0 18px;
+}
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  padding: 18px 24px;
+  margin-bottom: 28px;
+
+  box-shadow: 0 12px 35px rgba(30, 64, 175, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 50px;
+  height: 50px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 14px;
+
+  background: linear-gradient(
+    135deg,
+    #2453b8,
+    #4079ed
+  );
+
+  color: #ffffff;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  box-shadow: 0 7px 18px rgba(37, 99, 235, 0.25);
+}
+
+.brand-subtitle {
+  color: #3970df;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  margin-bottom: 4px;
+}
+
+.brand h1 {
+  color: #10213d;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ==================================================
+   HEADER RIGHT
+================================================== */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-role {
+  padding: 9px 15px;
+
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+
+  color: #2563eb;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ==================================================
+   BUTTON
+================================================== */
+
+button {
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  padding: 12px 20px;
+
+  border-radius: 10px;
+
+  background: linear-gradient(
+    135deg,
+    #2861df,
+    #477ff0
+  );
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  box-shadow: 0 7px 18px rgba(37, 99, 235, 0.18);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 9px 22px rgba(37, 99, 235, 0.28);
+}
+
+.btn-secondary {
+  padding: 12px 20px;
+
+  border-radius: 10px;
+
+  background: #f1f5f9;
+
+  color: #475569;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.btn-logout {
+  padding: 10px 17px;
+
+  border-radius: 9px;
+
+  background: #fff1f2;
+
+  border: 1px solid #fecdd3;
+
+  color: #e11d48;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.btn-logout:hover {
+  background: #ffe4e6;
+}
+
+.btn-close {
+  padding: 2px 7px;
+
+  background: transparent;
+
+  color: #94a3b8;
+
+  font-size: 28px;
+}
+
+.btn-close:hover {
+  color: #334155;
+}
+
+/* ==================================================
+   PAGE TITLE
+================================================== */
+
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 22px;
+}
+
+.page-heading h2 {
+  color: #10213d;
+
+  font-size: 28px;
+  font-weight: 750;
+
+  margin-bottom: 7px;
+}
+
+.page-heading p {
+  color: #718096;
+
+  font-size: 14px;
+}
+
+/* ==================================================
+   CARD
+================================================== */
+
+.card {
+  background: rgba(255, 255, 255, 0.96);
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  padding: 26px;
+
+  margin-bottom: 24px;
+
+  box-shadow: 0 12px 35px rgba(30, 64, 175, 0.07);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  margin-bottom: 25px;
+}
+
+.card h3 {
+  color: #10213d;
+
+  font-size: 20px;
+
+  margin-bottom: 6px;
+}
+
+.card p {
+  color: #8491a6;
+
+  font-size: 13px;
+}
+
+/* ==================================================
+   FORM
+================================================== */
+
+.form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 21px 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  color: #1e293b;
+
+  margin-bottom: 8px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-group label span {
+  color: #ef4444;
+}
+
+.form-group input {
+  width: 100%;
+  height: 50px;
+
+  padding: 0 15px;
+
+  background: #f8fafc;
+
+  border: 1px solid #dbe4ef;
+  border-radius: 11px;
+
+  outline: none;
+
+  color: #172033;
+
+  font-size: 14px;
+
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.form-group input::placeholder {
+  color: #a3afc2;
+}
+
+.form-group input:focus {
+  background: #ffffff;
+
+  border-color: #477ff0;
+
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 11px;
+
+  margin-top: 26px;
+}
+
+/* ==================================================
+   VALIDATION
+================================================== */
+
+.error-message {
+  min-height: 16px;
+
+  margin-top: 6px;
+
+  color: #dc2626;
+
+  font-size: 12px;
+}
+
+.form-group input.input-error {
+  border-color: #ef4444;
+  background: #fffafa;
+}
+
+/* ==================================================
+   MESSAGE
+================================================== */
+
+.message-box {
+  display: none;
+
+  padding: 14px 17px;
+
+  margin-bottom: 20px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.message-box.success {
+  display: block;
+
+  background: #ecfdf5;
+
+  border: 1px solid #a7f3d0;
+
+  color: #047857;
+}
+
+.message-box.error {
+  display: block;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #b91c1c;
+}
+
+/* ==================================================
+   LIST HEADER
+================================================== */
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.search-box {
+  width: 320px;
+}
+
+.search-box input {
+  width: 100%;
+  height: 45px;
+
+  padding: 0 15px;
+
+  background: #f8fafc;
+
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+
+  color: #172033;
+
+  font-size: 13px;
+
+  outline: none;
+}
+
+.search-box input::placeholder {
+  color: #a3afc2;
+}
+
+.search-box input:focus {
+  background: white;
+
+  border-color: #477ff0;
+
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+/* ==================================================
+   TABLE
+================================================== */
+
+.table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border: 1px solid #e5eaf1;
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+
+  min-width: 850px;
+
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f5f8fc;
+}
+
+th {
+  color: #526178;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.3px;
+}
+
+th,
+td {
+  padding: 15px 16px;
+
+  text-align: left;
+
+  border-bottom: 1px solid #e9edf3;
+}
+
+td {
+  color: #334155;
+
+  font-size: 13px;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: #f8fbff;
+}
+
+.empty-state {
+  padding: 42px;
+
+  text-align: center;
+
+  color: #94a3b8;
+}
+
+/* ==================================================
+   UTILITIES
+================================================== */
+
+.hidden {
+  display: none !important;
+}
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+footer {
+  padding: 12px 0;
+
+  text-align: center;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+/* ==================================================
+   RESPONSIVE
+================================================== */
+
+@media (max-width: 768px) {
+
+  .page-container {
+    width: 94%;
+
+    padding-top: 16px;
+  }
+
+  .header {
+    padding: 14px;
+  }
+
+  .brand-logo {
+    width: 43px;
+    height: 43px;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .brand h1 {
+    font-size: 14px;
+  }
+
+  .user-role {
+    display: none;
+  }
+
+  .page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 16px;
+  }
+
+  .page-heading .btn-primary {
+    width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: auto;
+  }
+
+  .card {
+    padding: 19px;
+  }
+
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+}/* =============================================
+   CHỈNH SỬA HỒ SƠ THỰC TẬP SINH
+============================================= */
+
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.edit-modal.hidden {
+  display: none;
+}
+
+/* Lớp nền tối phía sau */
+.edit-modal-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+/* Khung chỉnh sửa */
+.edit-modal-content {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+}
+
+/* Header */
+.edit-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 20px;
+  margin-bottom: 25px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.edit-label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #3970df;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+.edit-modal-header h2 {
+  margin: 0 0 7px;
+
+  color: #10213d;
+
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.edit-modal-header p {
+  margin: 0;
+
+  color: #8491a6;
+
+  font-size: 13px;
+}
+
+/* Nút X */
+.edit-close-btn {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #f1f5f9;
+
+  color: #64748b;
+
+  font-size: 25px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.edit-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* =============================
+   FORM
+============================= */
+
+#editInternForm .form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+#editInternForm .form-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+#editInternForm .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+#editInternForm label {
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#editInternForm input {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe3ef;
+  border-radius: 9px;
+
+  color: #1e293b;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition: 0.2s;
+}
+
+#editInternForm input:focus {
+  border-color: #3970df;
+
+  box-shadow:
+    0 0 0 3px rgba(57, 112, 223, 0.1);
+}
+
+/* =============================
+   BUTTON
+============================= */
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 11px 20px;
+
+  border: none;
+  border-radius: 9px;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+
+  color: #475569;
+}
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-save {
+  background:
+    linear-gradient(
+      135deg,
+      #2861df,
+      #477ff0
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 18px rgba(37, 99, 235, 0.2);
+}
+
+.btn-save:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 9px 22px rgba(37, 99, 235, 0.3);
+}
+
+/* =============================
+   NÚT CHỈNH SỬA TRONG BẢNG
+============================= */
+
+.btn-edit {
+  padding: 8px 14px;
+
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.btn-edit:hover {
+  background: #dbeafe;
+
+  border-color: #93c5fd;
+}
+
+/* =============================
+   THÔNG BÁO
+============================= */
+
+.edit-message {
+  display: none;
+
+  margin-top: 20px;
+
+  padding: 12px 15px;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+}
+
+.edit-message.success {
+  display: block;
+
+  background: #ecfdf5;
+
+  border: 1px solid #a7f3d0;
+
+  color: #047857;
+}
+
+.edit-message.error {
+  display: block;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #b91c1c;
+}
+
+/* =============================
+   RESPONSIVE
+============================= */
+
+@media (max-width: 768px) {
+
+  .edit-modal-content {
+    padding: 20px;
+  }
+
+  #editInternForm .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #editInternForm .form-group.full-width {
+    grid-column: auto;
+  }
+
+  .edit-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .edit-actions {
+    flex-direction: column-reverse;
+  }
+
+  .edit-actions button {
+    width: 100%;
+  }
+}
