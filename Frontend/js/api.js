@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5024/api";
+const BASE_URL = window.APP_CONFIG?.apiBaseUrl || "http://LAPTOP-JMIK4SIO:5024/api";
 
 function getAuthHeader() {
   const token = localStorage.getItem("token");

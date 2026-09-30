@@ -6,7 +6,7 @@
     <title>Quản lý tài khoản | Intern Management System</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
-  <body>
+  <body data-required-roles="ADMIN">
     <div class="dashboard">
       <!-- HEADER -->
       <header class="dashboard-header">
@@ -127,7 +127,9 @@
       <footer class="dashboard-footer">© 2026 Intern Management System</footer>
     </div>
 
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
+    <script src="../js/role-access.js"></script>
     <script src="../js/user-manage.js"></script>
   </body>
 </html>

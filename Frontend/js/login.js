@@ -39,15 +39,9 @@ document
           break;
 
         case "HR":
-          window.location.href = "pages/hr.html";
-          break;
-
         case "MENTOR":
-          window.location.href = "pages/mentor.html";
-          break;
-
         case "INTERN":
-          window.location.href = "pages/intern.html";
+          window.location.href = "pages/role-dashboard.html";
           break;
 
         default:

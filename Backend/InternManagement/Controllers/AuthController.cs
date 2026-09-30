@@ -57,4 +57,25 @@ public sealed class AuthController : ControllerBase
         var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role);
         return Ok(new LoginResponse(tokens.Issue(user), responseUser));
     }
+
+    [HttpGet("permissions")]
+    public IActionResult GetPermissions()
+    {
+        var header = Request.Headers.Authorization.ToString();
+        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            || !tokens.TryValidate(header[7..].Trim(), out var user))
+            return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn." });
+
+        var role = user!.Role.ToUpperInvariant();
+        var permissions = role switch
+        {
+            "ADMIN" => new[] { "users.manage", "interns.manage" },
+            "HR" => new[] { "interns.manage" },
+            "MENTOR" => new[] { "interns.assigned.read", "progress.review" },
+            "INTERN" => new[] { "profile.own.read", "progress.own.read", "tasks.own.read" },
+            _ => Array.Empty<string>()
+        };
+
+        return Ok(new { role, permissions });
+    }
 }

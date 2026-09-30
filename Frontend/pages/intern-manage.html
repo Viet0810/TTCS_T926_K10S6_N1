@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="../css/intern.css" />
   </head>
 
-  <body>
+  <body data-required-roles="HR,ADMIN">
     <div class="page-container">
 
       <!-- HEADER -->
@@ -24,7 +24,7 @@
         </div>
 
         <div class="header-actions">
-          <span class="user-role">HR</span>
+          <span id="currentUserRole" class="user-role" data-role-label>HR</span>
           <button id="logoutBtn" class="btn-logout">
             Đăng xuất
           </button>
@@ -416,9 +416,9 @@
 
 
     <!-- JavaScript -->
+    <script src="../js/config.js"></script>
+    <script src="../js/role-access.js"></script>
     <script src="../js/intern.js"></script>
 
   </body>
 </html>
-
- 

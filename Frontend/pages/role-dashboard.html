@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Khu vực làm việc | Intern Management System</title>
+    <link rel="stylesheet" href="../css/roles.css" />
+  </head>
+  <body>
+    <main class="workspace">
+      <header class="topbar">
+        <a class="brand" href="role-dashboard.html" aria-label="Trang chính">IM <span>Intern Management</span></a>
+        <div class="account"><span data-user-name></span><span class="role-pill" data-role-label></span><button id="logoutBtn" class="button button-outline">Đăng xuất</button></div>
+      </header>
+      <section class="welcome">
+        <p class="eyebrow">KHÔNG GIAN LÀM VIỆC</p>
+        <h1>Xin chào, <span data-user-name></span></h1>
+        <p>Các mục bên dưới được hiển thị theo vai trò tài khoản của bạn.</p>
+      </section>
+      <section class="cards" aria-label="Chức năng theo vai trò">
+        <article class="card" data-allow="HR,ADMIN" data-permission="interns.manage">
+          <span class="card-icon">01</span><h2>Quản lý hồ sơ thực tập</h2>
+          <p>Tiếp nhận, tìm kiếm, cập nhật hồ sơ và phân công Mentor cho thực tập sinh.</p>
+          <a class="button" href="../hr-search-filter-interns/index.html">Mở phân hệ HR</a>
+        </article>
+        <article class="card" data-allow="ADMIN" data-permission="users.manage">
+          <span class="card-icon">02</span><h2>Quản lý tài khoản</h2>
+          <p>Tạo tài khoản và phân vai trò HR, Mentor hoặc Thực tập sinh.</p>
+          <a class="button" href="user-manage.html">Mở quản lý tài khoản</a>
+        </article>
+        <article class="card" data-allow="MENTOR" data-permission="progress.review">
+          <span class="card-icon">02</span><h2>Hướng dẫn thực tập</h2>
+          <p>Vai trò Mentor được dành cho việc theo dõi tiến độ và hướng dẫn thực tập sinh được phân công.</p>
+          <p class="notice">Phân hệ theo dõi và đánh giá Mentor chưa được kết nối với dữ liệu hệ thống.</p>
+        </article>
+        <article class="card" data-allow="INTERN" data-permission="profile.own.read">
+          <span class="card-icon">02</span><h2>Thông tin thực tập của tôi</h2>
+          <p>Vai trò Thực tập sinh được dành cho việc xem hồ sơ, nhiệm vụ và tiến độ cá nhân.</p>
+          <p class="notice">Hồ sơ cá nhân và nhiệm vụ chưa được kết nối với dữ liệu hệ thống.</p>
+        </article>
+        <article class="card" data-allow="HR" data-permission="interns.manage">
+          <span class="card-icon">02</span><h2>Quản lý hồ sơ nội bộ</h2>
+          <p>Biểu mẫu quản lý hồ sơ hiện có, dùng dữ liệu thử nghiệm trên trình duyệt.</p>
+          <a class="button button-outline" href="intern-manage.html">Mở màn hình hồ sơ</a>
+        </article>
+      </section>
+      <footer>Intern Management System · 2026</footer>
+    </main>
+    <script src="../js/config.js"></script>
+    <script src="../js/role-access.js"></script>
+    <script>
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.clear();
+        window.location.replace("../index.html");
+      });
+    </script>
+  </body>
+</html>
