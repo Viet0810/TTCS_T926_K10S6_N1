@@ -38,7 +38,7 @@ const InternService = {
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const url = `${this.API_BASE_URL}/interns?${queryParams.toString()}`;
+        const url = `${this.API_BASE_URL}/interns/search?${queryParams.toString()}`;
         const res = await fetch(url, { headers });
 
         if (res.ok) {

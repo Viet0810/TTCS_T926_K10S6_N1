@@ -21,13 +21,13 @@ public sealed class InternsController : ControllerBase
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<InternResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetAll([FromQuery] InternFilterRequest? filter, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AccessDenied(decision.Status);
 
-        return Ok(await interns.GetAllAsync(filter, cancellationToken));
+        return Ok(await interns.GetAllAsync(cancellationToken));
     }
 
     [HttpGet("me")]

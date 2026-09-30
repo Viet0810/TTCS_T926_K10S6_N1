@@ -13,6 +13,7 @@ builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>()
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.IInternService, InternManagement.Services.InternService>();
+builder.Services.AddScoped<InternManagement.HrSearchFilterInterns.IInternFilterService, InternManagement.HrSearchFilterInterns.InternFilterService>();
 
 var app = builder.Build();
 var connectionString = builder.Configuration.GetConnectionString("InternManagement");
