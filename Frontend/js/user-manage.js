@@ -1,9 +1,6 @@
 const tableBody = document.getElementById("userTableBody");
-const role = localStorage.getItem("role");
-
-if (role !== "ADMIN") {
-  window.location.href = "../index.html";
-}
+const searchInput = document.getElementById("userSearchInput");
+let users = [];
 
 function escapeHtml(value) {
   return String(value)
@@ -19,8 +16,19 @@ function roleClass(userRole) {
 }
 
 async function loadUsers() {
-  const users = await API.getUsers();
-  tableBody.innerHTML = users
+  users = await API.getUsers();
+  renderUsers();
+}
+
+function renderUsers() {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const visibleUsers = users.filter((user) =>
+    `${user.fullName} ${user.email} ${user.role}`
+      .toLowerCase()
+      .includes(keyword),
+  );
+
+  tableBody.innerHTML = visibleUsers
     .map(
       (user) => `
         <tr>
@@ -35,25 +43,46 @@ async function loadUsers() {
     .join("");
 }
 
+async function initializePage() {
+  if (!localStorage.getItem("token")) {
+    window.location.href = "../index.html";
+    return;
+  }
+
+  try {
+    const session = await API.getCurrentUser();
+    if (session.user.role !== "ADMIN") {
+      window.location.href = "dashboard.html";
+      return;
+    }
+    await loadUsers();
+  } catch {
+    localStorage.clear();
+    window.location.href = "../index.html";
+  }
+}
+
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.clear();
   window.location.href = "../index.html";
 });
+
+searchInput.addEventListener("input", renderUsers);
 
 tableBody.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-user-id]");
   if (!button || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
 
   try {
-    const result = await API.deleteUser(button.dataset.userId);
-    alert(result.message);
+    await API.deleteUser(button.dataset.userId);
+    alert("Đã xóa tài khoản.");
     await loadUsers();
   } catch (error) {
     alert(error.message);
   }
 });
 
-loadUsers().catch((error) => alert(error.message));
+initializePage();
 
 document
   .getElementById("createUserForm")
@@ -65,8 +94,15 @@ document
     const email = document.getElementById("email").value.trim();
 
     const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
     const role = document.getElementById("role").value;
+
+    if (password !== confirmPassword) {
+      alert("Mật khẩu xác nhận không khớp.");
+      document.getElementById("confirmPassword").focus();
+      return;
+    }
 
     try {
       const result = await API.createUser({

@@ -11,20 +11,22 @@ public sealed class UsersController : ControllerBase
 {
     private readonly string connectionString;
     private readonly PasswordHasher passwords;
-    private readonly AuthTokenService tokens;
+    private readonly RequestAuthorizationService authorization;
 
-    public UsersController(IConfiguration configuration, PasswordHasher passwords, AuthTokenService tokens)
+    public UsersController(IConfiguration configuration, PasswordHasher passwords, RequestAuthorizationService authorization)
     {
         connectionString = configuration.GetConnectionString("InternManagement")
             ?? throw new InvalidOperationException("Chưa cấu hình connection string InternManagement.");
         this.passwords = passwords;
-        this.tokens = tokens;
+        this.authorization = authorization;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out _)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
+        var decision = authorization.Evaluate(Request, PermissionNames.ManageUsers);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AccessDenied(decision.Status);
 
         var users = new List<UserResponse>();
         await using var connection = new SqlConnection(connectionString);
@@ -38,17 +40,44 @@ public sealed class UsersController : ControllerBase
         return Ok(users);
     }
 
+    [HttpGet("{id:int}")]
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserById(int id, CancellationToken cancellationToken)
+    {
+        var decision = authorization.Evaluate(Request, PermissionNames.ManageUsers);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AccessDenied(decision.Status);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, Username, FullName, Email, Role FROM dbo.Users WHERE Id = @id";
+        command.Parameters.AddWithValue("@id", id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return NotFound(new ApiErrorResponse(false, "Không tìm thấy tài khoản.", null));
+
+        return Ok(new UserResponse(
+            reader.GetInt32(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            reader.GetString(4)));
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out _)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
-        var role = request.Role?.Trim().ToUpperInvariant();
-        if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrEmpty(request.Password))
-            return BadRequest(new { message = "Vui lòng nhập đủ thông tin tài khoản." });
-        if (request.Password.Length < 8)
-            return BadRequest(new { message = "Mật khẩu phải có ít nhất 8 ký tự." });
+        var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AccessDenied(decision.Status);
+
+        var role = request.Role.Trim().ToUpperInvariant();
         if (role is not ("HR" or "MENTOR" or "INTERN"))
-            return BadRequest(new { message = "Vai trò không hợp lệ." });
+            return BadRequest(new ApiErrorResponse(false, "Vai trò không hợp lệ.", null));
 
         try
         {
@@ -57,6 +86,7 @@ public sealed class UsersController : ControllerBase
             await using var command = connection.CreateCommand();
             command.CommandText = """
                 INSERT INTO dbo.Users (Username, FullName, Email, PasswordHash, Role)
+                OUTPUT INSERTED.Id, INSERTED.Username, INSERTED.FullName, INSERTED.Email, INSERTED.Role
                 VALUES (@username, @fullName, @email, @passwordHash, @role);
                 """;
             command.Parameters.AddWithValue("@username", request.Email.Trim());
@@ -64,20 +94,31 @@ public sealed class UsersController : ControllerBase
             command.Parameters.AddWithValue("@email", request.Email.Trim());
             command.Parameters.AddWithValue("@passwordHash", passwords.Hash(request.Password));
             command.Parameters.AddWithValue("@role", role);
-            await command.ExecuteNonQueryAsync(cancellationToken);
-            return Ok(new { message = "Tạo tài khoản thành công." });
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await reader.ReadAsync(cancellationToken);
+            var user = new UserResponse(
+                reader.GetInt32(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4));
+            return CreatedAtAction(nameof(GetUserById), new { id = user.Id },
+                new { success = true, message = "Tạo tài khoản thành công.", data = user });
         }
         catch (SqlException error) when (error.Number is 2601 or 2627)
         {
-            return Conflict(new { message = "Email hoặc tên đăng nhập đã tồn tại." });
+            return Conflict(new ApiErrorResponse(false, "Email hoặc tên đăng nhập đã tồn tại.", null));
         }
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out var currentUser)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
-        if (currentUser!.Id == id) return BadRequest(new { message = "Không thể xóa tài khoản đang đăng nhập." });
+        var decision = authorization.Evaluate(Request, PermissionNames.DeleteUser);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AccessDenied(decision.Status);
+        if (decision.User!.Id == id)
+            return BadRequest(new ApiErrorResponse(false, "Không thể xóa tài khoản đang đăng nhập.", null));
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -85,15 +126,14 @@ public sealed class UsersController : ControllerBase
         command.CommandText = "DELETE FROM dbo.Users WHERE Id = @id AND Role <> 'ADMIN'";
         command.Parameters.AddWithValue("@id", id);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
-        return affected == 0 ? NotFound(new { message = "Không tìm thấy tài khoản cần xóa." }) : Ok(new { message = "Đã xóa tài khoản." });
+        return affected == 0
+            ? NotFound(new ApiErrorResponse(false, "Không tìm thấy tài khoản cần xóa.", null))
+            : NoContent();
     }
 
-    private bool IsAdmin(out AuthenticatedUser? user)
+    private IActionResult AccessDenied(AuthorizationStatus status) => status switch
     {
-        user = null;
-        var header = Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return false;
-        return tokens.TryValidate(header[7..].Trim(), out user)
-            && string.Equals(user!.Role, "ADMIN", StringComparison.OrdinalIgnoreCase);
-    }
+        AuthorizationStatus.Unauthenticated => Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null)),
+        _ => StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse(false, "Bạn không có quyền thực hiện chức năng này.", null))
+    };
 }

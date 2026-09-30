@@ -13,18 +13,45 @@ const searchInput = document.getElementById("searchInput");
 
 const logoutBtn = document.getElementById("logoutBtn");
 
-
-/*
-==================================
-DỮ LIỆU TẠM THỜI
-
-Hiện tại dùng Array để test FE.
-Sau này sẽ thay bằng API Backend.
-==================================
-*/
-
+const INTERN_API_URL = "http://localhost:5024/api/interns";
 let interns = [];
+let canManageInterns = false;
 
+async function requestInternApi(path = "", options = {}) {
+  const token = localStorage.getItem("token");
+  const headers = { ...options.headers };
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (options.body) headers["Content-Type"] = "application/json";
+
+  const response = await fetch(`${INTERN_API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        data.detail ||
+        data.title ||
+        `Lỗi HTTP ${response.status}`,
+    );
+  }
+
+  return data;
+}
+
+async function loadInterns() {
+  try {
+    interns = await requestInternApi();
+    renderInterns(interns);
+    return true;
+  } catch (error) {
+    showMessage(`Không thể tải dữ liệu: ${error.message}`, "error");
+    return false;
+  }
+}
 
 /*
 ==================================
@@ -33,13 +60,10 @@ MỞ FORM
 */
 
 openFormBtn.addEventListener("click", () => {
-
   formSection.classList.remove("hidden");
 
   document.getElementById("fullName").focus();
-
 });
-
 
 /*
 ==================================
@@ -48,20 +72,16 @@ openFormBtn.addEventListener("click", () => {
 */
 
 function closeForm() {
-
   formSection.classList.add("hidden");
 
   form.reset();
 
   clearErrors();
-
 }
-
 
 closeFormBtn.addEventListener("click", closeForm);
 
 cancelBtn.addEventListener("click", closeForm);
-
 
 /*
 ==================================
@@ -70,38 +90,18 @@ LẤY DỮ LIỆU FORM
 */
 
 function getFormData() {
-
   return {
+    fullName: document.getElementById("fullName").value.trim(),
 
-    fullName:
-      document.getElementById("fullName")
-        .value
-        .trim(),
+    email: document.getElementById("email").value.trim(),
 
-    email:
-      document.getElementById("email")
-        .value
-        .trim(),
+    phone: document.getElementById("phone").value.trim(),
 
-    phone:
-      document.getElementById("phone")
-        .value
-        .trim(),
+    school: document.getElementById("school").value.trim(),
 
-    school:
-      document.getElementById("school")
-        .value
-        .trim(),
-
-    major:
-      document.getElementById("major")
-        .value
-        .trim()
-
+    major: document.getElementById("major").value.trim(),
   };
-
 }
-
 
 /*
 ==================================
@@ -110,107 +110,58 @@ VALIDATE
 */
 
 function validateIntern(intern) {
-
   clearErrors();
 
   let valid = true;
 
-
   if (!intern.fullName) {
-
-    showFieldError(
-      "fullName",
-      "Vui lòng nhập họ và tên."
-    );
+    showFieldError("fullName", "Vui lòng nhập họ và tên.");
 
     valid = false;
-
   }
-
 
   if (!intern.email) {
-
-    showFieldError(
-      "email",
-      "Vui lòng nhập email."
-    );
+    showFieldError("email", "Vui lòng nhập email.");
 
     valid = false;
-
   } else {
-
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(intern.email)) {
-
-      showFieldError(
-        "email",
-        "Email không đúng định dạng."
-      );
+      showFieldError("email", "Email không đúng định dạng.");
 
       valid = false;
-
     }
-
   }
 
-
   if (!intern.phone) {
-
-    showFieldError(
-      "phone",
-      "Vui lòng nhập số điện thoại."
-    );
+    showFieldError("phone", "Vui lòng nhập số điện thoại.");
 
     valid = false;
-
   } else {
-
     const phoneRegex = /^[0-9]{10,11}$/;
 
     if (!phoneRegex.test(intern.phone)) {
-
-      showFieldError(
-        "phone",
-        "Số điện thoại phải có 10 đến 11 chữ số."
-      );
+      showFieldError("phone", "Số điện thoại phải có 10 đến 11 chữ số.");
 
       valid = false;
-
     }
-
   }
-
 
   if (!intern.school) {
-
-    showFieldError(
-      "school",
-      "Vui lòng nhập tên trường."
-    );
+    showFieldError("school", "Vui lòng nhập tên trường.");
 
     valid = false;
-
   }
-
 
   if (!intern.major) {
-
-    showFieldError(
-      "major",
-      "Vui lòng nhập chuyên ngành."
-    );
+    showFieldError("major", "Vui lòng nhập chuyên ngành.");
 
     valid = false;
-
   }
 
-
   return valid;
-
 }
-
 
 /*
 ==================================
@@ -219,21 +170,14 @@ HIỂN THỊ LỖI
 */
 
 function showFieldError(fieldId, message) {
+  const input = document.getElementById(fieldId);
 
-  const input =
-    document.getElementById(fieldId);
-
-  const error =
-    document.getElementById(
-      `${fieldId}Error`
-    );
+  const error = document.getElementById(`${fieldId}Error`);
 
   input.classList.add("input-error");
 
   error.textContent = message;
-
 }
-
 
 /*
 ==================================
@@ -242,34 +186,18 @@ XÓA LỖI
 */
 
 function clearErrors() {
-
-  const inputs =
-    document.querySelectorAll(
-      ".form-group input"
-    );
+  const inputs = document.querySelectorAll(".form-group input");
 
   inputs.forEach((input) => {
-
-    input.classList.remove(
-      "input-error"
-    );
-
+    input.classList.remove("input-error");
   });
 
-
-  const errors =
-    document.querySelectorAll(
-      ".error-message"
-    );
+  const errors = document.querySelectorAll(".error-message");
 
   errors.forEach((error) => {
-
     error.textContent = "";
-
   });
-
 }
-
 
 /*
 ==================================
@@ -277,79 +205,46 @@ SUBMIT FORM
 ==================================
 */
 
-form.addEventListener(
-  "submit",
-  function (event) {
+form.addEventListener("submit", async function (event) {
+  event.preventDefault();
 
-    event.preventDefault();
+  if (!canManageInterns) {
+    showMessage("Bạn không có quyền quản lý hồ sơ thực tập sinh.", "error");
+    return;
+  }
 
+  const intern = getFormData();
 
-    const intern = getFormData();
+  if (!validateIntern(intern)) {
+    showMessage("Vui lòng kiểm tra lại thông tin.", "error");
 
+    return;
+  }
 
-    if (!validateIntern(intern)) {
+  const emailExists = interns.some(
+    (item) => item.email.toLowerCase() === intern.email.toLowerCase(),
+  );
 
-      showMessage(
-        "Vui lòng kiểm tra lại thông tin.",
-        "error"
-      );
+  if (emailExists) {
+    showFieldError("email", "Email này đã tồn tại.");
 
-      return;
+    return;
+  }
 
-    }
-
-
-    /*
-    Kiểm tra email trùng.
-    Hiện tại kiểm tra trên dữ liệu FE.
-    Sau này Backend sẽ kiểm tra.
-    */
-
-    const emailExists =
-      interns.some(
-        (item) =>
-          item.email.toLowerCase() ===
-          intern.email.toLowerCase()
-      );
-
-
-    if (emailExists) {
-
-      showFieldError(
-        "email",
-        "Email này đã tồn tại."
-      );
-
-      return;
-
-    }
-
-
-    /*
-    Tạo ID tạm thời.
-    Sau này ID sẽ do Backend tạo.
-    */
-
-    intern.id = Date.now();
-
-
-    interns.push(intern);
-
-
-    renderInterns(interns);
-
-
-    showMessage(
-      "Thêm hồ sơ thực tập sinh thành công!",
-      "success"
-    );
-
+  try {
+    await requestInternApi("", {
+      method: "POST",
+      body: JSON.stringify(intern),
+    });
 
     closeForm();
-
+    if (await loadInterns()) {
+      showMessage("Thêm hồ sơ thực tập sinh thành công!", "success");
+    }
+  } catch (error) {
+    showMessage(error.message, "error");
   }
-);
-
+});
 
 /*
 ==================================
@@ -358,12 +253,9 @@ HIỂN THỊ DANH SÁCH
 */
 
 function renderInterns(data) {
-
   tableBody.innerHTML = "";
 
-
   if (data.length === 0) {
-
     tableBody.innerHTML = `
       <tr>
         <td
@@ -376,15 +268,10 @@ function renderInterns(data) {
     `;
 
     return;
-
   }
 
-
   data.forEach((intern) => {
-
-    const row =
-      document.createElement("tr");
-
+    const row = document.createElement("tr");
 
     row.innerHTML = `
 
@@ -400,13 +287,9 @@ function renderInterns(data) {
 
     `;
 
-
     tableBody.appendChild(row);
-
   });
-
 }
-
 
 /*
 ==================================
@@ -414,37 +297,17 @@ TÌM KIẾM
 ==================================
 */
 
-searchInput.addEventListener(
-  "input",
-  function () {
+searchInput.addEventListener("input", function () {
+  const keyword = this.value.trim().toLowerCase();
 
-    const keyword =
-      this.value
-        .trim()
-        .toLowerCase();
+  const filtered = interns.filter(
+    (intern) =>
+      intern.fullName.toLowerCase().includes(keyword) ||
+      intern.email.toLowerCase().includes(keyword),
+  );
 
-
-    const filtered =
-      interns.filter((intern) =>
-
-        intern.fullName
-          .toLowerCase()
-          .includes(keyword)
-
-        ||
-
-        intern.email
-          .toLowerCase()
-          .includes(keyword)
-
-      );
-
-
-    renderInterns(filtered);
-
-  }
-);
-
+  renderInterns(filtered);
+});
 
 /*
 ==================================
@@ -453,24 +316,16 @@ THÔNG BÁO
 */
 
 function showMessage(message, type) {
-
   messageBox.textContent = message;
 
-  messageBox.className =
-    `message-box ${type}`;
-
+  messageBox.className = `message-box ${type}`;
 
   setTimeout(() => {
-
-    messageBox.className =
-      "message-box";
+    messageBox.className = "message-box";
 
     messageBox.textContent = "";
-
   }, 3000);
-
 }
-
 
 /*
 ==================================
@@ -479,16 +334,12 @@ CHỐNG CHÈN HTML VÀO TABLE
 */
 
 function escapeHtml(value) {
-
-  const div =
-    document.createElement("div");
+  const div = document.createElement("div");
 
   div.textContent = value;
 
   return div.innerHTML;
-
 }
-
 
 /*
 ==================================
@@ -496,19 +347,12 @@ function escapeHtml(value) {
 ==================================
 */
 
-logoutBtn.addEventListener(
-  "click",
-  function () {
+logoutBtn.addEventListener("click", function () {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    window.location.href =
-      "../index.html";
-
-  }
-);
-
+  window.location.href = "../index.html";
+});
 
 /*
 ==================================
@@ -516,4 +360,38 @@ KHỞI TẠO
 ==================================
 */
 
-renderInterns(interns);
+async function initializeInternPage() {
+  if (!localStorage.getItem("token")) {
+    window.location.href = "../index.html";
+    return;
+  }
+
+  try {
+    const session = await API.getCurrentUser();
+    const permissions = session.permissions;
+    document.getElementById("userRole").textContent = session.user.role;
+
+    if (!permissions.includes("VIEW_INTERNS")) {
+      window.location.href = permissions.includes("VIEW_PROFILE")
+        ? "profile.html"
+        : "dashboard.html";
+      return;
+    }
+
+    canManageInterns = permissions.includes("MANAGE_INTERNS");
+    if (!canManageInterns) {
+      openFormBtn.hidden = true;
+      formSection.classList.add("hidden");
+      document.querySelector(".page-heading h2").textContent =
+        "Danh sách thực tập sinh";
+    }
+
+    await loadInterns();
+  } catch (error) {
+    showMessage(`Không thể xác thực phiên: ${error.message}`, "error");
+    localStorage.clear();
+    window.location.href = "../index.html";
+  }
+}
+
+initializeInternPage();

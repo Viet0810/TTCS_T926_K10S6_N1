@@ -9,7 +9,10 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
     policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 builder.Services.AddSingleton<InternManagement.Services.PasswordHasher>();
 builder.Services.AddSingleton<InternManagement.Services.AuthTokenService>();
+builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>();
+builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddScoped<InternManagement.Services.IInternService, InternManagement.Services.InternService>();
 
 var app = builder.Build();
 var connectionString = builder.Configuration.GetConnectionString("InternManagement");

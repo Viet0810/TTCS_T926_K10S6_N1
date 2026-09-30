@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hồ sơ cá nhân | Intern Management System</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo">IM</div>
+          <div class="dashboard-title">
+            <span>INTERN MANAGEMENT SYSTEM</span>
+            <h1>Hồ sơ cá nhân</h1>
+          </div>
+        </div>
+        <div class="dashboard-session">
+          <a class="btn-primary" href="dashboard.html">Bảng điều khiển</a>
+          <button type="button" id="logoutBtn" class="btn-danger">
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">HỒ SƠ TÀI KHOẢN</span>
+              <h2 id="profileName">Đang tải...</h2>
+              <p>Thông tin lấy từ phiên đăng nhập đã xác thực.</p>
+            </div>
+            <span id="profileRole" class="badge"></span>
+          </div>
+          <dl class="profile-details">
+            <div>
+              <dt>Email</dt>
+              <dd id="profileEmail"></dd>
+            </div>
+            <div>
+              <dt>Tên đăng nhập</dt>
+              <dd id="profileUsername"></dd>
+            </div>
+            <div>
+              <dt>Vai trò</dt>
+              <dd id="profileRoleName"></dd>
+            </div>
+          </dl>
+          <p id="profileMessage" class="dashboard-message" role="status"></p>
+        </section>
+      </main>
+      <footer class="dashboard-footer">© 2026 Intern Management System</footer>
+    </div>
+    <script src="../js/api.js"></script>
+    <script src="../js/profile.js"></script>
+  </body>
+</html>

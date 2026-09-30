@@ -4,3 +4,69 @@ GET {{InternManagement_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+@adminToken = replace-with-a-valid-admin-or-hr-token
+
+### Thông tin phiên và permission hiện tại
+GET {{InternManagement_HostAddress}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Ma trận role-permission (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/auth/roles/permissions
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Danh sách tài khoản (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/users
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Tạo tài khoản (chỉ ADMIN; role chỉ nhận HR, MENTOR, INTERN)
+POST {{InternManagement_HostAddress}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+	"fullName": "Nguyễn Văn A",
+	"email": "hr01@example.com",
+	"password": "Hr123456@",
+	"role": "HR"
+}
+
+### Lấy tài khoản theo ID (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/users/1
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Xóa tài khoản theo ID (chỉ ADMIN; response 204)
+DELETE {{InternManagement_HostAddress}}/api/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+### Danh sách thực tập sinh
+GET {{InternManagement_HostAddress}}/api/interns
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Hồ sơ gắn với tài khoản đang đăng nhập
+GET {{InternManagement_HostAddress}}/api/interns/me
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Chi tiết thực tập sinh
+GET {{InternManagement_HostAddress}}/api/interns/1
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Tạo hồ sơ thực tập sinh
+POST {{InternManagement_HostAddress}}/api/interns
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+	"fullName": "Nguyễn Demo",
+	"email": "nguyendemo@example.com",
+	"phone": "0901234567",
+	"school": "Đại học Demo",
+	"major": "Công nghệ thông tin"
+}
