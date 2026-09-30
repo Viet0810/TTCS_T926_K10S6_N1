@@ -14,13 +14,36 @@ public sealed class InternService : IInternService
             ?? throw new InvalidOperationException("Chưa cấu hình connection string InternManagement.");
     }
 
-    public async Task<IReadOnlyList<InternResponse>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<InternResponse>> GetAllAsync(InternFilterRequest? filter = null, CancellationToken cancellationToken = default)
     {
         var interns = new List<InternResponse>();
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, FullName, Email, Phone, School, Major, CreatedAt FROM dbo.Interns ORDER BY Id DESC";
+
+        var sql = new System.Text.StringBuilder("SELECT Id, FullName, Email, Phone, School, Major, CreatedAt FROM dbo.Interns WHERE 1 = 1");
+
+        if (!string.IsNullOrWhiteSpace(filter?.Search))
+        {
+            sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search)");
+            command.Parameters.Add("@search", SqlDbType.NVarChar, 254).Value = $"%{filter.Search.Trim()}%";
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter?.School))
+        {
+            sql.Append(" AND School = @school");
+            command.Parameters.Add("@school", SqlDbType.NVarChar, 200).Value = filter.School.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter?.Major))
+        {
+            sql.Append(" AND Major = @major");
+            command.Parameters.Add("@major", SqlDbType.NVarChar, 200).Value = filter.Major.Trim();
+        }
+
+        sql.Append(" ORDER BY Id DESC");
+        command.CommandText = sql.ToString();
+
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
             interns.Add(Map(reader));

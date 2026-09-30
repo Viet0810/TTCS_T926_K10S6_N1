@@ -7,8 +7,8 @@
 const STORAGE_KEY = "intern_management_data_v1";
 
 const InternService = {
-  USE_API: false,
-  API_BASE_URL: "https://localhost:7001/api",
+  USE_API: false, // Đổi thành true khi muốn kết nối trực tiếp Backend ASP.NET Core
+  API_BASE_URL: "http://localhost:5024/api",
 
   initStorage() {
     if (!localStorage.getItem(STORAGE_KEY)) {
@@ -28,11 +28,66 @@ const InternService = {
 
   async getInterns(filters = {}) {
     if (this.USE_API) {
-      const params = new URLSearchParams(filters);
-      const res = await fetch(`${this.API_BASE_URL}/interns?${params}`);
-      return await res.json();
+      try {
+        const queryParams = new URLSearchParams();
+        if (filters.search) queryParams.append("search", filters.search);
+        if (filters.school) queryParams.append("school", filters.school);
+        if (filters.major) queryParams.append("major", filters.major);
+
+        const token = localStorage.getItem("token");
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const url = `${this.API_BASE_URL}/interns?${queryParams.toString()}`;
+        const res = await fetch(url, { headers });
+
+        if (res.ok) {
+          const raw = await res.json();
+          return this.adaptApiData(raw, filters);
+        } else {
+          console.warn(`[Backend API] Phản hồi lỗi ${res.status}, tự động chuyển sang chế độ dữ liệu cục bộ.`);
+        }
+      } catch (err) {
+        console.warn("[Backend API] Không thể kết nối tới server Backend, sử dụng dữ liệu cục bộ:", err.message);
+      }
     }
 
+    return this.getLocalFiltered(filters);
+  },
+
+  adaptApiData(rawList, filters = {}) {
+    return rawList
+      .filter(item => {
+        if (filters.status && item.status && item.status !== filters.status) return false;
+        if (filters.batch && item.batch && item.batch !== filters.batch) return false;
+        if (filters.mentor && item.mentor && item.mentor !== filters.mentor) return false;
+        return true;
+      })
+      .map((item, idx) => {
+        const matchedSchool = MOCK_UNIVERSITIES.find(u => u.name === item.school);
+        const schoolShort = matchedSchool ? matchedSchool.shortName : (item.schoolShort || "DH");
+        return {
+          id: item.id,
+          name: item.fullName || item.name,
+          mssv: item.studentCode || item.mssv || `SV2024${String(item.id).padStart(4, '0')}`,
+          email: item.email,
+          phone: item.phone,
+          school: item.school,
+          schoolShort,
+          major: item.major,
+          role: item.role || "Thực tập sinh",
+          batch: item.batch || "Đợt 1 - 2026",
+          mentor: item.mentor || "Chưa phân công",
+          status: item.status || "Đang thực tập",
+          progress: item.progress ?? 65,
+          gpa: item.gpa || "3.20",
+          avatar: item.avatar || `https://images.unsplash.com/photo-${1534528741775 + (idx % 10) * 1000}-53994a69daeb?w=150&auto=format&fit=crop&q=80`,
+          createdAt: item.createdAt || new Date().toISOString()
+        };
+      });
+  },
+
+  getLocalFiltered(filters = {}) {
     const list = this.getAllInterns();
     return list.filter(item => {
       // 1. Tìm kiếm theo Tên, MSSV, Email, SĐT
