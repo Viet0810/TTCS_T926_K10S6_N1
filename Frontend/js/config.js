@@ -1,5 +1,5 @@
 // Set this to the computer running the backend, keeping the /api suffix.
 // Example: http://192.168.1.25:5024/api
 window.APP_CONFIG = {
-  apiBaseUrl: "http://172.172.10.171:5024/api",
+  apiBaseUrl: "http://192.168.1.107:5024/api",
 };

@@ -1,4 +1,4 @@
-const BASE_URL = window.APP_CONFIG?.apiBaseUrl || "http://172.172.10.171:5024/api";
+const BASE_URL = window.APP_CONFIG?.apiBaseUrl || "http://192.168.1.107:5024/api";
 
 function getAuthHeader() {
   const token = localStorage.getItem("token");

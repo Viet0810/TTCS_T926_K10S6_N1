@@ -34,7 +34,7 @@
     element.textContent = user?.fullName || user?.username || access.label;
   });
 
-  const apiBaseUrl = window.APP_CONFIG?.apiBaseUrl || "http://172.172.10.171:5024/api";
+  const apiBaseUrl = window.APP_CONFIG?.apiBaseUrl || "http://192.168.1.107:5024/api";
   fetch(`${apiBaseUrl}/auth/permissions`, {
     headers: { Authorization: `Bearer ${token}` },
   }).then(async (response) => {
