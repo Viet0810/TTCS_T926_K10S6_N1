@@ -11,7 +11,6 @@
 
   <body>
     <div class="page-container">
-
       <!-- HEADER -->
       <header class="header">
         <div class="brand">
@@ -24,16 +23,13 @@
         </div>
 
         <div class="header-actions">
-          <span class="user-role">HR</span>
-          <button id="logoutBtn" class="btn-logout">
-            Đăng xuất
-          </button>
+          <span id="userRole" class="user-role">HR</span>
+          <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
         </div>
       </header>
 
       <!-- MAIN -->
       <main>
-
         <!-- TIÊU ĐỀ -->
         <section class="page-heading">
           <div>
@@ -41,9 +37,7 @@
             <p>Quản lý và lưu trữ hồ sơ thực tập sinh.</p>
           </div>
 
-          <button id="openFormBtn" class="btn-primary">
-            + Thêm hồ sơ
-          </button>
+          <button id="openFormBtn" class="btn-primary">+ Thêm hồ sơ</button>
         </section>
 
         <!-- THÔNG BÁO -->
@@ -51,7 +45,6 @@
 
         <!-- FORM THÊM HỒ SƠ -->
         <section id="internFormSection" class="card form-card hidden">
-
           <div class="card-header">
             <div>
               <h3>Thêm hồ sơ thực tập sinh</h3>
@@ -69,14 +62,10 @@
           </div>
 
           <form id="createInternForm">
-
             <div class="form-grid">
-
               <!-- HỌ TÊN -->
               <div class="form-group">
-                <label for="fullName">
-                  Họ và tên <span>*</span>
-                </label>
+                <label for="fullName"> Họ và tên <span>*</span> </label>
 
                 <input
                   type="text"
@@ -91,9 +80,7 @@
 
               <!-- EMAIL -->
               <div class="form-group">
-                <label for="email">
-                  Email <span>*</span>
-                </label>
+                <label for="email"> Email <span>*</span> </label>
 
                 <input
                   type="email"
@@ -108,9 +95,7 @@
 
               <!-- SỐ ĐIỆN THOẠI -->
               <div class="form-group">
-                <label for="phone">
-                  Số điện thoại <span>*</span>
-                </label>
+                <label for="phone"> Số điện thoại <span>*</span> </label>
 
                 <input
                   type="tel"
@@ -125,9 +110,7 @@
 
               <!-- TRƯỜNG -->
               <div class="form-group">
-                <label for="school">
-                  Trường <span>*</span>
-                </label>
+                <label for="school"> Trường <span>*</span> </label>
 
                 <input
                   type="text"
@@ -142,9 +125,7 @@
 
               <!-- CHUYÊN NGÀNH -->
               <div class="form-group full-width">
-                <label for="major">
-                  Chuyên ngành <span>*</span>
-                </label>
+                <label for="major"> Chuyên ngành <span>*</span> </label>
 
                 <input
                   type="text"
@@ -156,37 +137,22 @@
 
                 <small class="error-message" id="majorError"></small>
               </div>
-
             </div>
 
             <!-- BUTTON -->
             <div class="form-actions">
-
-              <button
-                type="button"
-                id="cancelBtn"
-                class="btn-secondary"
-              >
+              <button type="button" id="cancelBtn" class="btn-secondary">
                 Hủy
               </button>
 
-              <button
-                type="submit"
-                class="btn-primary"
-              >
-                Thêm hồ sơ
-              </button>
-
+              <button type="submit" class="btn-primary">Thêm hồ sơ</button>
             </div>
-
           </form>
         </section>
 
         <!-- DANH SÁCH -->
         <section class="card">
-
           <div class="list-header">
-
             <div>
               <h3>Danh sách thực tập sinh</h3>
               <p>Danh sách hồ sơ hiện có trong hệ thống.</p>
@@ -199,14 +165,11 @@
                 placeholder="Tìm theo tên hoặc email..."
               />
             </div>
-
           </div>
 
           <!-- TABLE -->
           <div class="table-wrapper">
-
             <table>
-
               <thead>
                 <tr>
                   <th>Họ và tên</th>
@@ -218,30 +181,22 @@
               </thead>
 
               <tbody id="internTableBody">
-
                 <tr id="emptyRow">
                   <td colspan="5" class="empty-state">
                     Chưa có hồ sơ thực tập sinh.
                   </td>
                 </tr>
-
               </tbody>
-
             </table>
-
           </div>
-
         </section>
-
       </main>
 
       <!-- FOOTER -->
-      <footer>
-        © 2026 Intern Management System
-      </footer>
-
+      <footer>© 2026 Intern Management System</footer>
     </div>
 
+    <script src="../js/api.js"></script>
     <script src="../js/intern.js"></script>
   </body>
 </html>

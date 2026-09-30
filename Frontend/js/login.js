@@ -33,27 +33,13 @@ document
       localStorage.setItem("role", role);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      switch (role) {
-        case "ADMIN":
-          window.location.href = "pages/user-manage.html";
-          break;
-
-        case "HR":
-          window.location.href = "pages/hr.html";
-          break;
-
-        case "MENTOR":
-          window.location.href = "pages/mentor.html";
-          break;
-
-        case "INTERN":
-          window.location.href = "pages/intern.html";
-          break;
-
-        default:
-          alert("Vai trò tài khoản không hợp lệ!");
-          localStorage.clear();
+      if (!["ADMIN", "HR", "MENTOR", "INTERN"].includes(role)) {
+        alert("Vai trò tài khoản không hợp lệ!");
+        localStorage.clear();
+        return;
       }
+
+      window.location.href = "pages/dashboard.html";
     } catch (error) {
       alert(error.message);
     }

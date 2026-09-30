@@ -32,6 +32,24 @@ const API = {
     return handleResponse(response);
   },
 
+  getCurrentUser: async () => {
+    const response = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: getAuthHeader(),
+    });
+
+    return handleResponse(response);
+  },
+
+  getRolePermissions: async () => {
+    const response = await fetch(`${BASE_URL}/auth/roles/permissions`, {
+      method: "GET",
+      headers: getAuthHeader(),
+    });
+
+    return handleResponse(response);
+  },
+
   getUsers: async () => {
     const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",

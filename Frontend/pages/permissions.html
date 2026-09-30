@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ma trận phân quyền | Intern Management System</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo">IM</div>
+          <div class="dashboard-title">
+            <span>INTERN MANAGEMENT SYSTEM</span>
+            <h1>Ma trận quyền theo vai trò</h1>
+          </div>
+        </div>
+        <div class="dashboard-session">
+          <a class="btn-primary" href="dashboard.html">Bảng điều khiển</a>
+          <button type="button" id="logoutBtn" class="btn-danger">
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+      <main class="dashboard-main">
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
+              <h2>Quyền được cấp theo role</h2>
+              <p>
+                Ma trận này do backend quy định; quyền không được gán riêng cho
+                từng tài khoản.
+              </p>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Permissions</th>
+                </tr>
+              </thead>
+              <tbody id="rolePermissionTable"></tbody>
+            </table>
+          </div>
+          <p
+            id="permissionsMessage"
+            class="dashboard-message"
+            role="status"
+          ></p>
+        </section>
+      </main>
+      <footer class="dashboard-footer">© 2026 Intern Management System</footer>
+    </div>
+    <script src="../js/api.js"></script>
+    <script src="../js/permissions.js"></script>
+  </body>
+</html>

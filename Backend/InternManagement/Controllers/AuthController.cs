@@ -13,13 +13,22 @@ public sealed class AuthController : ControllerBase
     private readonly string connectionString;
     private readonly PasswordHasher passwords;
     private readonly AuthTokenService tokens;
+    private readonly RequestAuthorizationService authorization;
+    private readonly RolePermissionService rolePermissions;
 
-    public AuthController(IConfiguration configuration, PasswordHasher passwords, AuthTokenService tokens)
+    public AuthController(
+        IConfiguration configuration,
+        PasswordHasher passwords,
+        AuthTokenService tokens,
+        RequestAuthorizationService authorization,
+        RolePermissionService rolePermissions)
     {
         connectionString = configuration.GetConnectionString("InternManagement")
             ?? throw new InvalidOperationException("Chưa cấu hình connection string InternManagement.");
         this.passwords = passwords;
         this.tokens = tokens;
+        this.authorization = authorization;
+        this.rolePermissions = rolePermissions;
     }
 
     [HttpPost("login")]
@@ -56,5 +65,49 @@ public sealed class AuthController : ControllerBase
 
         var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role);
         return Ok(new LoginResponse(tokens.Issue(user), responseUser));
+    }
+
+    [HttpGet("me")]
+    [ProducesResponseType<CurrentUserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<CurrentUserResponse>> GetCurrentUser(CancellationToken cancellationToken)
+    {
+        var decision = authorization.Evaluate(Request);
+        if (decision.Status == AuthorizationStatus.Unauthenticated)
+            return Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null));
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, Username, FullName, Email, Role FROM dbo.Users WHERE Id = @id";
+        command.Parameters.AddWithValue("@id", decision.User!.Id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+            return Unauthorized(new ApiErrorResponse(false, "Phiên đăng nhập không còn hợp lệ.", null));
+
+        var user = new UserResponse(
+            reader.GetInt32(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            reader.GetString(4));
+
+        return Ok(new CurrentUserResponse(user, rolePermissions.GetPermissions(user.Role)));
+    }
+
+    [HttpGet("roles/permissions")]
+    [ProducesResponseType<IReadOnlyDictionary<string, IReadOnlyList<string>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status403Forbidden)]
+    public IActionResult GetRolePermissions()
+    {
+        var decision = authorization.Evaluate(Request, PermissionNames.ManagePermissions);
+        if (decision.Status == AuthorizationStatus.Unauthenticated)
+            return Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null));
+        if (decision.Status == AuthorizationStatus.Forbidden)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new ApiErrorResponse(false, "Bạn không có quyền thực hiện chức năng này.", null));
+
+        return Ok(rolePermissions.GetRolePermissions());
     }
 }
