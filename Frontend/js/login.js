@@ -35,7 +35,7 @@ document
 
       switch (role) {
         case "ADMIN":
-          window.location.href = "pages/admin.html";
+          window.location.href = "pages/user-manage.html";
           break;
 
         case "HR":
