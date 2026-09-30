@@ -1,4 +1,5 @@
 /**
+ * Chức năng: Tìm kiếm và lọc thực tập sinh
  * Service Layer: Quản lý truy xuất dữ liệu Thực tập sinh cho màn hình HR
  * Lưu trữ trong LocalStorage, sẵn sàng chuyển USE_API = true khi nối Backend/CSDL
  */

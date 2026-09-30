@@ -1,4 +1,5 @@
 /**
+ * Chức năng: Tìm kiếm và lọc thực tập sinh
  * Controller: Điều khiển sự kiện giao diện, tìm kiếm, lọc trường/ngành, modal và render
  */
 

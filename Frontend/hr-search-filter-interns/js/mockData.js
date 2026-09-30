@@ -1,4 +1,5 @@
 /**
+ * Chức năng: Tìm kiếm và lọc thực tập sinh
  * Dữ liệu giả lập (Mock Data) phục vụ giao diện HR - Tìm kiếm & Lọc Thực tập sinh
  */
 
