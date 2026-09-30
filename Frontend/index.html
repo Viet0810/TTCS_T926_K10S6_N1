@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập | Hệ thống quản lý Thực tập sinh</title>
+    <link rel="stylesheet" href="css/auth.css" />
+  </head>
+  <body>
+    <main class="login-page">
+      <div class="login-shell">
+        <section class="login-showcase" aria-label="Giới thiệu hệ thống">
+          <div class="showcase-orb showcase-orb-one"></div>
+          <div class="showcase-orb showcase-orb-two"></div>
+          <div class="brand-lockup">
+            <div class="project-icon">IM</div>
+            <div>
+              <p class="project-subtitle">INTERN MANAGEMENT SYSTEM</p>
+              <h1>Quản lý thực tập<br />trực quan hơn.</h1>
+            </div>
+          </div>
+          <p class="project-description">
+            Tập trung hồ sơ, tiến độ và đánh giá thực tập trong một không gian
+            làm việc thống nhất.
+          </p>
+          <div class="showcase-points">
+            <div class="showcase-point">
+              <span class="point-icon">✓</span>
+              <span>Theo dõi tiến độ theo thời gian thực</span>
+            </div>
+            <div class="showcase-point">
+              <span class="point-icon">↗</span>
+              <span>Kết nối sinh viên và người hướng dẫn</span>
+            </div>
+          </div>
+          <div class="showcase-footer"><span class="status-dot"></span> Không gian làm việc an toàn</div>
+        </section>
+
+        <section class="login-card" aria-labelledby="loginTitle">
+          <div class="login-content">
+            <div class="mobile-brand-mark">IM</div>
+            <p class="eyebrow">CHÀO MỪNG TRỞ LẠI</p>
+            <h2 id="loginTitle">Đăng nhập tài khoản</h2>
+            <p class="login-instruction">Nhập thông tin để tiếp tục vào hệ thống.</p>
+
+            <form id="loginForm">
+              <div class="form-group">
+                <label for="username">Email / Tên đăng nhập</label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  placeholder="Nhập email hoặc tên đăng nhập"
+                  autocomplete="username"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="password-field">
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Nhập mật khẩu"
+                    autocomplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    id="togglePassword"
+                    class="password-toggle"
+                    aria-label="Hiển thị mật khẩu"
+                    aria-controls="password"
+                    aria-pressed="false"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M2.1 12s3.3-6 9.9-6 9.9 6 9.9 6-3.3 6-9.9 6-9.9-6-9.9-6Z" />
+                      <circle cx="12" cy="12" r="2.8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="login-button">
+                <span>Đăng nhập</span>
+                <span class="button-arrow" aria-hidden="true">→</span>
+              </button>
+            </form>
+
+            <p class="login-security"><span>⌁</span> Dữ liệu của bạn được bảo vệ an toàn</p>
+          </div>
+        </section>
+      </div>
+      <p class="login-footer">© 2026 Intern Management System</p>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/login.js"></script>
+  </body>
+</html>
