@@ -24,7 +24,8 @@ public sealed class UsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers(CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out _)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
+        var authorizationFailure = AuthorizeUserManagement(out _);
+        if (authorizationFailure is not null) return authorizationFailure;
 
         var users = new List<UserResponse>();
         await using var connection = new SqlConnection(connectionString);
@@ -41,7 +42,8 @@ public sealed class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out _)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
+        var authorizationFailure = AuthorizeUserManagement(out _);
+        if (authorizationFailure is not null) return authorizationFailure;
         var role = request.Role?.Trim().ToUpperInvariant();
         if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrEmpty(request.Password))
             return BadRequest(new { message = "Vui lòng nhập đủ thông tin tài khoản." });
@@ -76,7 +78,8 @@ public sealed class UsersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
-        if (!IsAdmin(out var currentUser)) return Unauthorized(new { message = "Bạn cần đăng nhập bằng tài khoản quản trị." });
+        var authorizationFailure = AuthorizeUserManagement(out var currentUser);
+        if (authorizationFailure is not null) return authorizationFailure;
         if (currentUser!.Id == id) return BadRequest(new { message = "Không thể xóa tài khoản đang đăng nhập." });
 
         await using var connection = new SqlConnection(connectionString);
@@ -88,12 +91,16 @@ public sealed class UsersController : ControllerBase
         return affected == 0 ? NotFound(new { message = "Không tìm thấy tài khoản cần xóa." }) : Ok(new { message = "Đã xóa tài khoản." });
     }
 
-    private bool IsAdmin(out AuthenticatedUser? user)
+    private ActionResult? AuthorizeUserManagement(out AuthenticatedUser? user)
     {
         user = null;
         var header = Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return false;
-        return tokens.TryValidate(header[7..].Trim(), out user)
-            && string.Equals(user!.Role, "ADMIN", StringComparison.OrdinalIgnoreCase);
+        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            || !tokens.TryValidate(header[7..].Trim(), out user))
+            return Unauthorized(new { message = "Bạn cần đăng nhập để thực hiện thao tác này." });
+
+        return RolePermissions.HasPermission(user!.Role, "users.manage")
+            ? null
+            : StatusCode(StatusCodes.Status403Forbidden, new { message = "Vai trò hiện tại không có quyền quản lý tài khoản." });
     }
 }

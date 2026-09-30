@@ -67,15 +67,6 @@ public sealed class AuthController : ControllerBase
             return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn." });
 
         var role = user!.Role.ToUpperInvariant();
-        var permissions = role switch
-        {
-            "ADMIN" => new[] { "users.manage", "interns.manage" },
-            "HR" => new[] { "interns.manage" },
-            "MENTOR" => new[] { "interns.assigned.read", "progress.review" },
-            "INTERN" => new[] { "profile.own.read", "progress.own.read", "tasks.own.read" },
-            _ => Array.Empty<string>()
-        };
-
-        return Ok(new { role, permissions });
+        return Ok(new { role, permissions = RolePermissions.ForRole(role) });
     }
 }
