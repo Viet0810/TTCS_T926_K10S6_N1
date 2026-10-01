@@ -23,6 +23,7 @@
         </div>
 
         <div class="header-actions">
+          <a href="hr-search-filter.html" style="text-decoration:none; display:inline-flex; align-items:center; padding: 6px 14px; border-radius: 8px; background: #3568e8; color: #fff; font-size: 13px; font-weight: 600; margin-right: 8px;">Tìm kiếm & Lọc</a>
           <span id="userRole" class="user-role">HR</span>
           <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
         </div>
@@ -41,13 +42,13 @@
         </section>
 
         <!-- THÔNG BÁO -->
-        <div id="messageBox" class="message-box"></div>
+        <div id="messageBox" class="message-box" role="status" aria-live="polite"></div>
 
         <!-- FORM THÊM HỒ SƠ -->
         <section id="internFormSection" class="card form-card hidden">
           <div class="card-header">
             <div>
-              <h3>Thêm hồ sơ thực tập sinh</h3>
+              <h3 id="internFormTitle">Thêm hồ sơ thực tập sinh</h3>
               <p>Nhập thông tin của thực tập sinh.</p>
             </div>
 
@@ -137,6 +138,21 @@
 
                 <small class="error-message" id="majorError"></small>
               </div>
+              <div class="form-group">
+                <label for="position">Vị trí thực tập <span>*</span></label>
+                <input type="text" id="position" name="position" required maxlength="200" placeholder="Nhập vị trí thực tập" />
+                <small class="error-message" id="positionError"></small>
+              </div>
+              <div class="form-group">
+                <label for="mentor">Người hướng dẫn <span>*</span></label>
+                <input type="text" id="mentor" name="mentor" required maxlength="200" placeholder="Nhập người hướng dẫn" />
+                <small class="error-message" id="mentorError"></small>
+              </div>
+              <div class="form-group">
+                <label for="organization">Đơn vị thực tập <span>*</span></label>
+                <input type="text" id="organization" name="organization" required maxlength="200" placeholder="Nhập đơn vị thực tập" />
+                <small class="error-message" id="organizationError"></small>
+              </div>
             </div>
 
             <!-- BUTTON -->
@@ -145,7 +161,7 @@
                 Hủy
               </button>
 
-              <button type="submit" class="btn-primary">Thêm hồ sơ</button>
+              <button id="saveInternBtn" type="submit" class="btn-primary">Thêm hồ sơ</button>
             </div>
           </form>
         </section>
@@ -210,14 +226,25 @@
                   <th>Số điện thoại</th>
                   <th>Trường</th>
                   <th>Chuyên ngành</th>
+<<<<<<< HEAD
                   <th>Trạng thái tài liệu</th>
                   <th>Thao tác</th>
+=======
+                  <th>Vị trí thực tập</th>
+                  <th>Người hướng dẫn</th>
+                  <th>Đơn vị thực tập</th>
+                  <th>Hành động</th>
+>>>>>>> origin/develop
                 </tr>
               </thead>
 
               <tbody id="internTableBody">
                 <tr id="emptyRow">
+<<<<<<< HEAD
                   <td colspan="7" class="empty-state">
+=======
+                  <td colspan="9" class="empty-state">
+>>>>>>> origin/develop
                     Chưa có hồ sơ thực tập sinh.
                   </td>
                 </tr>

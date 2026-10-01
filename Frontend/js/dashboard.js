@@ -8,7 +8,10 @@ const featureLabels = {
     label: "Xem danh sách thực tập sinh",
     href: "intern-manage.html",
   },
-  MANAGE_INTERNS: { label: "Quản lý hồ sơ thực tập sinh" },
+  MANAGE_INTERNS: {
+    label: "Tìm kiếm & Lọc thực tập sinh",
+    href: "hr-search-filter.html",
+  },
   VIEW_PROFILE: { label: "Hồ sơ cá nhân", href: "profile.html" },
   VIEW_DOCUMENTS: { label: "Tài liệu (module giao diện chưa triển khai)" },
   APPROVE_DOCUMENTS: {
@@ -30,7 +33,7 @@ function addMenuItem(label, href) {
 function renderPermissions(permissions) {
   const menuPermissions = permissions.filter(
     (permission) =>
-      !["CREATE_USER", "DELETE_USER", "MANAGE_INTERNS"].includes(permission),
+      !["CREATE_USER", "DELETE_USER"].includes(permission),
   );
   const items = [
     { label: "Bảng điều khiển", href: "dashboard.html" },

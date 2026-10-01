@@ -20,6 +20,9 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 const INTERN_API_URL = "http://localhost:5024/api/interns";
 let interns = [];
+let editingInternId = null;
+let isSaving = false;
+const saveInternBtn = document.getElementById("saveInternBtn");
 let canManageInterns = false;
 
 async function requestInternApi(path = "", options = {}) {
@@ -50,8 +53,12 @@ async function requestInternApi(path = "", options = {}) {
 async function loadInterns() {
   try {
     interns = await requestInternApi();
+<<<<<<< HEAD
     interns.forEach(updateInternOverallStatus);
     renderInterns(interns);
+=======
+    applySearch();
+>>>>>>> origin/develop
     return true;
   } catch (error) {
     // Fake data cho danh sách thực tập sinh để test giao diện
@@ -85,6 +92,8 @@ MỞ FORM
 */
 
 openFormBtn.addEventListener("click", () => {
+  if (!canManageInterns || isSaving) return;
+  closeForm();
   formSection.classList.remove("hidden");
 
   document.getElementById("fullName").focus();
@@ -97,6 +106,10 @@ openFormBtn.addEventListener("click", () => {
 */
 
 function closeForm() {
+  if (isSaving) return;
+  editingInternId = null;
+  document.getElementById("internFormTitle").textContent = "Thêm hồ sơ thực tập sinh";
+  saveInternBtn.textContent = "Thêm hồ sơ";
   formSection.classList.add("hidden");
 
   form.reset();
@@ -131,6 +144,10 @@ function getFormData() {
     school: document.getElementById("school").value.trim(),
 
     major: document.getElementById("major").value.trim(),
+    position: document.getElementById("position").value.trim(),
+    mentor: document.getElementById("mentor").value.trim(),
+    organization: document.getElementById("organization").value.trim(),
+
   };
 }
 
@@ -191,6 +208,21 @@ function validateIntern(intern) {
     valid = false;
   }
 
+  if (!intern.position) {
+    showFieldError("position", "Vui lòng nhập vị trí thực tập.");
+    valid = false;
+  }
+
+  if (!intern.mentor) {
+    showFieldError("mentor", "Vui lòng nhập người hướng dẫn.");
+    valid = false;
+  }
+
+  if (!intern.organization) {
+    showFieldError("organization", "Vui lòng nhập đơn vị thực tập.");
+    valid = false;
+  }
+
   return valid;
 }
 
@@ -239,6 +271,7 @@ SUBMIT FORM
 form.addEventListener("submit", async function (event) {
   event.preventDefault();
 
+  if (isSaving) return;
   if (!canManageInterns) {
     showMessage("Bạn không có quyền quản lý hồ sơ thực tập sinh.", "error");
     return;
@@ -253,7 +286,7 @@ form.addEventListener("submit", async function (event) {
   }
 
   const emailExists = interns.some(
-    (item) => item.email.toLowerCase() === intern.email.toLowerCase(),
+    (item) => item.id !== editingInternId && item.email.toLowerCase() === intern.email.toLowerCase(),
   );
 
   if (emailExists) {
@@ -262,18 +295,30 @@ form.addEventListener("submit", async function (event) {
     return;
   }
 
+  const isEditing = editingInternId !== null;
+  isSaving = true;
+  Array.from(form.elements).forEach((element) => { element.disabled = true; });
+  closeFormBtn.disabled = true;
+  openFormBtn.disabled = true;
+  saveInternBtn.textContent = "Đang lưu...";
   try {
-    await requestInternApi("", {
-      method: "POST",
+    await requestInternApi(isEditing ? `/${editingInternId}` : "", {
+      method: isEditing ? "PUT" : "POST",
       body: JSON.stringify(intern),
     });
-
+    isSaving = false;
     closeForm();
     if (await loadInterns()) {
-      showMessage("Thêm hồ sơ thực tập sinh thành công!", "success");
+      showMessage(isEditing ? "Lưu thay đổi thành công!" : "Thêm hồ sơ thực tập sinh thành công!", "success");
     }
   } catch (error) {
     showMessage(error.message, "error");
+  } finally {
+    isSaving = false;
+    Array.from(form.elements).forEach((element) => { element.disabled = false; });
+    closeFormBtn.disabled = false;
+    openFormBtn.disabled = false;
+    saveInternBtn.textContent = editingInternId !== null ? "Lưu thay đổi" : "Thêm hồ sơ";
   }
 });
 
@@ -290,7 +335,11 @@ function renderInterns(data) {
     tableBody.innerHTML = `
       <tr>
         <td
+<<<<<<< HEAD
           colspan="7"
+=======
+          colspan="9"
+>>>>>>> origin/develop
           class="empty-state"
         >
           Chưa có hồ sơ thực tập sinh.
@@ -320,6 +369,10 @@ function renderInterns(data) {
       <td>${escapeHtml(intern.school)}</td>
 
       <td>${escapeHtml(intern.major)}</td>
+      <td>${escapeHtml(intern.position || "—")}</td>
+      <td>${escapeHtml(intern.mentor || "—")}</td>
+      <td>${escapeHtml(intern.organization || "—")}</td>
+      <td class="intern-actions"></td>
 
       <td><span style="color: ${statusColor}; font-weight: bold;">${escapeHtml(docStatus)}</span></td>
       
@@ -330,6 +383,15 @@ function renderInterns(data) {
       </td>
     `;
 
+    if (canManageInterns) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn-secondary";
+      button.textContent = "Chỉnh sửa";
+      button.setAttribute("aria-label", `Chỉnh sửa hồ sơ ${intern.fullName}`);
+      button.addEventListener("click", () => openEditForm(intern));
+      row.querySelector(".intern-actions").appendChild(button);
+    }
     tableBody.appendChild(row);
   });
 }
@@ -340,8 +402,8 @@ TÌM KIẾM
 ==================================
 */
 
-searchInput.addEventListener("input", function () {
-  const keyword = this.value.trim().toLowerCase();
+function applySearch() {
+  const keyword = searchInput.value.trim().toLowerCase();
 
   const filtered = interns.filter(
     (intern) =>
@@ -350,7 +412,8 @@ searchInput.addEventListener("input", function () {
   );
 
   renderInterns(filtered);
-});
+}
+searchInput.addEventListener("input", applySearch);
 
 /*
 ==================================
@@ -552,3 +615,17 @@ async function initializeInternPage() {
 }
 
 initializeInternPage();
+
+function openEditForm(intern) {
+  if (!canManageInterns || isSaving) return;
+  closeForm();
+  editingInternId = intern.id;
+  Object.keys(getFormData()).forEach((key) => {
+    document.getElementById(key).value = intern[key] || "";
+  });
+  document.getElementById("internFormTitle").textContent = "Chỉnh sửa hồ sơ thực tập sinh";
+  saveInternBtn.textContent = "Lưu thay đổi";
+  formSection.classList.remove("hidden");
+  formSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("fullName").focus();
+}
