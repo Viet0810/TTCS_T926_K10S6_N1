@@ -36,6 +36,7 @@ async function requestInternApi(path = "", options = {}) {
   if (!response.ok) {
     throw new Error(
       data.message ||
+        (data.errors && Object.values(data.errors).flat().join(" ")) ||
         data.detail ||
         data.title ||
         `Lỗi HTTP ${response.status}`,
@@ -102,6 +103,7 @@ function getFormData() {
   return {
     fullName: document.getElementById("fullName").value.trim(),
 
+    dateOfBirth: document.getElementById("dateOfBirth").value,
     email: document.getElementById("email").value.trim(),
 
     phone: document.getElementById("phone").value.trim(),
@@ -185,6 +187,14 @@ function validateIntern(intern) {
 
   if (!intern.organization) {
     showFieldError("organization", "Vui lòng nhập đơn vị thực tập.");
+    valid = false;
+  }
+
+  if (!intern.dateOfBirth) {
+    showFieldError("dateOfBirth", "Vui lòng nhập ngày tháng năm sinh.");
+    valid = false;
+  } else if (intern.dateOfBirth > new Date().toLocaleDateString("sv-SE")) {
+    showFieldError("dateOfBirth", "Ngày sinh không được ở tương lai.");
     valid = false;
   }
 
@@ -300,7 +310,7 @@ function renderInterns(data) {
     tableBody.innerHTML = `
       <tr>
         <td
-          colspan="9"
+          colspan="10"
           class="empty-state"
         >
           Chưa có hồ sơ thực tập sinh.
@@ -317,6 +327,7 @@ function renderInterns(data) {
     row.innerHTML = `
 
       <td>${escapeHtml(intern.fullName)}</td>
+      <td>${escapeHtml(intern.dateOfBirth ? intern.dateOfBirth.split("-").reverse().join("/") : "—")}</td>
 
       <td>${escapeHtml(intern.email)}</td>
 

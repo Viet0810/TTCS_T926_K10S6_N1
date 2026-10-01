@@ -23,6 +23,7 @@
         </div>
 
         <div class="header-actions">
+          <a href="dashboard.html" class="btn-secondary" style="text-decoration: none;">← Quay lại bảng điều khiển</a>
           <a href="hr-search-filter.html" style="text-decoration:none; display:inline-flex; align-items:center; padding: 6px 14px; border-radius: 8px; background: #3568e8; color: #fff; font-size: 13px; font-weight: 600; margin-right: 8px;">Tìm kiếm & Lọc</a>
           <span id="userRole" class="user-role">HR</span>
           <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
@@ -79,6 +80,11 @@
                 <small class="error-message" id="fullNameError"></small>
               </div>
 
+              <div class="form-group">
+                <label for="dateOfBirth">Ngày sinh <span>*</span></label>
+                <input type="date" id="dateOfBirth" name="dateOfBirth" required />
+                <small class="error-message" id="dateOfBirthError"></small>
+              </div>
               <!-- EMAIL -->
               <div class="form-group">
                 <label for="email"> Email <span>*</span> </label>
@@ -140,17 +146,17 @@
               </div>
               <div class="form-group">
                 <label for="position">Vị trí thực tập <span>*</span></label>
-                <input type="text" id="position" name="position" required maxlength="200" placeholder="Nhập vị trí thực tập" />
+                <input type="text" id="position" name="position" maxlength="200" placeholder="Nhập vị trí thực tập" required />
                 <small class="error-message" id="positionError"></small>
               </div>
               <div class="form-group">
                 <label for="mentor">Người hướng dẫn <span>*</span></label>
-                <input type="text" id="mentor" name="mentor" required maxlength="200" placeholder="Nhập người hướng dẫn" />
+                <input type="text" id="mentor" name="mentor" maxlength="200" placeholder="Nhập người hướng dẫn" required />
                 <small class="error-message" id="mentorError"></small>
               </div>
               <div class="form-group">
                 <label for="organization">Đơn vị thực tập <span>*</span></label>
-                <input type="text" id="organization" name="organization" required maxlength="200" placeholder="Nhập đơn vị thực tập" />
+                <input type="text" id="organization" name="organization" maxlength="200" placeholder="Nhập đơn vị thực tập" required />
                 <small class="error-message" id="organizationError"></small>
               </div>
             </div>
@@ -189,6 +195,7 @@
               <thead>
                 <tr>
                   <th>Họ và tên</th>
+                  <th>Ngày sinh</th>
                   <th>Email</th>
                   <th>Số điện thoại</th>
                   <th>Trường</th>
@@ -217,6 +224,6 @@
     </div>
 
     <script src="../js/api.js"></script>
-    <script src="../js/intern.js"></script>
+    <script src="../js/intern.js?v=20261001-dob"></script>
   </body>
 </html>
