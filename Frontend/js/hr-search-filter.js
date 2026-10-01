@@ -144,18 +144,15 @@ function renderTable(list) {
           <input type="checkbox" ${isChecked} onchange="handleRowSelect(${item.id}, this)" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
         </td>
         <td class="py-3.5 px-4">
-          <div class="flex items-center space-x-3">
-            <img class="w-10 h-10 rounded-full object-cover ring-1 ring-slate-200" src="${item.avatar}" alt="${item.name}">
-            <div>
-              <button onclick="openDetailDrawer(${item.id})" class="font-semibold text-slate-900 hover:text-indigo-600 transition-colors text-left flex items-center gap-1 group">
-                ${item.name}
-                <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-              </button>
-              <div class="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
-                <span>${item.mssv}</span>
-                <span>•</span>
-                <span class="truncate max-w-[140px]" title="${item.email}">${item.email}</span>
-              </div>
+          <div>
+            <button onclick="openDetailDrawer(${item.id})" class="font-semibold text-slate-900 hover:text-indigo-600 transition-colors text-left flex items-center gap-1 group">
+              ${item.name}
+              <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </button>
+            <div class="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+              <span>${item.mssv}</span>
+              <span>•</span>
+              <span class="truncate max-w-[180px]" title="${item.email}">${item.email}</span>
             </div>
           </div>
         </td>
@@ -224,12 +221,9 @@ function renderGrid(list) {
     <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between">
       <div>
         <div class="flex items-start justify-between">
-          <div class="flex items-center space-x-3">
-            <img class="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-50" src="${item.avatar}" alt="${item.name}">
-            <div>
-              <h4 onclick="openDetailDrawer(${item.id})" class="font-bold text-slate-900 hover:text-indigo-600 cursor-pointer transition">${item.name}</h4>
-              <p class="text-xs text-slate-500 font-mono">${item.mssv}</p>
-            </div>
+          <div>
+            <h4 onclick="openDetailDrawer(${item.id})" class="font-bold text-slate-900 hover:text-indigo-600 cursor-pointer transition">${item.name}</h4>
+            <p class="text-xs text-slate-500 font-mono">${item.mssv}</p>
           </div>
           ${getStatusBadge(item.status)}
         </div>
@@ -515,7 +509,6 @@ async function openDetailDrawer(id) {
   document.getElementById("drawer-name").textContent = intern.name;
   document.getElementById("drawer-full-name").textContent = intern.name;
   document.getElementById("drawer-mssv").textContent = `MSSV: ${intern.mssv}`;
-  document.getElementById("drawer-avatar").src = intern.avatar;
   document.getElementById("drawer-school").textContent = intern.school;
   document.getElementById("drawer-major").textContent = intern.major;
   document.getElementById("drawer-gpa").textContent = intern.gpa;
