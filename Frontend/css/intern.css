@@ -632,3 +632,6 @@ footer {
   }
 
 }
+.intern-actions { white-space: nowrap; }
+button:disabled { opacity: .6; cursor: wait; }
+[hidden] { display: none !important; }
