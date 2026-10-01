@@ -30,7 +30,7 @@ public sealed class InternFilterService : IInternFilterService
 
         if (!string.IsNullOrWhiteSpace(filter?.Search))
         {
-            sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search)");
+            sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search OR School LIKE @search OR Major LIKE @search)");
             command.Parameters.Add("@search", SqlDbType.NVarChar, 254).Value = $"%{filter.Search.Trim()}%";
         }
 
