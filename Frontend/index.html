@@ -1,3 +1,322 @@
+ feature/K10S6N1-41-upload-cv-don-xin-thuc-tap
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoàn thiện hồ sơ thực tập - K10S6N1-41</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 680px;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            border-bottom: 2px solid #ebecf0;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            color: #172b4d;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+        p.subtitle {
+            color: #6b778c;
+            font-size: 13px;
+        }
+        
+        /* Thông tin sinh viên */
+        .student-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            background-color: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid #e9ecef;
+        }
+        .info-item {
+            font-size: 14px;
+            color: #344563;
+        }
+        .info-item strong {
+            color: #172b4d;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #344563;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        label span {
+            color: #de350b;
+        }
+        .file-upload-box {
+            border: 2px dashed #c1c7d0;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            background-color: #fafbfc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .file-upload-box:hover, .file-upload-box.dragover {
+            border-color: #0052cc;
+            background-color: #deebff;
+        }
+        .file-upload-box input[type="file"] {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .upload-text {
+            font-size: 14px;
+            color: #42526e;
+        }
+        .upload-text span {
+            color: #0052cc;
+            font-weight: 600;
+        }
+        
+        /* Hiển thị chi tiết file đã chọn */
+        .file-details {
+            display: none;
+            margin-top: 10px;
+            background: #e3fcef;
+            border: 1px solid #abf5d1;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #006644;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-remove-file {
+            background: none;
+            border: none;
+            color: #de350b;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+        }
+        .btn-remove-file:hover {
+            text-decoration: underline;
+        }
+
+        /* Group nút bấm */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .btn-submit {
+            flex: 2;
+            background-color: #0052cc;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover {
+            background-color: #0747a6;
+        }
+        .btn-cancel {
+            flex: 1;
+            background-color: #f4f5f7;
+            color: #42526e;
+            border: 1px solid #c1c7d0;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn-cancel:hover {
+            background-color: #ebecf0;
+        }
+
+        .alert-message {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+        .alert-success {
+            background-color: #e3fcef;
+            color: #006644;
+            border: 1px solid #abf5d1;
+        }
+        .alert-error {
+            background-color: #ffebe6;
+            color: #bf2600;
+            border: 1px solid #ffbdad;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h2>Hồ Sơ Thực Tập Sinh</h2>
+            <p class="subtitle">Đợt thực tập: <strong>Đợt 1 - Kỳ 2 (2025 - 2026)</strong></p>
+        </div>
+
+        <!-- Thông tin sinh viên -->
+        <div class="student-info-grid">
+            <div class="info-item">Họ và tên: <strong>Hoàng Xuân Đoàn</strong></div>
+            <div class="info-item">Mã sinh viên: <strong>DTC245200226</strong></div>
+            <div class="info-item">Lớp: <strong>CNTT K22A</strong></div>
+            <div class="info-item">Trạng thái hồ sơ: <span id="statusText" style="color: #de350b; font-weight: 600;">Chưa hoàn thiện</span></div>
+        </div>
+
+        <form id="uploadForm">
+            <!-- 1. CV -->
+            <div class="form-group">
+                <label>1. CV / Sơ yếu lý lịch <span>*</span></label>
+                <div class="file-upload-box" id="boxCv" onclick="document.getElementById('cvInput').click()">
+                    <span class="upload-icon">📄</span>
+                    <p class="upload-text">Kéo thả file CV vào đây hoặc <span>Chọn tệp</span></p>
+                    <p style="font-size: 11px; color: #8993a4; margin-top: 4px;">Hỗ trợ: .PDF, .DOC, .DOCX (Tối đa 5MB)</p>
+                    <input type="file" id="cvInput" accept=".pdf,.doc,.docx" onchange="handleFileSelect('cvInput', 'cvDetails', 'cvName')">
+                </div>
+                <div id="cvDetails" class="file-details">
+                    <span id="cvName"></span>
+                    <button type="button" class="btn-remove-file" onclick="removeFile('cvInput', 'cvDetails')">✕ Xóa</button>
+                </div>
+            </div>
+
+            <!-- 2. Đơn xin thực tập -->
+            <div class="form-group">
+                <label>2. Đơn xin thực tập <span>*</span></label>
+                <div class="file-upload-box" id="boxApp" onclick="document.getElementById('appInput').click()">
+                    <span class="upload-icon">📝</span>
+                    <p class="upload-text">Kéo thả Đơn xin thực tập vào đây hoặc <span>Chọn tệp</span></p>
+                    <p style="font-size: 11px; color: #8993a4; margin-top: 4px;">Hỗ trợ: .PDF, .DOC, .DOCX (Tối đa 5MB)</p>
+                    <input type="file" id="appInput" accept=".pdf,.doc,.docx" onchange="handleFileSelect('appInput', 'appDetails', 'appName')">
+                </div>
+                <div id="appDetails" class="file-details">
+                    <span id="appName"></span>
+                    <button type="button" class="btn-remove-file" onclick="removeFile('appInput', 'appDetails')">✕ Xóa</button>
+                </div>
+            </div>
+
+            <!-- Thông báo lỗi/thành công -->
+            <div id="alertMsg" class="alert-message"></div>
+
+            <!-- Group nút thao tác -->
+            <div class="btn-group">
+                <button type="button" class="btn-cancel" onclick="alert('Đã hủy thao tác')">Hủy bỏ</button>
+                <button type="submit" id="submitBtn" class="btn-submit">Lưu & Tải lên hồ sơ</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Xử lý chọn File
+        function handleFileSelect(inputId, detailsId, nameId) {
+            const input = document.getElementById(inputId);
+            const details = document.getElementById(detailsId);
+            const nameSpan = document.getElementById(nameId);
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Dung lượng file không được vượt quá 5MB!');
+                    input.value = '';
+                    details.style.display = 'none';
+                    return;
+                }
+                nameSpan.textContent = '✔ ' + file.name + ' (' + (file.size / (1024 * 1024)).toFixed(2) + ' MB)';
+                details.style.display = 'flex';
+            }
+        }
+
+        // Xóa File đã chọn & Reset trạng thái nếu cần
+        function removeFile(inputId, detailsId) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(detailsId).style.display = 'none';
+            
+            // Đưa trạng thái về Chưa hoàn thiện nếu bị xóa file
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = 'Chưa hoàn thiện';
+            statusText.style.color = '#de350b';
+        }
+
+        // Xử lý Submit
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const cvFile = document.getElementById('cvInput').files[0];
+            const appFile = document.getElementById('appInput').files[0];
+            const alertMsg = document.getElementById('alertMsg');
+            const submitBtn = document.getElementById('submitBtn');
+            const statusText = document.getElementById('statusText');
+
+            if (!cvFile || !appFile) {
+                alertMsg.className = 'alert-message alert-error';
+                alertMsg.textContent = 'Vui lòng chọn đầy đủ cả CV và Đơn xin thực tập trước khi gửi!';
+                alertMsg.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Đang lưu hồ sơ...';
+            alertMsg.style.display = 'none';
+
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Lưu & Tải lên hồ sơ';
+                
+                // Hiển thị thông báo thành công
+                alertMsg.className = 'alert-message alert-success';
+                alertMsg.textContent = 'Tải lên CV và Đơn xin thực tập thành công!';
+                alertMsg.style.display = 'block';
+
+                // Tự động chuyển Trạng thái hồ sơ sang Đã hoàn thiện
+                statusText.textContent = 'Đã hoàn thiện';
+                statusText.style.color = '#006644';
+            }, 1200);
+        });
+    </script>
+</body>
+</html>
+=======
 <!doctype html>
 <html lang="vi">
   <head>
@@ -50,7 +369,7 @@
                   type="text"
                   id="username"
                   name="username"
-                  placeholder="Nhập email hoặc tên đăng nhập (vd: hr.demo, admin.demo)"
+                  placeholder="Nhập email hoặc tên đăng nhập"
                   autocomplete="username"
                   required
                 />
@@ -63,7 +382,7 @@
                     type="password"
                     id="password"
                     name="password"
-                    placeholder="Nhập mật khẩu (vd: Demo@123456)"
+                    placeholder="Nhập mật khẩu"
                     autocomplete="current-password"
                     required
                   />
@@ -76,7 +395,7 @@
                     aria-pressed="false"
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M2.1 12s3.3-6 9.9-6 9.9 6 9.9 6-3.3 6-9.9 6-9.9-6Z" />
+                      <path d="M2.1 12s3.3-6 9.9-6 9.9 6 9.9 6-3.3 6-9.9 6-9.9-6-9.9-6Z" />
                       <circle cx="12" cy="12" r="2.8" />
                     </svg>
                   </button>
@@ -99,4 +418,4 @@
     <script src="js/api.js"></script>
     <script src="js/login.js"></script>
   </body>
-</html>
+</html> develop
