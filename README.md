@@ -1,6 +1,9 @@
-<<<<<<< HEAD
 
 # HỆ THỐNG QUẢN LÝ THỰC TẬP SINH
+
+Hướng dẫn cấu hình đăng nhập và email đặt lại mật khẩu: [docs/password-recovery.md](docs/password-recovery.md).
+
+Cấu trúc backend, API hồ sơ và quyền HR: [docs/backend-frontend-contract.md](docs/backend-frontend-contract.md).
 
 ## 1. Tổng quan dự án
 

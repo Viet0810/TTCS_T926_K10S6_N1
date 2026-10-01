@@ -1,6 +1,9 @@
 const tableBody = document.getElementById("userTableBody");
 const searchInput = document.getElementById("userSearchInput");
 let users = [];
+let creatingUser = false;
+let canCreateUser = false;
+let canDeleteUser = false;
 
 function escapeHtml(value) {
   return String(value)
@@ -36,7 +39,7 @@ function renderUsers() {
           <td>${escapeHtml(user.email)}</td>
           <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
           <td>
-            ${user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
+            ${!canDeleteUser || user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
           </td>
         </tr>`,
     )
@@ -51,35 +54,36 @@ async function initializePage() {
 
   try {
     const session = await API.getCurrentUser();
-    if (session.user.role !== "ADMIN") {
+    if (!Session.hasPermission(session, "MANAGE_USERS")) {
       window.location.href = "dashboard.html";
       return;
     }
+    canCreateUser = Session.hasPermission(session, "CREATE_USER");
+    canDeleteUser = Session.hasPermission(session, "DELETE_USER");
     await loadUsers();
-  } catch {
-    localStorage.clear();
-    window.location.href = "../index.html";
+  } catch (error) {
+    if (!Session.redirectIfExpired(error)) alert(error.message);
   }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "../index.html";
-});
+document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 
 searchInput.addEventListener("input", renderUsers);
 
 tableBody.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-user-id]");
-  if (!button || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
+  if (!button || button.disabled || !canDeleteUser || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
 
+  button.disabled = true;
   try {
     await API.deleteUser(button.dataset.userId);
     alert("Đã xóa tài khoản.");
-    await loadUsers();
+    try { await loadUsers(); }
+    catch (error) { alert(`Đã xóa tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
   } catch (error) {
     alert(error.message);
   }
+  finally { button.disabled = false; }
 });
 
 initializePage();
@@ -88,6 +92,7 @@ document
   .getElementById("createUserForm")
   .addEventListener("submit", async function (event) {
     event.preventDefault();
+    if (creatingUser || !canCreateUser) return;
 
     const fullName = document.getElementById("fullName").value.trim();
 
@@ -104,6 +109,8 @@ document
       return;
     }
 
+    creatingUser = true;
+    [...this.elements].forEach((control) => control.disabled = true);
     try {
       const result = await API.createUser({
         fullName,
@@ -116,8 +123,13 @@ document
 
       this.reset();
 
-      await loadUsers();
+      try { await loadUsers(); }
+      catch (error) { alert(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
     } catch (error) {
       alert(error.message);
+    }
+    finally {
+      creatingUser = false;
+      [...this.elements].forEach((control) => control.disabled = false);
     }
   });

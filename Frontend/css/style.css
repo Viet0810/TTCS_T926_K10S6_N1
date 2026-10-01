@@ -1,54 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap");
-
-:root {
-  --page: #f4f7fc;
-  --surface: #fff;
-  --ink: #10213f;
-  --muted: #71809a;
-  --line: #e3eaf4;
-  --input: #f8fafe;
-  --primary: #3568e8;
-  --primary-dark: #2855c8;
-  --danger: #d95768;
-}
-
-* {
-  box-sizing: border-box;
-}
-html {
-  min-width: 320px;
-  min-height: 100%;
-}
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  color: var(--ink);
-  background:
-    radial-gradient(
-      circle at 100% 0,
-      rgba(91, 139, 242, 0.12),
-      transparent 31%
-    ),
-    var(--page);
-  font-family: "DM Sans", "Segoe UI", sans-serif;
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-}
-button,
-input,
-select {
-  font: inherit;
-}
-button {
-  cursor: pointer;
-}
-
 .dashboard {
-  width: min(1180px, calc(100% - 56px));
+  width: min(1280px, calc(100% - 56px));
   margin: 28px auto 24px;
 }
 .dashboard-header {
+  flex-wrap: wrap;
   min-height: 82px;
   display: flex;
   align-items: center;
@@ -57,7 +12,7 @@ button {
   margin-bottom: 24px;
   padding: 16px 22px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 12px 35px rgba(36, 65, 111, 0.07);
   backdrop-filter: blur(14px);
@@ -69,16 +24,16 @@ button {
   gap: 13px;
 }
 .dashboard-logo {
-  width: 46px;
+  width: 138px;
   height: 46px;
-  flex: 0 0 46px;
+  flex: 0 0 138px;
   display: grid;
   place-items: center;
   border-radius: 14px;
   color: #fff;
   background: linear-gradient(145deg, #3568e8, #4e84ec);
   font:
-    800 17px Manrope,
+    800 17px "Segoe UI",
     sans-serif;
   letter-spacing: -0.05em;
   box-shadow: 0 8px 18px rgba(53, 104, 232, 0.2);
@@ -102,10 +57,9 @@ button {
   overflow: hidden;
   color: var(--ink);
   font:
-    800 16px Manrope,
+    800 16px "Segoe UI",
     sans-serif;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .dashboard-main {
   display: flex;
@@ -116,7 +70,7 @@ button {
   width: 100%;
   padding: 28px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 12px 35px rgba(36, 65, 111, 0.06);
 }
@@ -134,7 +88,7 @@ button {
   margin: 0;
   color: var(--ink);
   font:
-    800 22px/1.25 Manrope,
+    800 22px/1.25 "Segoe UI",
     sans-serif;
   letter-spacing: -0.035em;
 }
@@ -157,12 +111,14 @@ button {
   font-size: 23px;
 }
 .btn-primary,
-.btn-danger {
+.btn-danger,
+.btn-secondary {
   min-height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-decoration: none;
   padding: 0 17px;
   border: 0;
   border-radius: 10px;
@@ -208,19 +164,19 @@ button {
   gap: 19px 20px;
   align-items: end;
 }
-.create-user-form .form-group {
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
 }
-.create-user-form label {
+.form-group label {
   color: #354563;
   font-size: 12px;
   font-weight: 700;
 }
-.create-user-form input,
-.create-user-form select {
+.form-group input,
+.form-group select {
   width: 100%;
   height: 46px;
   min-width: 0;
@@ -236,15 +192,15 @@ button {
     box-shadow 0.2s,
     background 0.2s;
 }
-.create-user-form input::placeholder {
+.form-group input::placeholder {
   color: #a3aec0;
 }
-.create-user-form input:hover,
-.create-user-form select:hover {
+.form-group input:hover,
+.form-group select:hover {
   border-color: #c3cfdf;
 }
-.create-user-form input:focus,
-.create-user-form select:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: #6c94ed;
   background: #fff;
   box-shadow: 0 0 0 4px rgba(53, 104, 232, 0.11);
@@ -284,6 +240,7 @@ button {
   white-space: nowrap;
 }
 .user-table td {
+  overflow-wrap: anywhere;
   padding: 16px 17px;
   border-bottom: 1px solid #edf1f7;
   vertical-align: middle;
@@ -507,8 +464,6 @@ button {
   .user-table {
     min-width: 580px;
   }
-}
-@media (max-width: 560px) {
   .dashboard-session {
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -536,3 +491,36 @@ button {
     align-self: flex-end;
   }
 }
+
+.btn-secondary { border: 1px solid var(--line); background: #f7f9fc; color: #354563; }
+.btn-secondary:hover { background: #eaf0fa; }
+.role-menu a[aria-current="page"] { background: #edf3ff; color: var(--primary); }
+.profile-details > div { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--input); }
+.user-search input:focus { outline: 3px solid #dbe7ff; border-color: var(--primary); }
+.user-table .empty-state { padding: 40px 20px; color: var(--muted); text-align: center; }
+
+.profile-dialog { width: min(900px, calc(100% - 24px)); max-height: 88vh; padding: 26px; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); }
+.profile-dialog::backdrop { background: #10213f80; }
+.profile-dialog h2 { margin: 0; }
+.profile-dialog section + section { margin-top: 24px; }
+.profile-dialog dd, #internDetails dd { white-space: pre-wrap; }
+.profile-fieldset { min-width: 0; padding: 20px 0; margin: 0; border: 0; border-top: 1px solid var(--line); }
+.profile-fieldset legend { padding: 0 10px 0 0; font-size: 16px; font-weight: 700; }
+.form-hint { color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+.form-group textarea { width: 100%; padding: 12px 14px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; background: var(--input); color: var(--ink); }
+
+.profile-sections section + section { margin-top: 24px; }
+.intern-page .user-table td:last-child, .hr-page .user-table td:last-child { white-space: nowrap; }
+.user-table td > .btn-compact + .btn-compact { margin-left: 8px; }
+
+.document-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.document-grid[hidden] { display: none; }
+.document-card { padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--input); }
+.document-card h3 { margin-top: 0; }
+.document-card p { line-height: 1.6; overflow-wrap: anywhere; }
+.document-card input[type=file] { display: block; width: 100%; margin-top: 12px; padding: 12px 0; }
+.document-info { color: var(--muted); font-size: 14px; }
+.document-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+@media (max-width: 800px) { .document-grid { grid-template-columns: 1fr; } }
+
+.dashboard-logo img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }

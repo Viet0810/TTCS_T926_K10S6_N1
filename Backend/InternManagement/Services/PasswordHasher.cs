@@ -17,14 +17,17 @@ public sealed class PasswordHasher
 
     public bool Verify(string password, string encodedHash)
     {
+        if (string.IsNullOrEmpty(encodedHash)) return false;
         var parts = encodedHash.Split('$');
-        if (parts.Length != 4 || parts[0] != "PBKDF2-SHA256" || !int.TryParse(parts[1], out var iterations))
+        if (parts.Length != 4 || parts[0] != "PBKDF2-SHA256"
+            || !int.TryParse(parts[1], out var iterations) || iterations <= 0)
             return false;
 
         try
         {
             var salt = Convert.FromBase64String(parts[2]);
             var expected = Convert.FromBase64String(parts[3]);
+            if (salt.Length == 0 || expected.Length == 0) return false;
             var actual = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, expected.Length);
             return CryptographicOperations.FixedTimeEquals(actual, expected);
         }

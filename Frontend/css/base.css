@@ -1,0 +1,54 @@
+
+:root {
+  --page: #f5f7fb;
+  --surface: #fff;
+  --ink: #10213f;
+  --muted: #596b85;
+  --line: #e3eaf4;
+  --input: #f8fafe;
+  --primary: #3568e8;
+  --primary-dark: #2855c8;
+  --danger: #d95768;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgba(91, 139, 242, 0.12),
+      transparent 31%
+    ),
+    var(--page);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+
+a { color: var(--primary); }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid #9bb9fb; outline-offset: 3px; }
+button:disabled { opacity: .6; cursor: wait; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

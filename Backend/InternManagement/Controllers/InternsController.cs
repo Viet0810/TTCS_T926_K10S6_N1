@@ -1,3 +1,4 @@
+using InternManagement.Infrastructure;
 using InternManagement.DTOs;
 using InternManagement.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +12,13 @@ public sealed class InternsController : ControllerBase
 {
     private readonly IInternService interns;
     private readonly RequestAuthorizationService authorization;
+    private readonly AccountService accounts;
 
-    public InternsController(IInternService interns, RequestAuthorizationService authorization)
+    public InternsController(IInternService interns, RequestAuthorizationService authorization, AccountService accounts)
     {
         this.interns = interns;
         this.authorization = authorization;
+        this.accounts = accounts;
     }
 
     [HttpGet]
@@ -25,7 +28,7 @@ public sealed class InternsController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
-            return AccessDenied(decision.Status);
+            return AuthorizationResponses.Denied(decision.Status);
 
         return Ok(await interns.GetAllAsync(cancellationToken));
     }
@@ -39,9 +42,12 @@ public sealed class InternsController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ViewProfile);
         if (decision.Status != AuthorizationStatus.Authorized)
-            return AccessDenied(decision.Status);
+            return AuthorizationResponses.Denied(decision.Status);
 
-        var intern = await interns.GetByEmailAsync(decision.User!.Username, cancellationToken);
+        var user = await accounts.GetByIdAsync(decision.User!.Id, cancellationToken);
+        var email = user?.Email;
+        if (email is null) return AuthorizationResponses.Denied(AuthorizationStatus.Unauthenticated);
+        var intern = await interns.GetByEmailAsync(email, cancellationToken);
         return intern is null
             ? NotFound(new ApiErrorResponse(false, "Chưa có hồ sơ thực tập sinh gắn với tài khoản này.", null))
             : Ok(intern);
@@ -55,7 +61,7 @@ public sealed class InternsController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
-            return AccessDenied(decision.Status);
+            return AuthorizationResponses.Denied(decision.Status);
 
         var intern = await interns.GetByIdAsync(id, cancellationToken);
         return intern is null ? NotFound() : Ok(intern);
@@ -70,7 +76,7 @@ public sealed class InternsController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ManageInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
-            return AccessDenied(decision.Status);
+            return AuthorizationResponses.Denied(decision.Status);
 
         try
         {
@@ -83,9 +89,29 @@ public sealed class InternsController : ControllerBase
         }
     }
 
-    private IActionResult AccessDenied(AuthorizationStatus status) => status switch
+    [HttpPut("{id:int}")]
+    [ProducesResponseType<InternResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Update(int id, CreateInternRequest request, CancellationToken cancellationToken)
     {
-        AuthorizationStatus.Unauthenticated => Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null)),
-        _ => StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse(false, "Bạn không có quyền thực hiện chức năng này.", null))
-    };
+        var decision = authorization.Evaluate(Request, PermissionNames.EditInterns);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AuthorizationResponses.Denied(decision.Status);
+        try
+        {
+            var intern = await interns.UpdateAsync(id, request, cancellationToken);
+            return intern is null
+                ? NotFound(new ApiErrorResponse(false, "Không tìm thấy hồ sơ thực tập sinh.", null))
+                : Ok(intern);
+        }
+        catch (SqlException error) when (error.Number is 2601 or 2627)
+        {
+            return Conflict(new ApiErrorResponse(false, "Email thực tập sinh đã tồn tại.", null));
+        }
+    }
+
 }

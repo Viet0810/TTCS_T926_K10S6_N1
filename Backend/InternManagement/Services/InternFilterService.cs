@@ -3,7 +3,7 @@ using System.Text;
 using InternManagement.DTOs;
 using Microsoft.Data.SqlClient;
 
-namespace InternManagement.HrSearchFilterInterns;
+namespace InternManagement.Services;
 
 /// <summary>
 /// Chức năng: Tìm kiếm và lọc thực tập sinh (K10S6N1-48)
@@ -26,12 +26,12 @@ public sealed class InternFilterService : IInternFilterService
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
 
-        var sql = new StringBuilder("SELECT Id, FullName, Email, Phone, School, Major, CreatedAt FROM dbo.Interns WHERE 1 = 1");
+        var sql = new StringBuilder($"SELECT {InternRecordMapper.Columns} FROM dbo.Interns WHERE 1 = 1");
 
         if (!string.IsNullOrWhiteSpace(filter?.Search))
         {
-            sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search)");
-            command.Parameters.Add("@search", SqlDbType.NVarChar, 254).Value = $"%{filter.Search.Trim()}%";
+            sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search OR School LIKE @search OR Major LIKE @search OR StudentCode LIKE @search OR ClassName LIKE @search OR Organization LIKE @search OR Position LIKE @search OR Mentor LIKE @search)");
+            command.Parameters.Add("@search", SqlDbType.NVarChar, 256).Value = $"%{filter.Search.Trim()}%";
         }
 
         if (!string.IsNullOrWhiteSpace(filter?.School))
@@ -52,14 +52,7 @@ public sealed class InternFilterService : IInternFilterService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            interns.Add(new InternResponse(
-                reader.GetInt32(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                reader.GetString(4),
-                reader.GetString(5),
-                reader.GetDateTimeOffset(6)));
+            interns.Add(InternRecordMapper.Map(reader));
         }
 
         return interns;

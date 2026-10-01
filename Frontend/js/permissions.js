@@ -3,8 +3,11 @@ const permissionLabels = {
   CREATE_USER: "Tạo tài khoản",
   DELETE_USER: "Xóa tài khoản",
   VIEW_INTERNS: "Xem thực tập sinh",
-  MANAGE_INTERNS: "Quản lý thực tập sinh",
+  MANAGE_INTERNS: "Tạo hồ sơ thực tập sinh",
+  SEARCH_INTERNS: "Tìm kiếm và lọc hồ sơ thực tập sinh",
+  EDIT_INTERNS: "Chỉnh sửa hồ sơ thực tập sinh",
   VIEW_PROFILE: "Xem hồ sơ cá nhân",
+  UPLOAD_DOCUMENTS: "Nộp CV và đơn xin thực tập",
   VIEW_DOCUMENTS: "Xem tài liệu",
   APPROVE_DOCUMENTS: "Duyệt tài liệu",
   MANAGE_PERMISSIONS: "Quản lý phân quyền",
@@ -34,21 +37,12 @@ async function loadRolePermissions() {
     });
   } catch (error) {
     document.getElementById("permissionsMessage").textContent = error.message;
-    if (error.message.includes("không có quyền")) {
+    if (error.status === 403) {
       window.location.href = "dashboard.html";
-    } else if (
-      error.message.includes("đăng nhập") ||
-      error.message.includes("phiên")
-    ) {
-      localStorage.clear();
-      window.location.href = "../index.html";
-    }
+    } else Session.redirectIfExpired(error);
   }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "../index.html";
-});
+document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 
 loadRolePermissions();
