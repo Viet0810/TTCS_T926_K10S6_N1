@@ -166,6 +166,39 @@
           </form>
         </section>
 
+        <!-- MODAL DUYỆT TÀI LIỆU -->
+        <section id="documentModal" class="card form-card hidden">
+          <div class="card-header">
+            <div>
+              <h3>Duyệt tài liệu</h3>
+              <p>Thực tập sinh: <strong id="docInternName"></strong></p>
+            </div>
+            <button
+              id="closeDocModalBtn"
+              type="button"
+              class="btn-close"
+              aria-label="Đóng"
+            >
+              ×
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tên tài liệu</th>
+                  <th>Link xem</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="documentTableBody">
+                <tr><td colspan="4" class="empty-state">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <!-- DANH SÁCH -->
         <section class="card">
           <div class="list-header">
@@ -193,16 +226,25 @@
                   <th>Số điện thoại</th>
                   <th>Trường</th>
                   <th>Chuyên ngành</th>
+<<<<<<< HEAD
+                  <th>Trạng thái tài liệu</th>
+                  <th>Thao tác</th>
+=======
                   <th>Vị trí thực tập</th>
                   <th>Người hướng dẫn</th>
                   <th>Đơn vị thực tập</th>
                   <th>Hành động</th>
+>>>>>>> origin/develop
                 </tr>
               </thead>
 
               <tbody id="internTableBody">
                 <tr id="emptyRow">
+<<<<<<< HEAD
+                  <td colspan="7" class="empty-state">
+=======
                   <td colspan="9" class="empty-state">
+>>>>>>> origin/develop
                     Chưa có hồ sơ thực tập sinh.
                   </td>
                 </tr>

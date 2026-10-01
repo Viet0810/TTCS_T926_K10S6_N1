@@ -8,6 +8,11 @@ const cancelBtn = document.getElementById("cancelBtn");
 
 const messageBox = document.getElementById("messageBox");
 
+const documentModal = document.getElementById("documentModal");
+const closeDocModalBtn = document.getElementById("closeDocModalBtn");
+const docTableBody = document.getElementById("documentTableBody");
+let currentInternId = null;
+
 const tableBody = document.getElementById("internTableBody");
 const searchInput = document.getElementById("searchInput");
 
@@ -48,10 +53,34 @@ async function requestInternApi(path = "", options = {}) {
 async function loadInterns() {
   try {
     interns = await requestInternApi();
+<<<<<<< HEAD
+    interns.forEach(updateInternOverallStatus);
+    renderInterns(interns);
+=======
     applySearch();
+>>>>>>> origin/develop
     return true;
   } catch (error) {
-    showMessage(`Không thể tải dữ liệu: ${error.message}`, "error");
+    // Fake data cho danh sách thực tập sinh để test giao diện
+    interns = [
+      { 
+        id: "1", fullName: "Nguyễn Văn A", email: "nva@gmail.com", phone: "0123456789", school: "ĐH Bách Khoa", major: "CNTT",
+        documents: [
+          { id: "1-1", name: "CV Thực tập sinh", url: "#", status: "Chưa nộp" },
+          { id: "1-2", name: "Giấy giới thiệu", url: "#", status: "Đã duyệt" }
+        ]
+      },
+      { 
+        id: "2", fullName: "Trần Thị B", email: "ttb@gmail.com", phone: "0987654321", school: "ĐH Kinh Tế", major: "Kế toán",
+        documents: [
+          { id: "2-1", name: "CV Thực tập sinh", url: "#", status: "Đã duyệt" },
+          { id: "2-2", name: "Giấy giới thiệu", url: "#", status: "Đã duyệt" }
+        ]
+      }
+    ];
+    interns.forEach(updateInternOverallStatus);
+    renderInterns(interns);
+    showMessage(`Đang dùng dữ liệu mẫu (Do lỗi API: ${error.message})`, "error");
     return false;
   }
 }
@@ -91,6 +120,12 @@ function closeForm() {
 closeFormBtn.addEventListener("click", closeForm);
 
 cancelBtn.addEventListener("click", closeForm);
+
+if (closeDocModalBtn) {
+  closeDocModalBtn.addEventListener("click", () => {
+    documentModal.classList.add("hidden");
+  });
+}
 
 /*
 ==================================
@@ -300,7 +335,11 @@ function renderInterns(data) {
     tableBody.innerHTML = `
       <tr>
         <td
+<<<<<<< HEAD
+          colspan="7"
+=======
           colspan="9"
+>>>>>>> origin/develop
           class="empty-state"
         >
           Chưa có hồ sơ thực tập sinh.
@@ -313,6 +352,11 @@ function renderInterns(data) {
 
   data.forEach((intern) => {
     const row = document.createElement("tr");
+
+    const docStatus = intern.docStatus || 'Chưa nộp';
+    let statusColor = 'orange';
+    if (docStatus === 'Đã duyệt đủ') statusColor = 'green';
+    else if (docStatus.includes('Thiếu') || docStatus.includes('Từ chối') || docStatus === 'Chưa có tài liệu') statusColor = 'red';
 
     row.innerHTML = `
 
@@ -330,6 +374,13 @@ function renderInterns(data) {
       <td>${escapeHtml(intern.organization || "—")}</td>
       <td class="intern-actions"></td>
 
+      <td><span style="color: ${statusColor}; font-weight: bold;">${escapeHtml(docStatus)}</span></td>
+      
+      <td>
+        <button class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="openDocumentModal('${intern.id}', '${escapeHtml(intern.fullName)}')">
+          Duyệt tài liệu
+        </button>
+      </td>
     `;
 
     if (canManageInterns) {
@@ -384,6 +435,113 @@ function showMessage(message, type) {
 
 /*
 ==================================
+QUẢN LÝ TÀI LIỆU
+==================================
+*/
+
+async function openDocumentModal(internId, internName) {
+  currentInternId = internId;
+  document.getElementById("docInternName").textContent = internName;
+  documentModal.classList.remove("hidden");
+  docTableBody.innerHTML = `<tr><td colspan="4" class="empty-state">Đang tải...</td></tr>`;
+
+  try {
+    const docs = await requestInternApi(`/${internId}/documents`, { method: "GET" });
+    if (!Array.isArray(docs)) throw new Error("Format error");
+    renderDocuments(docs);
+  } catch (error) {
+    // Dùng data nội bộ từ interns
+    const intern = interns.find(i => i.id === internId);
+    if (intern && intern.documents) {
+      renderDocuments(intern.documents);
+    } else {
+      renderDocuments([]);
+    }
+  }
+}
+
+function renderDocuments(docs) {
+  docTableBody.innerHTML = "";
+  if (!docs || docs.length === 0) {
+    docTableBody.innerHTML = `<tr><td colspan="4" class="empty-state">Chưa có tài liệu nào.</td></tr>`;
+    return;
+  }
+
+  docs.forEach(doc => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${escapeHtml(doc.name)}</td>
+      <td><a href="${doc.url}" target="_blank">Xem</a></td>
+      <td>
+        <select id="select-status-${doc.id}" style="padding: 4px;">
+            <option value="Chưa nộp" ${doc.status === 'Chưa nộp' ? 'selected' : ''}>Chưa nộp</option>
+            <option value="Chờ duyệt" ${doc.status === 'Chờ duyệt' ? 'selected' : ''}>Chờ duyệt</option>
+            <option value="Đã duyệt" ${doc.status === 'Đã duyệt' ? 'selected' : ''}>Đã duyệt</option>
+            <option value="Từ chối" ${doc.status === 'Từ chối' ? 'selected' : ''}>Từ chối</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="saveDocumentStatus('${doc.id}')">Lưu trạng thái</button>
+      </td>
+    `;
+    docTableBody.appendChild(row);
+  });
+}
+
+async function saveDocumentStatus(documentId) {
+  const newStatus = document.getElementById(`select-status-${documentId}`).value;
+  try {
+    // Gọi API thật khi backend sẵn sàng:
+    // await requestInternApi(`/${currentInternId}/documents/${documentId}/status`, { 
+    //   method: "PUT",
+    //   body: JSON.stringify({ status: newStatus })
+    // });
+    
+    // Cập nhật dữ liệu nội bộ
+    const internIndex = interns.findIndex(i => i.id === currentInternId);
+    if (internIndex !== -1) {
+      const intern = interns[internIndex];
+      const doc = intern.documents.find(d => d.id === documentId);
+      if (doc) doc.status = newStatus;
+      
+      updateInternOverallStatus(intern);
+      renderInterns(interns); // Render lại bảng danh sách bên ngoài
+    }
+
+    showMessage(`Đã lưu trạng thái thành công!`, "success");
+    
+  } catch (error) {
+    showMessage("Lỗi khi lưu trạng thái: " + error.message, "error");
+  }
+}
+
+/*
+==================================
+TÍNH TOÁN TRẠNG THÁI TÀI LIỆU
+==================================
+*/
+function updateInternOverallStatus(intern) {
+  if (!intern.documents || intern.documents.length === 0) {
+    intern.docStatus = "Chưa có tài liệu";
+    return;
+  }
+  
+  const statuses = intern.documents.map(d => d.status);
+  
+  if (statuses.includes("Từ chối")) {
+    intern.docStatus = "Có tài liệu bị từ chối";
+  } else if (statuses.includes("Chưa nộp")) {
+    const missingDocs = intern.documents.filter(d => d.status === "Chưa nộp").map(d => d.name);
+    intern.docStatus = `Thiếu: ${missingDocs.join(', ')}`;
+  } else if (statuses.includes("Chờ duyệt")) {
+    intern.docStatus = "Chờ duyệt";
+  } else {
+    intern.docStatus = "Đã duyệt đủ";
+  }
+}
+
+/*
+==================================
 CHỐNG CHÈN HTML VÀO TABLE
 ==================================
 */
@@ -416,15 +574,22 @@ KHỞI TẠO
 */
 
 async function initializeInternPage() {
+  /* Tạm thời comment đoạn check token để test giao diện
   if (!localStorage.getItem("token")) {
     window.location.href = "../index.html";
     return;
   }
+  */
 
   try {
-    const session = await API.getCurrentUser();
-    const permissions = session.permissions;
-    document.getElementById("userRole").textContent = session.user.role;
+    // Tạm thời comment API check user
+    // const session = await API.getCurrentUser();
+    // const permissions = session.permissions;
+    // document.getElementById("userRole").textContent = session.user.role;
+
+    // Giả lập quyền để test:
+    const permissions = ["VIEW_INTERNS", "MANAGE_INTERNS"];
+    document.getElementById("userRole").textContent = "HR (Demo)";
 
     if (!permissions.includes("VIEW_INTERNS")) {
       window.location.href = permissions.includes("VIEW_PROFILE")
