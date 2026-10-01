@@ -1,92 +1,60 @@
-const tableBody = document.getElementById("userTableBody");
-const searchInput = document.getElementById("userSearchInput");
-let users = [];
+const userTableBody = document.getElementById("userTableBody");
 
 function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function roleClass(userRole) {
-  return String(userRole).toLowerCase();
+  const element = document.createElement("span");
+  element.textContent = value ?? "";
+  return element.innerHTML;
 }
 
 async function loadUsers() {
-  users = await API.getUsers();
-  renderUsers();
-}
-
-function renderUsers() {
-  const keyword = searchInput.value.trim().toLowerCase();
-  const visibleUsers = users.filter((user) =>
-    `${user.fullName} ${user.email} ${user.role}`
-      .toLowerCase()
-      .includes(keyword),
-  );
-
-  tableBody.innerHTML = visibleUsers
-    .map(
-      (user) => `
-        <tr>
-          <td>${escapeHtml(user.fullName)}</td>
-          <td>${escapeHtml(user.email)}</td>
-          <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
-          <td>
-            ${user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
-          </td>
-        </tr>`,
-    )
-    .join("");
-}
-
-async function initializePage() {
-  if (!localStorage.getItem("token")) {
-    window.location.href = "../index.html";
-    return;
-  }
-
   try {
-    const session = await API.getCurrentUser();
-    if (session.user.role !== "ADMIN") {
-      window.location.href = "dashboard.html";
+    const users = await API.getUsers();
+    userTableBody.innerHTML = "";
+
+    if (!users.length) {
+      userTableBody.innerHTML = '<tr><td colspan="4">Chưa có tài khoản.</td></tr>';
       return;
     }
-    await loadUsers();
-  } catch {
-    localStorage.clear();
-    window.location.href = "../index.html";
+
+    users.forEach((user) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${escapeHtml(user.fullName)}</td>
+        <td>${escapeHtml(user.email)}</td>
+        <td>${escapeHtml(user.role)}</td>
+        <td><div class="user-actions">
+          <button type="button" class="btn-edit" data-user-id="${Number(user.id)}">Sửa</button>
+          <button type="button" class="btn-delete" data-user-id="${Number(user.id)}">Xóa</button>
+        </div></td>`;
+      row.querySelector(".btn-edit").addEventListener("click", () => {
+        window.location.href = `user-edit.html?id=${encodeURIComponent(user.id)}`;
+      });
+      row.querySelector(".btn-delete").addEventListener("click", () => deleteUser(user.id));
+      userTableBody.appendChild(row);
+    });
+  } catch (error) {
+    alert(error.message);
   }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "../index.html";
-});
-
-searchInput.addEventListener("input", renderUsers);
-
-tableBody.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-user-id]");
-  if (!button || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
-
+async function deleteUser(userId) {
+  if (!window.confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
   try {
-    await API.deleteUser(button.dataset.userId);
-    alert("Đã xóa tài khoản.");
+    const result = await API.deleteUser(userId);
+    alert(result.message);
     await loadUsers();
   } catch (error) {
     alert(error.message);
   }
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("user");
+  window.location.href = "../index.html";
 });
 
-initializePage();
-
-document
-  .getElementById("createUserForm")
-  .addEventListener("submit", async function (event) {
+document.getElementById("createUserForm").addEventListener("submit", async function (event) {
     event.preventDefault();
 
     const fullName = document.getElementById("fullName").value.trim();
@@ -94,15 +62,8 @@ document
     const email = document.getElementById("email").value.trim();
 
     const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
 
     const role = document.getElementById("role").value;
-
-    if (password !== confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp.");
-      document.getElementById("confirmPassword").focus();
-      return;
-    }
 
     try {
       const result = await API.createUser({
@@ -121,3 +82,5 @@ document
       alert(error.message);
     }
   });
+
+loadUsers();

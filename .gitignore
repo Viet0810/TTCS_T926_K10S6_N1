@@ -12,6 +12,7 @@
 .env
 .env.*
 !.env.example
+Backend/InternManagement/appsettings.Database.json
 
 # Log
 *.log

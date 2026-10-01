@@ -33,13 +33,27 @@ document
       localStorage.setItem("role", role);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      if (!["ADMIN", "HR", "MENTOR", "INTERN"].includes(role)) {
-        alert("Vai trò tài khoản không hợp lệ!");
-        localStorage.clear();
-        return;
-      }
+      switch (role) {
+        case "ADMIN":
+          window.location.href = "pages/user-manage.html";
+          break;
 
-      window.location.href = "pages/dashboard.html";
+        case "HR":
+          window.location.href = "pages/intern-manage.html";
+          break;
+
+        case "MENTOR":
+          alert("Đăng nhập thành công. Giao diện dành cho mentor chưa được tạo.");
+          break;
+
+        case "INTERN":
+          alert("Đăng nhập thành công. Giao diện dành cho thực tập sinh chưa được tạo.");
+          break;
+
+        default:
+          alert("Vai trò tài khoản không hợp lệ!");
+          localStorage.clear();
+      }
     } catch (error) {
       alert(error.message);
     }

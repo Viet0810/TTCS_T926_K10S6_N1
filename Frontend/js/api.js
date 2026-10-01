@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5024/api";
+const BASE_URL = "http://127.0.0.1:5024/api";
 
 function getAuthHeader() {
   const token = localStorage.getItem("token");
@@ -62,6 +62,25 @@ const API = {
   createUser: async (userData) => {
     const response = await fetch(`${BASE_URL}/users`, {
       method: "POST",
+      headers: getAuthHeader(),
+      body: JSON.stringify(userData),
+    });
+
+    return handleResponse(response);
+  },
+
+  getUser: async (userId) => {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, {
+      method: "GET",
+      headers: getAuthHeader(),
+    });
+
+    return handleResponse(response);
+  },
+
+  updateUser: async (userId, userData) => {
+    const response = await fetch(`${BASE_URL}/users/${userId}`, {
+      method: "PUT",
       headers: getAuthHeader(),
       body: JSON.stringify(userData),
     });

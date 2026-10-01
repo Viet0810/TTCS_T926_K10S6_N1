@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sửa tài khoản | Intern Management System</title>
+    <link rel="stylesheet" href="../css/style.css?v=20261001-2" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo">IM</div>
+          <div class="dashboard-title">
+            <span>INTERN MANAGEMENT SYSTEM</span>
+            <h1>Hệ thống quản lý Thực tập sinh</h1>
+          </div>
+        </div>
+        <button type="button" id="logoutBtn" class="btn-danger">
+          <span class="logout-icon">↪</span>
+          Đăng xuất
+        </button>
+      </header>
+
+      <main class="dashboard-main">
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
+              <h2>Sửa tài khoản</h2>
+              <p>Chỉnh sửa thông tin và lưu thay đổi vào hệ thống.</p>
+            </div>
+            <div class="section-icon">✎</div>
+          </div>
+
+          <div id="editMessage" class="edit-message" role="status" aria-live="polite"></div>
+          <form id="editUserForm" class="create-user-form" hidden>
+            <div class="form-group">
+              <label for="fullName">Họ và tên</label>
+              <input id="fullName" name="fullName" type="text" autocomplete="name" required />
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required />
+            </div>
+            <div class="form-group">
+              <label for="role">Vai trò</label>
+              <select id="role" name="role" required>
+                <option value="ADMIN">Quản trị viên</option>
+                <option value="HR">HR</option>
+                <option value="MENTOR">Mentor</option>
+                <option value="INTERN">Thực tập sinh</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="password">Mật khẩu mới (không bắt buộc)</label>
+              <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Để trống nếu không đổi mật khẩu" />
+            </div>
+            <div class="form-actions edit-form-actions">
+              <button type="submit" class="btn-primary">Lưu tài khoản</button>
+              <button type="button" id="cancelEditBtn" class="btn-secondary">Hủy</button>
+            </div>
+          </form>
+        </section>
+      </main>
+
+      <footer class="dashboard-footer">© 2026 Intern Management System</footer>
+    </div>
+
+    <script src="../js/api.js?v=20261001-3"></script>
+    <script src="../js/user-edit.js?v=20261001-3"></script>
+  </body>
+</html>
