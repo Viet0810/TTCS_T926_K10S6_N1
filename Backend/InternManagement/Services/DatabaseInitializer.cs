@@ -37,6 +37,18 @@ public sealed class DatabaseInitializer
                 VALUES (N'admin.demo', N'Quản trị viên Demo', N'admin.demo@example.com', @passwordHash, 'ADMIN');
             END;
 
+            IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Username = N'hr.demo')
+            BEGIN
+                INSERT INTO dbo.Users (Username, FullName, Email, PasswordHash, Role)
+                VALUES (N'hr.demo', N'Chuyên viên HR Demo', N'hr.demo@example.com', @passwordHash, 'HR');
+            END;
+
+            IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Username = N'mentor.demo')
+            BEGIN
+                INSERT INTO dbo.Users (Username, FullName, Email, PasswordHash, Role)
+                VALUES (N'mentor.demo', N'Mentor Demo', N'mentor.demo@example.com', @passwordHash, 'MENTOR');
+            END;
+
             IF OBJECT_ID(N'dbo.Interns', N'U') IS NULL
             BEGIN
                 CREATE TABLE dbo.Interns (
@@ -54,9 +66,18 @@ public sealed class DatabaseInitializer
             BEGIN
                 INSERT INTO dbo.Interns (FullName, Email, Phone, School, Major)
                 VALUES
-                    (N'Nguyễn Minh Anh', N'minhanh.demo@example.com', N'0901234567', N'Đại học Bách Khoa Hà Nội', N'Công nghệ thông tin'),
-                    (N'Trần Quốc Bảo', N'quocbao.demo@example.com', N'0912345678', N'Đại học Công nghệ - ĐHQGHN', N'Kỹ thuật phần mềm'),
-                    (N'Lê Thu Hà', N'thuha.demo@example.com', N'0987654321', N'Học viện Công nghệ Bưu chính Viễn thông', N'An toàn thông tin');
+                    (N'Nguyễn Hoàng Nam', N'nam.nh210678@sis.hust.edu.vn', N'0982341890', N'Đại học Bách Khoa Hà Nội', N'Công nghệ thông tin'),
+                    (N'Trần Mai Phương', N'phuong.tm@vnu.edu.vn', N'0912884123', N'Đại học Công Nghệ - ĐHQGHN', N'Kỹ thuật phần mềm'),
+                    (N'Lê Quốc Bảo', N'baolq.ptit@gmail.com', N'0977456321', N'Học Viện Công Nghệ Bưu Chính Viễn Thông', N'An toàn thông tin'),
+                    (N'Phạm Thùy Linh', N'linhpt.fpt@fe.edu.vn', N'0945123987', N'Đại Học FPT', N'Kỹ thuật phần mềm'),
+                    (N'Vũ Hải Đăng', N'dang.vh215542@sis.hust.edu.vn', N'0904889678', N'Đại học Bách Khoa Hà Nội', N'Khoa học máy tính'),
+                    (N'Đặng Thị Ngọc Ánh', N'anh.dtn@neu.edu.vn', N'0963222119', N'Đại học Kinh Tế Quốc Dân', N'Hệ thống thông tin'),
+                    (N'Bùi Tuấn Anh', N'anh.bui@hcmut.edu.vn', N'0938114556', N'Đại học Bách Khoa TP.HCM', N'Công nghệ thông tin'),
+                    (N'Hoàng Minh Trí', N'tri.hm@vnu.edu.vn', N'0971654321', N'Đại học Công Nghệ - ĐHQGHN', N'Khoa học máy tính'),
+                    (N'Ngô Mỹ Duyên', N'duyennm@ptit.edu.vn', N'0988776554', N'Học Viện Công Nghệ Bưu Chính Viễn Thông', N'Thiết kế Đồ họa / UI-UX'),
+                    (N'Trịnh Quang Huy', N'huytq@fpt.edu.vn', N'0915908765', N'Đại Học FPT', N'Kỹ thuật phần mềm'),
+                    (N'Cao Thảo Vân', N'van.ct218901@sis.hust.edu.vn', N'0944654990', N'Đại học Bách Khoa Hà Nội', N'Công nghệ thông tin'),
+                    (N'Lâm Gia Kiệt', N'kietlg@vnu.edu.vn', N'0909333444', N'Đại học Công Nghệ - ĐHQGHN', N'An toàn thông tin');
             END;
             """;
         command.Parameters.AddWithValue("@passwordHash", passwords.Hash("Demo@123456"));
