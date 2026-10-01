@@ -1,8 +1,9 @@
+using InternManagement.Infrastructure;
 using InternManagement.DTOs;
 using InternManagement.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace InternManagement.HrSearchFilterInterns;
+namespace InternManagement.Controllers;
 
 /// <summary>
 /// Chức năng: Tìm kiếm và lọc thực tập sinh (K10S6N1-48)
@@ -25,19 +26,16 @@ public sealed class InternFilterController : ControllerBase
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<InternResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SearchInterns([FromQuery] InternFilterRequest? filter, CancellationToken cancellationToken)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
+        var decision = authorization.Evaluate(Request, PermissionNames.SearchInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
-            return AccessDenied(decision.Status);
+            return AuthorizationResponses.Denied(decision.Status);
 
         var result = await filterService.FilterInternsAsync(filter, cancellationToken);
         return Ok(result);
     }
 
-    private IActionResult AccessDenied(AuthorizationStatus status) => status switch
-    {
-        AuthorizationStatus.Unauthenticated => Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null)),
-        _ => StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse(false, "Bạn không có quyền thực hiện chức năng này.", null))
-    };
 }

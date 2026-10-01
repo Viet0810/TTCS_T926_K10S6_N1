@@ -1,5 +1,4 @@
 const menu = document.getElementById("roleMenu");
-const permissionList = document.getElementById("permissionList");
 const featureLabels = {
   MANAGE_USERS: { label: "Quản lý tài khoản", href: "user-manage.html" },
   CREATE_USER: { label: "Tạo tài khoản thành viên" },
@@ -9,13 +8,22 @@ const featureLabels = {
     href: "intern-manage.html",
   },
   MANAGE_INTERNS: {
+    label: "Tạo hồ sơ thực tập sinh",
+    href: "intern-manage.html",
+  },
+  SEARCH_INTERNS: {
     label: "Tìm kiếm & Lọc thực tập sinh",
     href: "hr-search-filter.html",
   },
+  EDIT_INTERNS: {
+    label: "Chỉnh sửa hồ sơ thực tập sinh",
+    href: "intern-manage.html",
+  },
   VIEW_PROFILE: { label: "Hồ sơ cá nhân", href: "profile.html" },
-  VIEW_DOCUMENTS: { label: "Tài liệu (module giao diện chưa triển khai)" },
+  UPLOAD_DOCUMENTS: { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html" },
+  VIEW_DOCUMENTS: { label: "Hồ sơ và tài liệu", href: "intern-upload-cv.html" },
   APPROVE_DOCUMENTS: {
-    label: "Duyệt tài liệu (module giao diện chưa triển khai)",
+    label: "Xem và duyệt tài liệu", href: "document-reviews.html",
   },
   MANAGE_PERMISSIONS: { label: "Ma trận phân quyền", href: "permissions.html" },
 };
@@ -30,7 +38,7 @@ function addMenuItem(label, href) {
   menu.appendChild(item);
 }
 
-function renderPermissions(permissions) {
+function renderMenu(permissions) {
   const menuPermissions = permissions.filter(
     (permission) =>
       !["CREATE_USER", "DELETE_USER"].includes(permission),
@@ -42,15 +50,12 @@ function renderPermissions(permissions) {
       .filter(Boolean),
   ];
 
-  items.forEach((item) => addMenuItem(item.label, item.href));
-  permissionList.replaceChildren();
-
-  permissions.forEach((permission) => {
-    const item = featureLabels[permission];
-    if (!item) return;
-    const row = document.createElement("li");
-    row.textContent = item.label;
-    permissionList.appendChild(row);
+  menu.replaceChildren();
+  const linkedPages = new Set();
+  items.forEach((item) => {
+    if (item.href && linkedPages.has(item.href)) return;
+    if (item.href) linkedPages.add(item.href);
+    addMenuItem(item.label, item.href);
   });
 }
 
@@ -66,24 +71,14 @@ async function initializeDashboard() {
     document.getElementById("roleBadge").textContent = user.role;
     document.getElementById("welcomeTitle").textContent =
       `Xin chào, ${user.fullName}`;
-    document.getElementById("welcomeDescription").textContent =
-      `Đăng nhập với vai trò ${user.role}.`;
-    renderPermissions(session.permissions);
+    renderMenu(session.permissions);
   } catch (error) {
     document.getElementById("dashboardMessage").textContent = error.message;
-    if (
-      error.message.includes("đăng nhập") ||
-      error.message.includes("phiên")
-    ) {
-      localStorage.clear();
-      window.location.href = "../index.html";
-    }
+    document.getElementById("dashboardMessage").hidden = false;
+    Session.redirectIfExpired(error);
   }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "../index.html";
-});
+document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 
 initializeDashboard();

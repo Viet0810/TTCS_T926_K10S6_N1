@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using InternManagement.DTOs;
-using InternManagement.Models;
+using InternManagement.Infrastructure;
 using InternManagement.Services;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InternManagement.Controllers;
 
@@ -10,25 +11,27 @@ namespace InternManagement.Controllers;
 [Route("api/auth")]
 public sealed class AuthController : ControllerBase
 {
-    private readonly string connectionString;
-    private readonly PasswordHasher passwords;
+    private readonly AccountService accounts;
     private readonly AuthTokenService tokens;
     private readonly RequestAuthorizationService authorization;
     private readonly RolePermissionService rolePermissions;
+    private readonly PasswordResetService passwordReset;
+    private readonly ILogger<AuthController> logger;
 
     public AuthController(
-        IConfiguration configuration,
-        PasswordHasher passwords,
+        AccountService accounts,
         AuthTokenService tokens,
         RequestAuthorizationService authorization,
-        RolePermissionService rolePermissions)
+        RolePermissionService rolePermissions,
+        PasswordResetService passwordReset,
+        ILogger<AuthController> logger)
     {
-        connectionString = configuration.GetConnectionString("InternManagement")
-            ?? throw new InvalidOperationException("Chưa cấu hình connection string InternManagement.");
-        this.passwords = passwords;
+        this.accounts = accounts;
         this.tokens = tokens;
         this.authorization = authorization;
         this.rolePermissions = rolePermissions;
+        this.passwordReset = passwordReset;
+        this.logger = logger;
     }
 
     [HttpPost("login")]
@@ -37,34 +40,50 @@ public sealed class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrEmpty(request.Password))
             return BadRequest(new { message = "Vui lòng nhập tên đăng nhập và mật khẩu." });
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT Id, Username, FullName, Email, PasswordHash, Role
-            FROM dbo.Users
-            WHERE Username = @identifier OR Email = @identifier;
-            """;
-        command.Parameters.AddWithValue("@identifier", request.Username.Trim());
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
-            return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
-
-        var user = new User
-        {
-            Id = reader.GetInt32(0),
-            Username = reader.GetString(1),
-            FullName = reader.GetString(2),
-            Email = reader.GetString(3),
-            PasswordHash = reader.GetString(4),
-            Role = reader.GetString(5)
-        };
-
-        if (!passwords.Verify(request.Password, user.PasswordHash))
+        var user = await accounts.AuthenticateAsync(request, cancellationToken);
+        if (user is null)
             return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
 
         var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role);
         return Ok(new LoginResponse(tokens.Issue(user), responseUser));
+    }
+
+    [HttpPost("forgot-password")]
+    [EnableRateLimiting("password-recovery")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await passwordReset.RequestAsync(request.Email, cancellationToken);
+            return Ok(new { message = "Nếu email đã được đăng ký, bạn sẽ nhận được liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư và thư rác." });
+        }
+        catch (PasswordRecoveryUnavailableException error)
+        {
+            logger.LogWarning("Password recovery unavailable. Trace {TraceId}", HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = error.Message });
+        }
+        catch (SqlException error)
+        {
+            logger.LogError(error, "Password recovery database operation failed. Trace {TraceId}", HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau." });
+        }
+    }
+
+    [HttpPost("reset-password")]
+    [EnableRateLimiting("password-recovery")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await passwordReset.ResetAsync(request.Token, request.Password, cancellationToken)
+                ? Ok(new { message = "Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới." })
+                : BadRequest(new { message = "Liên kết đã hết hạn hoặc đã được sử dụng. Vui lòng gửi lại yêu cầu quên mật khẩu." });
+        }
+        catch (SqlException error)
+        {
+            logger.LogError(error, "Password reset database operation failed. Trace {TraceId}", HttpContext.TraceIdentifier);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Không thể cập nhật mật khẩu. Vui lòng thử lại sau." });
+        }
     }
 
     [HttpGet("me")]
@@ -76,21 +95,9 @@ public sealed class AuthController : ControllerBase
         if (decision.Status == AuthorizationStatus.Unauthenticated)
             return Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null));
 
-        await using var connection = new SqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Username, FullName, Email, Role FROM dbo.Users WHERE Id = @id";
-        command.Parameters.AddWithValue("@id", decision.User!.Id);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
+        var user = await accounts.GetByIdAsync(decision.User!.Id, cancellationToken);
+        if (user is null)
             return Unauthorized(new ApiErrorResponse(false, "Phiên đăng nhập không còn hợp lệ.", null));
-
-        var user = new UserResponse(
-            reader.GetInt32(0),
-            reader.GetString(1),
-            reader.GetString(2),
-            reader.GetString(3),
-            reader.GetString(4));
 
         return Ok(new CurrentUserResponse(user, rolePermissions.GetPermissions(user.Role)));
     }
@@ -102,11 +109,8 @@ public sealed class AuthController : ControllerBase
     public IActionResult GetRolePermissions()
     {
         var decision = authorization.Evaluate(Request, PermissionNames.ManagePermissions);
-        if (decision.Status == AuthorizationStatus.Unauthenticated)
-            return Unauthorized(new ApiErrorResponse(false, "Vui lòng đăng nhập để tiếp tục.", null));
-        if (decision.Status == AuthorizationStatus.Forbidden)
-            return StatusCode(StatusCodes.Status403Forbidden,
-                new ApiErrorResponse(false, "Bạn không có quyền thực hiện chức năng này.", null));
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AuthorizationResponses.Denied(decision.Status);
 
         return Ok(rolePermissions.GetRolePermissions());
     }

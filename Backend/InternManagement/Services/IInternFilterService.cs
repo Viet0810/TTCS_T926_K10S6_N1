@@ -1,6 +1,6 @@
 using InternManagement.DTOs;
 
-namespace InternManagement.HrSearchFilterInterns;
+namespace InternManagement.Services;
 
 /// <summary>
 /// Chức năng: Tìm kiếm và lọc thực tập sinh (K10S6N1-48)

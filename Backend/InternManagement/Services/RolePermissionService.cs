@@ -7,7 +7,10 @@ public static class PermissionNames
     public const string DeleteUser = "DELETE_USER";
     public const string ViewInterns = "VIEW_INTERNS";
     public const string ManageInterns = "MANAGE_INTERNS";
+    public const string SearchInterns = "SEARCH_INTERNS";
+    public const string EditInterns = "EDIT_INTERNS";
     public const string ViewProfile = "VIEW_PROFILE";
+    public const string UploadDocuments = "UPLOAD_DOCUMENTS";
     public const string ViewDocuments = "VIEW_DOCUMENTS";
     public const string ApproveDocuments = "APPROVE_DOCUMENTS";
     public const string ManagePermissions = "MANAGE_PERMISSIONS";
@@ -25,6 +28,8 @@ public sealed class RolePermissionService
                 PermissionNames.DeleteUser,
                 PermissionNames.ViewInterns,
                 PermissionNames.ManageInterns,
+                PermissionNames.SearchInterns,
+                PermissionNames.EditInterns,
                 PermissionNames.ViewProfile,
                 PermissionNames.ViewDocuments,
                 PermissionNames.ApproveDocuments,
@@ -34,6 +39,8 @@ public sealed class RolePermissionService
             [
                 PermissionNames.ViewInterns,
                 PermissionNames.ManageInterns,
+                PermissionNames.SearchInterns,
+                PermissionNames.EditInterns,
                 PermissionNames.ViewProfile,
                 PermissionNames.ViewDocuments,
                 PermissionNames.ApproveDocuments
@@ -41,11 +48,13 @@ public sealed class RolePermissionService
             ["MENTOR"] =
             [
                 PermissionNames.ViewInterns,
+                PermissionNames.SearchInterns,
                 PermissionNames.ViewProfile,
                 PermissionNames.ViewDocuments
             ],
             ["INTERN"] =
             [
+                PermissionNames.UploadDocuments,
                 PermissionNames.ViewProfile,
                 PermissionNames.ViewDocuments
             ]

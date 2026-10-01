@@ -1,11 +1,19 @@
 @InternManagement_HostAddress = http://localhost:5024
 
-GET {{InternManagement_HostAddress}}/weatherforecast/
-Accept: application/json
 
-###
 
-@adminToken = replace-with-a-valid-admin-or-hr-token
+@adminToken =
+@userId =
+@internId =
+@fullName =
+@email =
+@password =
+@role =
+@internEmail =
+@phone =
+@school =
+@major =
+@resetToken =
 
 ### Thông tin phiên và permission hiện tại
 GET {{InternManagement_HostAddress}}/api/auth/me
@@ -28,14 +36,14 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-	"fullName": "Nguyễn Văn A",
-	"email": "hr01@example.com",
-	"password": "Hr123456@",
-	"role": "HR"
+	"fullName": "{{fullName}}",
+	"email": "{{email}}",
+	"password": "{{password}}",
+	"role": "{{role}}"
 }
 
 ### Lấy tài khoản theo ID (chỉ ADMIN)
-GET {{InternManagement_HostAddress}}/api/users/1
+GET {{InternManagement_HostAddress}}/api/users/{{userId}}
 Authorization: Bearer {{adminToken}}
 Accept: application/json
 
@@ -54,7 +62,7 @@ Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 ### Chi tiết thực tập sinh
-GET {{InternManagement_HostAddress}}/api/interns/1
+GET {{InternManagement_HostAddress}}/api/interns/{{internId}}
 Authorization: Bearer {{adminToken}}
 Accept: application/json
 
@@ -64,9 +72,39 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-	"fullName": "Nguyễn Demo",
-	"email": "nguyendemo@example.com",
-	"phone": "0901234567",
-	"school": "Đại học Demo",
-	"major": "Công nghệ thông tin"
+	"fullName": "{{fullName}}",
+	"email": "{{internEmail}}",
+	"phone": "{{phone}}",
+	"school": "{{school}}",
+	"major": "{{major}}"
 }
+
+
+### Chỉnh sửa hồ sơ (ADMIN hoặc HR, quyền EDIT_INTERNS)
+PUT {{InternManagement_HostAddress}}/api/interns/{{internId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "fullName": "{{fullName}}", "email": "{{internEmail}}", "phone": "{{phone}}", "school": "{{school}}", "major": "{{major}}" }
+
+### Tìm kiếm hồ sơ (quyền SEARCH_INTERNS)
+GET {{InternManagement_HostAddress}}/api/interns/search?search={{fullName}}&school={{school}}&major={{major}}
+Authorization: Bearer {{adminToken}}
+
+### Đăng nhập bằng tài khoản thật
+POST {{InternManagement_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "{{email}}", "password": "{{password}}" }
+
+### Gửi liên kết đặt lại mật khẩu qua SMTP đã cấu hình
+POST {{InternManagement_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{ "email": "{{email}}" }
+
+### Đặt lại mật khẩu bằng mã nhận trong email
+POST {{InternManagement_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+
+{ "token": "{{resetToken}}", "password": "{{password}}" }

@@ -1,19 +1,46 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using InternManagement.Infrastructure;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss 'UTC' ";
+    options.UseUtcTimestamp = true;
+});
+
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddDataProtection();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
-    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("X-Request-ID")));
 builder.Services.AddSingleton<InternManagement.Services.PasswordHasher>();
 builder.Services.AddSingleton<InternManagement.Services.AuthTokenService>();
 builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>();
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
+builder.Services.AddScoped<InternManagement.Services.AccountService>();
+builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("password-recovery", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(15),
+            QueueLimit = 0
+        }));
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút." }, cancellationToken);
+    };
+});
 builder.Services.AddScoped<InternManagement.Services.IInternService, InternManagement.Services.InternService>();
-builder.Services.AddScoped<InternManagement.HrSearchFilterInterns.IInternFilterService, InternManagement.HrSearchFilterInterns.InternFilterService>();
+builder.Services.AddScoped<InternManagement.Services.IInternFilterService, InternManagement.Services.InternFilterService>();
 
 var app = builder.Build();
 var connectionString = builder.Configuration.GetConnectionString("InternManagement");
@@ -24,7 +51,8 @@ if (string.IsNullOrWhiteSpace(connectionString))
 await app.Services.GetRequiredService<InternManagement.Services.DatabaseInitializer>()
     .InitializeAsync(connectionString);
 
-// Configure the HTTP request pipeline.
+app.UseMiddleware<ApiRequestMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -33,6 +61,7 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseCors();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.MapGet("/api/database/status", async () =>
@@ -57,32 +86,9 @@ app.MapGet("/api/database/status", async () =>
     }
     catch (Exception error)
     {
-        return Results.Problem($"Không thể kết nối SQL Server: {error.Message}", statusCode: 503);
+        app.Logger.LogError(error, "Database health check failed.");
+        return Results.Problem("Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau.", statusCode: 503);
     }
 });
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

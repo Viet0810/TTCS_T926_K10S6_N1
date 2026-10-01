@@ -3,16 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bảng điều khiển | Intern Management System</title>
+    <title>Bảng điều khiển | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/style.css" />
   </head>
   <body>
     <div class="dashboard">
       <header class="dashboard-header">
         <div class="dashboard-brand">
-          <div class="dashboard-logo">IM</div>
+          <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
           <div class="dashboard-title">
-            <span>INTERN MANAGEMENT SYSTEM</span>
+            <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
             <h1>Bảng điều khiển</h1>
           </div>
         </div>
@@ -35,16 +36,13 @@
           <div class="section-heading">
             <div>
               <span class="section-label">XIN CHÀO</span>
-              <h2 id="welcomeTitle">Bảng điều khiển</h2>
-              <p id="welcomeDescription">Đang tải quyền truy cập...</p>
+              <h2 id="welcomeTitle">Đang tải lời chào…</h2>
             </div>
           </div>
-          <h3 class="permission-heading">Chức năng được cấp</h3>
-          <ul id="permissionList" class="permission-list"></ul>
-          <p id="dashboardMessage" class="dashboard-message" role="status"></p>
+          <p id="dashboardMessage" class="dashboard-message" role="status" hidden></p>
         </section>
       </main>
-      <footer class="dashboard-footer">© 2026 Intern Management System</footer>
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
     </div>
     <script src="../js/api.js"></script>
     <script src="../js/dashboard.js"></script>
