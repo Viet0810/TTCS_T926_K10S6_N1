@@ -688,3 +688,10 @@ function showToast(msg) {
     toast.classList.add("translate-y-16", "opacity-0");
   }, 3200);
 }
+
+function handleLogout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("user");
+  window.location.href = "../index.html";
+}
