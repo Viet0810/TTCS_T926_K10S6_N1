@@ -50,6 +50,11 @@ button { cursor: pointer; }
 .create-user-form input:focus, .create-user-form select:focus { border-color: #6c94ed; background: #fff; box-shadow: 0 0 0 4px rgba(53,104,232,.11); }
 .form-actions { display: flex; align-items: center; }
 .form-actions .btn-primary { min-width: 155px; }
+.form-actions .btn-secondary, .btn-secondary { min-height: 46px; margin-left: 10px; padding: 0 16px; border: 1px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); font-weight: 700; cursor: pointer; }
+.role-select { min-height: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); font-size: 12px; }
+#internImportMessage { color: var(--muted); font-size: 13px; }
+#internImportResults { margin-top: 14px; }
+#internImportResults p, #internImportResults li { color: var(--muted); font-size: 13px; line-height: 1.55; }
 
 .table-container { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
 .user-table { width: 100%; min-width: 620px; border-collapse: collapse; color: #354563; font-size: 13px; text-align: left; }

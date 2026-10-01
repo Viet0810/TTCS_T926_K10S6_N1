@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phân công Mentor | Intern Management</title>
+  <link rel="stylesheet" href="../css/roles.css">
+  <style>
+    .assignment-form{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}.assignment-form label{display:grid;gap:7px;font-size:13px;font-weight:700;color:#46556c}.assignment-form select{height:43px;padding:0 11px;border:1px solid #d8e0ec;border-radius:9px;background:white;color:#18243b}.table-wrap{overflow:auto;margin-top:22px}table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}th,td{text-align:left;padding:13px 15px;border-bottom:1px solid #edf0f5;font-size:13px}th{color:#647188;background:#f8faff}.message{min-height:22px;color:#315fce;font-size:13px;margin:12px 0 0}@media(max-width:700px){.assignment-form{grid-template-columns:1fr}.assignment-form .button{width:100%}}
+  </style>
+</head>
+<body data-required-roles="HR,ADMIN" data-denied-redirect="../hr-search-filter-interns/index.html">
+  <main class="workspace">
+    <header class="topbar"><a class="brand" href="role-dashboard.html">IM <span>Intern Management</span></a><div class="account"><span data-user-name></span><span class="role-pill" data-role-label></span><button id="logoutBtn" class="button button-outline">Đăng xuất</button></div></header>
+    <section class="welcome"><p class="eyebrow">HR WORKSPACE</p><h1>Phân công Mentor</h1><p>Chọn thực tập sinh và Mentor trong dữ liệu hiện có.</p></section>
+    <section class="card">
+      <form id="assignmentForm" class="assignment-form">
+        <label>Mentor<select id="assignmentMentor" required></select></label>
+        <button class="button" type="submit">Phân công Intern đã chọn</button>
+      </form>
+      <p class="message">Chọn một hoặc nhiều hồ sơ bên dưới để đưa vào cùng nhóm Mentor. Phân công mới sẽ thay Mentor hiện tại của các hồ sơ đã chọn.</p>
+      <p id="assignmentMessage" class="message" role="status" aria-live="polite"></p>
+      <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="selectAllInterns" aria-label="Chọn tất cả"></th><th>Thực tập sinh</th><th>MSSV</th><th>Email</th><th>Mentor đang phụ trách</th></tr></thead><tbody id="assignmentRows"></tbody></table></div>
+    </section>
+    <footer>Intern Management System</footer>
+  </main>
+  <script src="../js/config.js"></script><script src="../js/role-access.js"></script><script src="../js/mentor-assignments.js"></script>
+</body>
+</html>

@@ -33,7 +33,9 @@
               <span>Kết nối sinh viên và người hướng dẫn</span>
             </div>
           </div>
-          <div class="showcase-footer"><span class="status-dot"></span> Không gian làm việc an toàn</div>
+          <div class="showcase-footer">
+            <span class="status-dot"></span> Không gian làm việc an toàn
+          </div>
         </section>
 
         <section class="login-card" aria-labelledby="loginTitle">
@@ -41,7 +43,9 @@
             <div class="mobile-brand-mark">IM</div>
             <p class="eyebrow">CHÀO MỪNG TRỞ LẠI</p>
             <h2 id="loginTitle">Đăng nhập tài khoản</h2>
-            <p class="login-instruction">Nhập thông tin để tiếp tục vào hệ thống.</p>
+            <p class="login-instruction">
+              Nhập thông tin để tiếp tục vào hệ thống.
+            </p>
 
             <form id="loginForm">
               <div class="form-group">
@@ -75,8 +79,14 @@
                     aria-controls="password"
                     aria-pressed="false"
                   >
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M2.1 12s3.3-6 9.9-6 9.9 6 9.9 6-3.3 6-9.9 6-9.9-6-9.9-6Z" />
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M2.1 12s3.3-6 9.9-6 9.9 6 9.9 6-3.3 6-9.9 6-9.9-6-9.9-6Z"
+                      />
                       <circle cx="12" cy="12" r="2.8" />
                     </svg>
                   </button>
@@ -89,7 +99,88 @@
               </button>
             </form>
 
-            <p class="login-security"><span>⌁</span> Dữ liệu của bạn được bảo vệ an toàn</p>
+            <div id="forgotPasswordFlow" class="reset-flow" hidden>
+              <div id="resetEmailStep">
+                <p class="login-instruction">
+                  Nhập email đã đăng ký. Nếu tìm thấy tài khoản, mã OTP sẽ được
+                  gửi đến email đó.
+                </p>
+                <form id="requestResetForm" class="reset-form">
+                  <label for="resetEmail">Email tài khoản</label>
+                  <input
+                    id="resetEmail"
+                    type="email"
+                    autocomplete="email"
+                    required
+                    placeholder="name@example.com"
+                  />
+                  <button class="login-button" type="submit">Gửi mã OTP</button>
+                </form>
+              </div>
+              <div id="resetOtpStep" hidden>
+                <p class="login-instruction">
+                  Nhập mã OTP gồm 6 chữ số đã gửi đến email của bạn. Mã có hiệu
+                  lực trong 10 phút.
+                </p>
+                <form id="verifyResetForm" class="reset-form">
+                  <label for="resetOtp">Mã OTP</label>
+                  <input
+                    id="resetOtp"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                    required
+                  />
+                  <button class="login-button" type="submit">
+                    Xác nhận mã
+                  </button>
+                </form>
+              </div>
+              <div id="resetPasswordStep" hidden>
+                <p class="login-instruction">Tạo mật khẩu mới cho tài khoản.</p>
+                <form id="setNewPasswordForm" class="reset-form">
+                  <label for="newPassword"
+                    >Mật khẩu mới (ít nhất 8 ký tự)</label
+                  >
+                  <input
+                    id="newPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                  />
+                  <label for="confirmNewPassword">Xác nhận mật khẩu mới</label>
+                  <input
+                    id="confirmNewPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required
+                  />
+                  <button class="login-button" type="submit">
+                    Đặt lại mật khẩu
+                  </button>
+                </form>
+              </div>
+              <p
+                id="resetMessage"
+                class="reset-message"
+                role="status"
+                aria-live="polite"
+              ></p>
+              <button type="button" id="backToLogin" class="forgot-link">
+                Quay lại đăng nhập
+              </button>
+            </div>
+            <button type="button" id="forgotPasswordLink" class="forgot-link">
+              Quên mật khẩu?
+            </button>
+
+            <p class="login-security">
+              <span>⌁</span> Dữ liệu của bạn được bảo vệ an toàn
+            </p>
           </div>
         </section>
       </div>

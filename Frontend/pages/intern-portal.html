@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Khu vực Intern</title><link rel="stylesheet" href="../css/mentor.css"></head>
+<body data-required-roles="INTERN" data-denied-redirect="role-dashboard.html">
+<div class="mentor-shell">
+  <aside class="mentor-sidebar" id="internSidebar"><a class="mentor-brand" href="intern-portal.html"><span class="brand-mark">IM</span><span>Intern<span class="brand-light">Flow</span><small>INTERN WORKSPACE</small></span></a>
+    <nav id="internNav"><button class="nav-item active" data-page="dashboard">⌂ Dashboard</button><button class="nav-item" data-page="tasks">☷ Nhiệm vụ</button><button class="nav-item" data-page="reports">▤ Báo cáo</button><button class="nav-item" data-page="evaluations">★ Đánh giá</button><button class="nav-item" data-page="schedules">▦ Lịch mentoring</button><button class="nav-item" data-page="feedback">✎ Feedback</button><button class="nav-item" data-page="notifications">♧ Thông báo <b id="internUnread" hidden></b></button><button class="nav-item" data-page="profile">◉ Hồ sơ cá nhân</button></nav>
+    <div class="sidebar-bottom"><div class="mentor-mini"><span class="avatar" id="internAvatar">IN</span><span><strong id="internName">Intern</strong><small id="internEmail"></small></span></div><button id="internLogout" class="logout-button">⇥ Đăng xuất</button></div>
+  </aside>
+  <main class="mentor-main"><header class="mentor-topbar"><button id="internMobileMenu" class="mobile-menu">☰</button><div class="crumb">InternFlow <span>/</span> <strong id="internSection">Dashboard</strong></div></header><section id="internContent" class="mentor-content"><div class="loading-state">Đang tải...</div></section><footer class="mentor-footer">Intern Management System · Khu vực Intern</footer></main>
+</div>
+<dialog id="internDialog" class="mentor-dialog"><form method="dialog" class="dialog-close-row"><button aria-label="Đóng">×</button></form><div id="internDialogBody"></div></dialog><div id="internToast" class="mentor-toast" role="status"></div>
+<script src="../js/config.js"></script><script src="../js/role-access.js"></script><script src="../js/intern-portal.js"></script>
+</body></html>

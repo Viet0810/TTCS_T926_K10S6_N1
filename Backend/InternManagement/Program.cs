@@ -10,6 +10,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy =>
 builder.Services.AddSingleton<InternManagement.Services.PasswordHasher>();
 builder.Services.AddSingleton<InternManagement.Services.AuthTokenService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddSingleton<InternManagement.Services.PasswordResetEmailSender>();
 
 var app = builder.Build();
 var connectionString = builder.Configuration.GetConnectionString("InternManagement");

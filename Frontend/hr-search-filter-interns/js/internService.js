@@ -1,13 +1,30 @@
 /**
  * Service Layer: Quản lý truy xuất dữ liệu Thực tập sinh cho màn hình HR
- * Lưu trữ trong LocalStorage, sẵn sàng chuyển USE_API = true khi nối Backend/CSDL
+ * Đọc và cập nhật hồ sơ thực tập sinh qua Backend/CSDL.
  */
 
 const STORAGE_KEY = "intern_management_data_v1";
 
 const InternService = {
-  USE_API: false,
-  API_BASE_URL: "https://localhost:7001/api",
+  USE_API: true,
+  API_BASE_URL: window.APP_CONFIG?.apiBaseUrl || "http://localhost:5024/api",
+  apiInterns: [],
+
+  async apiRequest(path, options = {}) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${this.API_BASE_URL}${path}`, {
+      ...options,
+      headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : "", ...options.headers }
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(body.message || `Lỗi HTTP ${response.status}`);
+      error.status = response.status;
+      error.details = body.errors || {};
+      throw error;
+    }
+    return body;
+  },
 
   initStorage() {
     if (!localStorage.getItem(STORAGE_KEY)) {
@@ -27,9 +44,17 @@ const InternService = {
 
   async getInterns(filters = {}) {
     if (this.USE_API) {
-      const params = new URLSearchParams(filters);
-      const res = await fetch(`${this.API_BASE_URL}/interns?${params}`);
-      return await res.json();
+      let list = await this.apiRequest("/interns");
+      list = list.map(item => ({ ...item, batch: item.batch || "", schoolShort: "", avatar: "" }));
+      this.apiInterns = list;
+      return list.filter(item => {
+        const search = (filters.search || "").toLowerCase();
+        return (!search || [item.name, item.mssv, item.email, item.phone].some(value => (value || "").toLowerCase().includes(search)))
+          && (!filters.school || item.school === filters.school)
+          && (!filters.major || item.major === filters.major)
+          && (!filters.status || item.status === filters.status)
+          && (!filters.mentor || item.mentor === filters.mentor);
+      });
     }
 
     const list = this.getAllInterns();
@@ -73,12 +98,34 @@ const InternService = {
     });
   },
 
+  async getMentors() {
+    if (!this.USE_API) return MOCK_MENTORS.map(item => item.name);
+    return this.apiRequest("/interns/mentors");
+  },
+
   async getInternById(id) {
+    if (this.USE_API) {
+      const item = await this.apiRequest(`/interns/${encodeURIComponent(id)}`);
+      return { ...item, batch: item.batch || "", schoolShort: "", avatar: "" };
+    }
     const list = this.getAllInterns();
     return list.find(item => item.id === Number(id)) || null;
   },
 
   async addIntern(newIntern) {
+    if (this.USE_API) {
+      const result = await this.apiRequest("/interns", {
+        method: "POST",
+        body: JSON.stringify({
+          name: newIntern.name, mssv: newIntern.mssv, email: newIntern.email,
+          phone: newIntern.phone, school: newIntern.school, major: newIntern.major,
+          role: newIntern.role, status: newIntern.status, mentor: newIntern.mentor,
+          progress: newIntern.progress, gpa: newIntern.gpa, department: newIntern.department,
+          startDate: newIntern.startDate || null, endDate: newIntern.endDate || null
+        })
+      });
+      return this.getInternById(result.id);
+    }
     const list = this.getAllInterns();
     const id = list.length > 0 ? Math.max(...list.map(i => i.id)) + 1 : 1;
     const matchedSchool = MOCK_UNIVERSITIES.find(u => u.name === newIntern.school);
@@ -99,6 +146,13 @@ const InternService = {
   },
 
   async updateIntern(id, updatedFields) {
+    if (this.USE_API) {
+      const updated = await this.apiRequest(`/interns/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        body: JSON.stringify(updatedFields)
+      });
+      return updated.data;
+    }
     const list = this.getAllInterns();
     const index = list.findIndex(i => i.id === Number(id));
     if (index !== -1) {
@@ -121,12 +175,20 @@ const InternService = {
     return true;
   },
 
-  async bulkAssignMentor(ids, mentorName) {
+  async bulkAssignMentor(ids, mentorUserId) {
+    if (this.USE_API) {
+      const result = await this.apiRequest("/mentor/assignments/bulk", {
+        method: "POST",
+        body: JSON.stringify({ internIds: ids.map(Number), mentorUserId: Number(mentorUserId) })
+      });
+      await this.getInterns();
+      return result;
+    }
     const list = this.getAllInterns();
     const idSet = new Set(ids.map(Number));
     list.forEach(item => {
       if (idSet.has(item.id)) {
-        item.mentor = mentorName;
+        item.mentor = mentorUserId;
       }
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
@@ -134,6 +196,10 @@ const InternService = {
   },
 
   async deleteIntern(id) {
+    if (this.USE_API) {
+      await this.apiRequest(`/interns/${encodeURIComponent(id)}`, { method: "DELETE" });
+      return true;
+    }
     let list = this.getAllInterns();
     list = list.filter(i => i.id !== Number(id));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
@@ -141,7 +207,7 @@ const InternService = {
   },
 
   getKPIStats() {
-    const list = this.getAllInterns();
+    const list = this.USE_API ? this.apiInterns : this.getAllInterns();
     return {
       total: list.length,
       active: list.filter(i => i.status === "Đang thực tập").length,

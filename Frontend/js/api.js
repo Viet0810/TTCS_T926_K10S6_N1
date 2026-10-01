@@ -32,6 +32,33 @@ const API = {
     return handleResponse(response);
   },
 
+  requestPasswordReset: async (email) => {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse(response);
+  },
+
+  verifyPasswordResetCode: async (email, code) => {
+    const response = await fetch(`${BASE_URL}/auth/verify-reset-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code }),
+    });
+    return handleResponse(response);
+  },
+
+  resetPassword: async (payload) => {
+    const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
   getUsers: async () => {
     const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",
@@ -48,6 +75,15 @@ const API = {
       body: JSON.stringify(userData),
     });
 
+    return handleResponse(response);
+  },
+
+  updateUserRole: async (userId, role) => {
+    const response = await fetch(`${BASE_URL}/users/${userId}/role`, {
+      method: "PUT",
+      headers: getAuthHeader(),
+      body: JSON.stringify({ role }),
+    });
     return handleResponse(response);
   },
 

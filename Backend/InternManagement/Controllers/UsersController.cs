@@ -67,6 +67,13 @@ public sealed class UsersController : ControllerBase
             command.Parameters.AddWithValue("@passwordHash", passwords.Hash(request.Password));
             command.Parameters.AddWithValue("@role", role);
             await command.ExecuteNonQueryAsync(cancellationToken);
+            if (role == "INTERN")
+            {
+                await using var link = connection.CreateCommand();
+                link.CommandText = "UPDATE dbo.Interns SET UserId=(SELECT Id FROM dbo.Users WHERE Email=@email AND Role='INTERN') WHERE Email=@email AND UserId IS NULL";
+                link.Parameters.AddWithValue("@email", request.Email.Trim());
+                await link.ExecuteNonQueryAsync(cancellationToken);
+            }
             return Ok(new { message = "Tạo tài khoản thành công." });
         }
         catch (SqlException error) when (error.Number is 2601 or 2627)
@@ -103,4 +110,27 @@ public sealed class UsersController : ControllerBase
             ? null
             : StatusCode(StatusCodes.Status403Forbidden, new { message = "Vai trò hiện tại không có quyền quản lý tài khoản." });
     }
+
+    [HttpPut("{id:int}/role")]
+    public async Task<IActionResult> UpdateRole(int id, UpdateUserRoleRequest request, CancellationToken cancellationToken)
+    {
+        var authorizationFailure = AuthorizeUserManagement(out var currentUser);
+        if (authorizationFailure is not null) return authorizationFailure;
+        var role = request.Role?.Trim().ToUpperInvariant();
+        if (role is not ("HR" or "MENTOR" or "INTERN"))
+            return BadRequest(new { message = "Chỉ có thể phân quyền tài khoản thành HR, Mentor hoặc Intern." });
+        if (currentUser!.Id == id)
+            return BadRequest(new { message = "Không thể thay đổi vai trò của tài khoản Admin đang đăng nhập." });
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE dbo.Users SET Role=@role WHERE Id=@id AND Role<>'ADMIN'";
+        command.Parameters.AddWithValue("@role", role); command.Parameters.AddWithValue("@id", id);
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 0
+            ? NotFound(new { message = "Không tìm thấy tài khoản có thể phân quyền." })
+            : Ok(new { message = "Đã cập nhật vai trò. Người dùng cần đăng nhập lại để nhận quyền mới." });
+    }
 }
+
+public sealed record UpdateUserRoleRequest(string? Role);

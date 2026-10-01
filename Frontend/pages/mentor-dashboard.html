@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Khu vực Mentor | Intern Management</title>
+  <link rel="stylesheet" href="../css/mentor.css">
+</head>
+<body data-required-roles="MENTOR" data-denied-redirect="role-dashboard.html">
+  <div class="mentor-shell">
+    <aside class="mentor-sidebar" id="mentorSidebar">
+      <a class="mentor-brand" href="mentor-dashboard.html"><span class="brand-mark">IM</span><span>Intern<span class="brand-light">Flow</span><small>MENTOR WORKSPACE</small></span></a>
+      <nav id="mentorNav" aria-label="Menu Mentor">
+        <button class="nav-item active" data-page="dashboard"><span>⌂</span>Dashboard</button>
+        <button class="nav-item" data-page="interns"><span>♙</span>Thực tập sinh của tôi</button>
+        <button class="nav-item" data-page="tasks"><span>☷</span>Nhiệm vụ</button>
+        <button class="nav-item" data-page="progress"><span>◴</span>Tiến độ</button>
+        <button class="nav-item" data-page="reports"><span>▤</span>Báo cáo</button>
+        <button class="nav-item" data-page="evaluations"><span>★</span>Đánh giá</button>
+        <button class="nav-item" data-page="schedules"><span>▦</span>Lịch mentoring</button>
+        <button class="nav-item" data-page="feedback"><span>✎</span>Feedback</button>
+        <button class="nav-item" data-page="notifications"><span>♧</span>Thông báo <b id="unreadBadge" hidden></b></button>
+        <button class="nav-item" data-page="profile"><span>◉</span>Hồ sơ cá nhân</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="mentor-mini"><span class="avatar" data-avatar>ME</span><span><strong data-name>Mentor</strong><small data-email></small></span></div><button id="logoutBtn" class="logout-button">⇥ <span>Đăng xuất</span></button></div>
+    </aside>
+    <main class="mentor-main">
+      <header class="mentor-topbar"><button id="mobileMenu" class="mobile-menu" aria-label="Mở menu">☰</button><div class="crumb">InternFlow <span>/</span> <strong id="currentSection">Dashboard</strong></div><div class="top-actions"><button class="icon-button" data-goto="notifications" aria-label="Thông báo">♧<i id="notificationDot" hidden></i></button><div class="top-user"><span class="avatar" data-avatar>ME</span><span><strong data-name>Mentor</strong><small data-role-label>Mentor</small></span></div></div></header>
+      <section id="mentorContent" class="mentor-content" aria-live="polite"><div class="loading-state">Đang tải dữ liệu Mentor...</div></section>
+      <footer class="mentor-footer">Intern Management System <span>·</span> Khu vực Mentor</footer>
+    </main>
+  </div>
+  <dialog id="mentorDialog" class="mentor-dialog"><form method="dialog" class="dialog-close-row"><button aria-label="Đóng">×</button></form><div id="dialogContent"></div></dialog>
+  <div id="mentorToast" class="mentor-toast" role="status" aria-live="polite"></div>
+  <script src="../js/config.js"></script><script src="../js/role-access.js"></script><script src="../js/mentor.js"></script>
+</body>
+</html>

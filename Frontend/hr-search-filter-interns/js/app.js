@@ -19,12 +19,11 @@ const AppState = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  initDropdownOptions();
-  renderApp();
   setupEventListeners();
+  initDropdownOptions().then(renderApp).catch(error => showToast(error.message || "Không tải được danh mục."));
 });
 
-function initDropdownOptions() {
+async function initDropdownOptions() {
   const filterSchool = document.getElementById("filter-school");
   const filterMajor = document.getElementById("filter-major");
   const filterMentor = document.getElementById("filter-mentor");
@@ -60,8 +59,10 @@ function initDropdownOptions() {
     if (editMajor) editMajor.innerHTML += opt;
   });
 
-  MOCK_MENTORS.forEach(m => {
-    const opt = `<option value="${m.name}">${m.name} (${m.role})</option>`;
+  const mentors = await InternService.getMentors();
+  mentors.forEach(m => {
+    const name = typeof m === "string" ? m : m.name;
+    const opt = `<option value="${name}">${name}</option>`;
     if (filterMentor) filterMentor.innerHTML += opt;
     if (modalMentor) modalMentor.innerHTML += opt;
     if (editMentor) editMentor.innerHTML += opt;
@@ -495,13 +496,24 @@ async function handleBatchAction(action) {
   } else if (action === 'email') {
     showToast(`Đang mở giao diện gửi email tới ${ids.length} sinh viên...`);
   } else if (action === 'mentor') {
-    const mentorName = prompt("Nhập tên Mentor cần phân công:", "Trần Văn Minh");
-    if (mentorName) {
-      await InternService.bulkAssignMentor(ids, mentorName.trim());
-      showToast(`Đã gán Mentor ${mentorName} cho ${ids.length} sinh viên!`);
+    const mentors = await InternService.getMentors();
+    if (!mentors.length) {
+      showToast("Chưa có tài khoản Mentor. Hãy nhờ Admin tạo tài khoản Mentor trước.");
+      return;
+    }
+    const promptText = mentors.map((mentor, index) => `${index + 1}. ${mentor.name} · ${mentor.email}`).join("\n");
+    const selection = prompt(`Nhập số thứ tự Mentor muốn phân công:\n${promptText}`);
+    if (selection) {
+      const mentor = mentors[Number(selection) - 1];
+      if (!mentor) {
+        showToast("Số thứ tự Mentor không hợp lệ.");
+        return;
+      }
+      const result = await InternService.bulkAssignMentor(ids, mentor.id);
+      showToast(result.message || `Đã gán ${ids.length} thực tập sinh cho ${mentor.name}.`);
       AppState.selectedIds.clear();
       updateSelectionUI();
-      renderApp();
+      await renderApp();
     }
   }
 }
@@ -580,7 +592,13 @@ async function handleAddInternSubmit(event) {
 }
 
 async function openEditModal(id) {
-  const intern = await InternService.getInternById(id);
+  let intern;
+  try {
+    intern = await InternService.getInternById(id);
+  } catch (error) {
+    showToast(error.message || "Không tải được hồ sơ.");
+    return;
+  }
   if (!intern) return;
 
   document.getElementById("edit-id").value = intern.id;
@@ -605,6 +623,8 @@ function closeEditModal() {
 
 async function handleEditInternSubmit(event) {
   event.preventDefault();
+  const form = event.currentTarget;
+  if (!form.reportValidity()) return;
   const id = document.getElementById("edit-id").value;
   const updatedFields = {
     name: document.getElementById("edit-name").value.trim(),
@@ -620,10 +640,33 @@ async function handleEditInternSubmit(event) {
     gpa: document.getElementById("edit-gpa").value.trim()
   };
 
-  await InternService.updateIntern(id, updatedFields);
-  closeEditModal();
-  showToast(`Đã cập nhật hồ sơ thực tập sinh thành công!`);
-  renderApp();
+  const saveButton = form.querySelector('button[type="submit"]');
+  const originalText = saveButton.textContent;
+  saveButton.disabled = true;
+  saveButton.textContent = "Đang lưu...";
+  try {
+    await InternService.updateIntern(id, updatedFields);
+    closeEditModal();
+    showToast("Cập nhật hồ sơ thành công.");
+    await renderApp();
+  } catch (error) {
+    Object.entries(error.details || {}).forEach(([field, message]) => {
+      const input = document.getElementById(`edit-${field}`);
+      if (!input) return;
+      let errorNode = document.getElementById(`edit-${field}-error`);
+      if (!errorNode) {
+        errorNode = document.createElement("small");
+        errorNode.id = `edit-${field}-error`;
+        errorNode.className = "mt-1 block text-rose-600";
+        input.insertAdjacentElement("afterend", errorNode);
+      }
+      errorNode.textContent = message;
+    });
+    if (!Object.keys(error.details || {}).length) showToast(error.message || "Không thể cập nhật hồ sơ.");
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = originalText;
+  }
 }
 
 async function deleteInternConfirm(id) {

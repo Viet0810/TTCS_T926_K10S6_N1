@@ -94,6 +94,29 @@
           </form>
         </section>
 
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">NHẬP HÀNG LOẠT</span>
+              <h2>Tạo tài khoản thực tập sinh từ Excel</h2>
+              <p>Tải mẫu CSV và nhập trực tiếp, hoặc lưu thành .xlsx. Mỗi thực tập sinh sẽ có tài khoản đăng nhập riêng.</p>
+            </div>
+            <div class="section-icon">XLSX</div>
+          </div>
+          <form id="internImportForm" class="create-user-form" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="internExcelFile">Tệp Excel hoặc CSV (.xlsx, .csv)</label>
+              <input id="internExcelFile" name="file" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required />
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Tạo tài khoản từ Excel</button>
+              <button type="button" id="downloadImportTemplate" class="btn-secondary">Tải tệp mẫu</button>
+            </div>
+          </form>
+          <p id="internImportMessage" role="status" aria-live="polite"></p>
+          <div id="internImportResults"></div>
+        </section>
+
         <!-- USER LIST -->
         <section class="card">
           <div class="section-heading user-list-heading">
