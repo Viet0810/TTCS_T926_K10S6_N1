@@ -7,7 +7,7 @@
 const STORAGE_KEY = "intern_management_data_v1";
 
 const InternService = {
-  USE_API: true, // Kết nối trực tiếp Backend ASP.NET Core & CSDL SQL Server
+  USE_API: false, // Đổi thành true khi muốn kết nối trực tiếp Backend ASP.NET Core
   API_BASE_URL: "http://localhost:5024/api",
 
   initStorage() {
@@ -26,52 +26,20 @@ const InternService = {
     }
   },
 
-  async ensureToken() {
-    let token = localStorage.getItem("token");
-    if (!token) {
-      try {
-        const loginRes = await fetch(`${this.API_BASE_URL}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: "hr.demo", password: "Demo@123456" })
-        });
-        if (loginRes.ok) {
-          const loginData = await loginRes.json();
-          token = loginData.token;
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(loginData.user));
-          localStorage.setItem("role", loginData.user.role);
-        }
-      } catch (e) {
-        // Chế độ ngoại tuyến
-      }
-    }
-    return token;
-  },
-
   async getInterns(filters = {}) {
     if (this.USE_API) {
       try {
-        let token = await this.ensureToken();
         const queryParams = new URLSearchParams();
         if (filters.search) queryParams.append("search", filters.search);
         if (filters.school) queryParams.append("school", filters.school);
         if (filters.major) queryParams.append("major", filters.major);
 
+        const token = localStorage.getItem("token");
         const headers = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const url = `${this.API_BASE_URL}/interns/search?${queryParams.toString()}`;
-        let res = await fetch(url, { headers });
-
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          token = await this.ensureToken();
-          if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-            res = await fetch(url, { headers });
-          }
-        }
+        const res = await fetch(url, { headers });
 
         if (res.ok) {
           const raw = await res.json();
@@ -89,34 +57,33 @@ const InternService = {
 
   adaptApiData(rawList, filters = {}) {
     return rawList
+      .filter(item => {
+        if (filters.status && item.status && item.status !== filters.status) return false;
+        if (filters.batch && item.batch && item.batch !== filters.batch) return false;
+        if (filters.mentor && item.mentor && item.mentor !== filters.mentor) return false;
+        return true;
+      })
       .map((item, idx) => {
-        const mockItem = INITIAL_INTERNS.find(m => m.email === item.email || m.id === item.id);
         const matchedSchool = MOCK_UNIVERSITIES.find(u => u.name === item.school);
-        const schoolShort = matchedSchool ? matchedSchool.shortName : (mockItem?.schoolShort || item.schoolShort || "DH");
+        const schoolShort = matchedSchool ? matchedSchool.shortName : (item.schoolShort || "DH");
         return {
           id: item.id,
           name: item.fullName || item.name,
-          mssv: item.studentCode || mockItem?.mssv || item.mssv || `SV2024${String(item.id).padStart(4, '0')}`,
+          mssv: item.studentCode || item.mssv || `SV2024${String(item.id).padStart(4, '0')}`,
           email: item.email,
           phone: item.phone,
           school: item.school,
           schoolShort,
           major: item.major,
-          role: item.role || mockItem?.role || "Thực tập sinh",
-          batch: item.batch || mockItem?.batch || "Đợt 1 - 2026",
-          mentor: item.mentor || mockItem?.mentor || "Chưa phân công",
-          status: item.status || mockItem?.status || "Đang thực tập",
-          progress: item.progress ?? mockItem?.progress ?? 65,
-          gpa: item.gpa || mockItem?.gpa || "3.20",
-          avatar: item.avatar || mockItem?.avatar || `https://images.unsplash.com/photo-${1534528741775 + (idx % 10) * 1000}?w=150&auto=format&fit=crop&q=80`,
+          role: item.role || "Thực tập sinh",
+          batch: item.batch || "Đợt 1 - 2026",
+          mentor: item.mentor || "Chưa phân công",
+          status: item.status || "Đang thực tập",
+          progress: item.progress ?? 65,
+          gpa: item.gpa || "3.20",
+          avatar: item.avatar || `https://images.unsplash.com/photo-${1534528741775 + (idx % 10) * 1000}-53994a69daeb?w=150&auto=format&fit=crop&q=80`,
           createdAt: item.createdAt || new Date().toISOString()
         };
-      })
-      .filter(item => {
-        if (filters.status && item.status !== filters.status) return false;
-        if (filters.batch && item.batch !== filters.batch) return false;
-        if (filters.mentor && item.mentor !== filters.mentor) return false;
-        return true;
       });
   },
 
