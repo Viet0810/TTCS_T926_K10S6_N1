@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo cáo chuyên cần & Điểm danh | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/attendance-report.css">
+</head>
+<body>
+<div class="dashboard">
+  <header class="dashboard-header">
+    <div class="dashboard-brand">
+      <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
+      <div class="dashboard-title">
+        <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+        <h1>Báo cáo chuyên cần & Nghỉ phép</h1>
+      </div>
+    </div>
+    <div class="dashboard-session">
+      <span id="roleBadge" class="badge hr">HR</span>
+      <button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button>
+    </div>
+  </header>
+
+  <nav class="role-menu" aria-label="Điều hướng chính">
+    <a href="dashboard.html">Bảng điều khiển</a>
+    <a href="intern-manage.html">Quản lý thực tập sinh</a>
+    <a href="hr-search-filter.html">Tìm kiếm & Lọc</a>
+    <a href="attendance-report.html" aria-current="page">Báo cáo chuyên cần</a>
+    <a href="profile.html">Hồ sơ cá nhân</a>
+  </nav>
+
+  <main class="dashboard-main">
+    <!-- Thống kê tổng quan KPI Chuyên cần -->
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <span class="section-label">TỔNG QUAN CHUYÊN CẦN</span>
+          <h2>Chỉ số theo dõi đi làm & nghỉ phép</h2>
+          <p>Dữ liệu tổng hợp theo khoảng thời gian và tiêu chí lọc hiện tại.</p>
+        </div>
+      </div>
+      <div class="attendance-summary">
+        <div>
+          <span>Tổng ca ghi nhận</span>
+          <strong id="totalShiftsCount">—</strong>
+          <small>Số lượt điểm danh</small>
+        </div>
+        <div>
+          <span>Tỷ lệ chuyên cần</span>
+          <strong id="attendanceRate">—</strong>
+          <small>Ca đi làm đúng giờ</small>
+        </div>
+        <div>
+          <span>Đi muộn / Về sớm</span>
+          <strong id="lateEarlyCount">—</strong>
+          <small>Cần theo dõi sát</small>
+        </div>
+        <div>
+          <span>Nghỉ phép</span>
+          <strong id="approvedLeaveCount">—</strong>
+          <small>Có phép / Không phép</small>
+        </div>
+      </div>
+
+      <!-- Bộ lọc Báo cáo theo Thực tập sinh & Thời gian (K10S6N1-92) -->
+      <form id="filterForm" class="filter-card">
+        <div class="attendance-filters">
+          <div class="form-group">
+            <label for="internFilter">Thực tập sinh</label>
+            <select id="internFilter">
+              <option value="">Đang tải danh sách…</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="startDate">Khoảng thời gian (Từ ngày - Đến ngày)</label>
+            <div class="date-range-group">
+              <input type="date" id="startDate">
+              <span class="date-separator">→</span>
+              <input type="date" id="endDate">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="statusFilter">Trạng thái chuyên cần</label>
+            <select id="statusFilter">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ON_TIME">Đúng giờ (Có mặt)</option>
+              <option value="LATE">Đi muộn</option>
+              <option value="EARLY">Về sớm</option>
+              <option value="LEAVE_APPROVED">Nghỉ có phép</option>
+              <option value="ABSENT">Nghỉ không phép</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button type="submit" class="btn-primary">Áp dụng lọc</button>
+            <button type="reset" class="btn-secondary">Đặt lại</button>
+          </div>
+        </div>
+
+        <!-- Quick Date Presets -->
+        <div class="filter-presets">
+          <span class="filter-presets-label">Khoảng nhanh:</span>
+          <button type="button" class="preset-btn active" data-preset="THIS_MONTH">Tháng này</button>
+          <button type="button" class="preset-btn" data-preset="THIS_WEEK">Tuần này</button>
+          <button type="button" class="preset-btn" data-preset="TODAY">Hôm nay</button>
+          <button type="button" class="preset-btn" data-preset="LAST_MONTH">Tháng trước</button>
+          <button type="button" class="preset-btn" data-preset="ALL">Tất cả thời gian</button>
+
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+            <label for="keywordInput" class="filter-presets-label" style="margin: 0;">Tìm nhanh:</label>
+            <input type="search" id="keywordInput" placeholder="Tên, MSSV, bộ phận…" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; width: 170px;">
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Bảng Báo cáo Chi tiết -->
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <span class="section-label">BẢNG DỮ LIỆU</span>
+          <h2>Chi tiết ca làm việc & Chuyên cần</h2>
+          <p id="reportCount" aria-live="polite">Đang tải dữ liệu điểm danh…</p>
+        </div>
+        <button id="exportBtn" type="button" class="btn-secondary">
+          ⬇ Xuất file CSV / Excel
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Mã sinh viên</th>
+              <th>Họ và tên &amp; Vị trí</th>
+              <th>Giờ vào</th>
+              <th>Giờ ra</th>
+              <th>Thời lượng</th>
+              <th>Trạng thái</th>
+              <th>Ghi chú / Lý do</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody">
+            <tr>
+              <td colspan="9" class="empty-state">Đang tải báo cáo…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+</div>
+
+<!-- Modal Chi tiết Ca làm & Đơn nghỉ phép -->
+<dialog id="attendanceDialog" class="attendance-dialog" aria-labelledby="dialogTitle">
+  <div class="dialog-header">
+    <div>
+      <span class="dialog-label">CHI TIẾT ĐIỂM DANH</span>
+      <h3 id="dialogTitle">Thông tin ca làm việc</h3>
+    </div>
+    <button type="button" id="closeDialogBtn" class="btn-secondary" style="padding: 2px 8px; font-size: 16px;">✕</button>
+  </div>
+
+  <div class="dialog-grid">
+    <div>
+      <span class="dialog-label">Họ và tên</span>
+      <div class="dialog-value" id="modalInternName">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Mã sinh viên</span>
+      <div class="dialog-value" id="modalMssv">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Đơn vị / Dự án</span>
+      <div class="dialog-value" id="modalDepartment">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Ngày ghi nhận</span>
+      <div class="dialog-value" id="modalDate">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Giờ vào</span>
+      <div class="dialog-value" id="modalCheckIn">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Giờ ra</span>
+      <div class="dialog-value" id="modalCheckOut">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Tổng giờ làm việc</span>
+      <div class="dialog-value" id="modalHours">—</div>
+    </div>
+    <div>
+      <span class="dialog-label">Trạng thái</span>
+      <div style="margin-top: 3px;">
+        <span id="modalStatus" class="status-badge status-ontime">Đúng giờ</span>
+      </div>
+    </div>
+    <div class="dialog-grid-full">
+      <span class="dialog-label">Ghi chú / Lý do giải trình</span>
+      <p id="modalNote">—</p>
+    </div>
+    <div class="dialog-grid-full">
+      <span class="dialog-label">Người phê duyệt / Xác nhận</span>
+      <p id="modalApprover">—</p>
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button type="button" id="closeDialogFooterBtn" class="btn-primary">Đóng cửa sổ</button>
+  </div>
+</dialog>
+
+<script src="../js/api.js"></script>
+<script src="../js/attendance-report-service.js"></script>
+<script src="../js/attendance-report.js"></script>
+</body>
+</html>

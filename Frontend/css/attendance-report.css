@@ -1,0 +1,323 @@
+/* attendance-report.css: Phong cách chuyên dụng cho Báo cáo chuyên cần & Nghỉ phép */
+
+.attendance-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 24px;
+}
+
+.attendance-summary > div {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--input);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.attendance-summary > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(36, 65, 111, 0.06);
+}
+
+.attendance-summary span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.attendance-summary strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.attendance-summary small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Bộ lọc Báo cáo theo Thực tập sinh & Thời gian */
+.filter-card {
+  margin-bottom: 0;
+}
+
+.attendance-filters {
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr 1.2fr auto;
+  align-items: end;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.date-range-group {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-separator {
+  color: var(--muted);
+  font-weight: 600;
+  text-align: center;
+  margin-top: 24px;
+}
+
+.filter-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+
+.filter-presets-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.preset-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+  background: var(--input);
+  border-color: #9bb9fb;
+  color: var(--primary);
+}
+
+.preset-btn.active {
+  background: #e9effd;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-actions button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+/* Badge trạng thái chuyên cần */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-ontime {
+  background: #e6f7ed;
+  color: #107c41;
+}
+
+.status-ontime::before {
+  background: #107c41;
+}
+
+.status-late {
+  background: #fef4e5;
+  color: #b25e02;
+}
+
+.status-late::before {
+  background: #b25e02;
+}
+
+.status-early {
+  background: #fff0eb;
+  color: #c43806;
+}
+
+.status-early::before {
+  background: #c43806;
+}
+
+.status-leave-approved {
+  background: #eff3fe;
+  color: #2b57d0;
+}
+
+.status-leave-approved::before {
+  background: #2b57d0;
+}
+
+.status-absent {
+  background: #fde8e8;
+  color: #bc1c1c;
+}
+
+.status-absent::before {
+  background: #bc1c1c;
+}
+
+/* Chi tiết bảng */
+.user-table td {
+  vertical-align: middle;
+}
+
+.intern-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.work-hours {
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-detail {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--primary);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.btn-detail:hover {
+  background: #eff3fe;
+  border-color: #9bb9fb;
+}
+
+/* Dialog chi tiết ca làm / đơn xin nghỉ */
+.attendance-dialog {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 540px;
+  width: 90%;
+  background: var(--surface);
+  box-shadow: 0 20px 45px rgba(16, 33, 63, 0.18);
+}
+
+.attendance-dialog::backdrop {
+  background: rgba(16, 33, 63, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.dialog-grid-full {
+  grid-column: 1 / -1;
+  background: var(--input);
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.dialog-grid-full p {
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+
+.dialog-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dialog-value {
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 3px;
+}
+
+.dialog-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .attendance-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .attendance-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .attendance-summary {
+    grid-template-columns: 1fr;
+  }
+  .attendance-filters {
+    grid-template-columns: 1fr;
+  }
+  .date-range-group {
+    grid-template-columns: 1fr;
+  }
+  .date-separator {
+    display: none;
+  }
+  .dialog-grid {
+    grid-template-columns: 1fr;
+  }
+}
