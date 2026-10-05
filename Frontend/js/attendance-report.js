@@ -211,13 +211,17 @@ function renderStats(stats) {
   const rateEl = document.getElementById("attendanceRate");
   const lateEarlyEl = document.getElementById("lateEarlyCount");
   const leaveEl = document.getElementById("approvedLeaveCount");
+  const leaveSubEl = document.getElementById("approvedLeaveSub");
   const resultCountEl = document.getElementById("reportCount");
   const exportBtn = document.getElementById("exportBtn");
 
   if (totalEl) totalEl.textContent = stats.totalShifts;
   if (rateEl) rateEl.textContent = stats.attendanceRate;
   if (lateEarlyEl) lateEarlyEl.textContent = stats.lateOrEarlyCount;
-  if (leaveEl) leaveEl.textContent = `${stats.approvedLeaveCount} có phép / ${stats.absentCount} không phép`;
+  if (leaveEl) leaveEl.textContent = stats.approvedLeaveCount;
+  if (leaveSubEl) {
+    leaveSubEl.textContent = `${stats.approvedLeaveCount} có phép • ${stats.absentCount} không phép`;
+  }
 
   if (resultCountEl) {
     resultCountEl.textContent = `Hiển thị ${stats.totalShifts} bản ghi chuyên cần`;

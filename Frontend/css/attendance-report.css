@@ -1,5 +1,53 @@
 /* attendance-report.css: Phong cách chuyên dụng cho Báo cáo chuyên cần & Nghỉ phép */
 
+/* Logo IM nguyên bản hình vuông cân đối */
+.dashboard-logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #3568e8, #4e84ec);
+  font: 800 17px "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+  box-shadow: 0 6px 16px rgba(53, 104, 232, 0.22);
+}
+
+/* Tinh chỉnh typography phần đầu: Header & Tiêu đề vừa vặn, không quá to/đậm */
+.dashboard-title span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.dashboard-title h1 {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.section-heading h2 {
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.section-heading p {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Thống kê chuyên cần KPI cards */
 .attendance-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -8,7 +56,7 @@
 }
 
 .attendance-summary > div {
-  padding: 18px 20px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--input);
@@ -23,16 +71,16 @@
 .attendance-summary span {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .attendance-summary strong {
   display: block;
-  margin-top: 8px;
-  font-size: 26px;
-  font-weight: 800;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--ink);
 }
 
