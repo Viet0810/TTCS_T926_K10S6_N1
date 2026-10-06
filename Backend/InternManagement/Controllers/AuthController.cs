@@ -34,6 +34,20 @@ public sealed class AuthController : ControllerBase
         this.logger = logger;
     }
 
+    [HttpPost("register")]
+    public async Task<ActionResult<UserResponse>> Register(RegisterInternRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await accounts.RegisterInternAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, user);
+        }
+        catch (SqlException error) when (error.Number is 2601 or 2627)
+        {
+            return Conflict(new { message = "Email đã được sử dụng cho tài khoản hoặc hồ sơ. Vui lòng đăng nhập hoặc liên hệ HR." });
+        }
+    }
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {

@@ -78,6 +78,34 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
         return MapUser(reader);
     }
 
+    public async Task<UserResponse> RegisterInternAsync(RegisterInternRequest request, CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO dbo.Users (Username, FullName, Email, PasswordHash, Role)
+            OUTPUT INSERTED.Id
+            VALUES (@email, @name, @email, @hash, 'INTERN');
+            """;
+        command.Parameters.Add("@email", SqlDbType.NVarChar, 100).Value = request.Email.Trim();
+        command.Parameters.Add("@name", SqlDbType.NVarChar, 200).Value = request.FullName.Trim();
+        command.Parameters.Add("@hash", SqlDbType.NVarChar, 512).Value = passwords.Hash(request.Password);
+        var id = (int)(await command.ExecuteScalarAsync(cancellationToken))!;
+        command.CommandText = """
+            INSERT INTO dbo.Interns (FullName, Email, Phone, School, Major)
+            VALUES (@name, @email, @phone, @school, @major);
+            """;
+        command.Parameters.Add("@phone", SqlDbType.NVarChar, 20).Value = request.Phone;
+        command.Parameters.Add("@school", SqlDbType.NVarChar, 200).Value = request.School.Trim();
+        command.Parameters.Add("@major", SqlDbType.NVarChar, 200).Value = request.Major.Trim();
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new UserResponse(id, request.Email.Trim(), request.FullName.Trim(), request.Email.Trim(), "INTERN");
+    }
+
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
