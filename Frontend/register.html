@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Đăng ký tài khoản thực tập sinh</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/register.css">
+</head>
+<body class="auth-page register-page">
+  <main class="auth-shell register-shell">
+    <aside class="auth-brand-panel register-brand" aria-label="Hệ thống quản lý thực tập sinh">
+      <a href="index.html" class="auth-brand"><span class="auth-logo"><img src="assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></span></a>
+      <div class="auth-brand-content">
+        <span class="auth-overline">BẮT ĐẦU HÀNH TRÌNH CỦA BẠN</span>
+        <h2>Một khởi đầu mới.<br>Một bước tiến xa.</h2>
+        <p>Tạo tài khoản để nộp hồ sơ trực tuyến và chuẩn bị cho hành trình thực tập của bạn.</p>
+        <div class="register-journey" aria-hidden="true">
+          <div><p><strong>Tạo tài khoản</strong>Thông tin cơ bản của bạn</p></div>
+          <div><p><strong>Đăng nhập</strong>Truy cập hồ sơ cá nhân</p></div>
+          <div><p><strong>Nộp hồ sơ</strong>Gửi CV và đơn xin thực tập</p></div>
+        </div>
+      </div>
+      <p class="auth-brand-footer">HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</p>
+    </aside>
+    <section class="auth-form-panel register-panel" aria-labelledby="registerTitle">
+      <a href="index.html" class="register-back"><span aria-hidden="true">←</span> Quay lại đăng nhập</a>
+      <div class="auth-form-content">
+        <span class="auth-form-kicker">TÀI KHOẢN THỰC TẬP SINH</span>
+        <h1 id="registerTitle">Đăng ký tài khoản<br>thực tập sinh</h1>
+        <p class="auth-description">Điền thông tin của bạn để tạo tài khoản. Sau khi đăng nhập, bạn có thể nộp CV và đơn xin thực tập.</p>
+        <p id="registerMessage" class="auth-message" role="status" aria-live="polite" tabindex="-1" hidden></p>
+        <form id="registerForm" class="auth-form" aria-labelledby="registerTitle" novalidate>
+          <div class="auth-field"><label for="fullName">Họ và tên</label><input id="fullName" name="fullName" autocomplete="name" required maxlength="200" placeholder="Nhập họ và tên" aria-describedby="fullNameError"><span id="fullNameError" class="register-error" hidden></span></div>
+          <div class="auth-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="100" placeholder="Nhập Gmail, ví dụ: example@gmail.com" aria-describedby="emailError"><span id="emailError" class="register-error" hidden></span></div>
+          <div class="auth-field"><label for="password">Mật khẩu</label>
+            <div class="password-field"><input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="200" placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt" aria-describedby="passwordError">
+              <button type="button" class="password-toggle" data-password-toggle="password" aria-controls="password" aria-label="Hiển thị mật khẩu" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="m4 4 16 16"/></svg></button>
+            </div><span id="passwordError" class="register-error" hidden></span>
+          </div>
+          <div class="auth-field"><label for="phone">Số điện thoại</label><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" required pattern="0[35789][0-9]{8}" maxlength="10" placeholder="Nhập 10 chữ số, ví dụ: 0912345678" aria-describedby="phoneError"><span id="phoneError" class="register-error" hidden></span></div>
+          <div class="register-field-row">
+            <div class="auth-field"><label for="school">Trường</label><input id="school" name="school" required maxlength="200" placeholder="Tên trường của bạn" aria-describedby="schoolError"><span id="schoolError" class="register-error" hidden></span></div>
+            <div class="auth-field"><label for="major">Chuyên ngành</label><input id="major" name="major" required maxlength="200" placeholder="Ngành bạn đang học" aria-describedby="majorError"><span id="majorError" class="register-error" hidden></span></div>
+          </div>
+          <button type="submit" class="auth-submit"><span class="register-spinner" aria-hidden="true" hidden></span><span id="registerSubmitLabel">Đăng ký tài khoản</span><span class="register-submit-arrow" aria-hidden="true">→</span></button>
+          <p class="register-login">Đã có tài khoản? <a href="index.html">Đăng nhập</a></p>
+        </form>
+        <a id="registeredLogin" class="auth-submit register-success-link" href="index.html" hidden>Đăng nhập để nộp hồ sơ <span aria-hidden="true">→</span></a>
+      </div>
+      <p class="auth-copyright">© 2026 Hệ thống quản lý thực tập sinh</p>
+    </section>
+  </main>
+  <script src="js/api.js"></script>
+  <script src="js/auth-ui.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>

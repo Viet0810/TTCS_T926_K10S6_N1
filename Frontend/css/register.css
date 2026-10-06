@@ -1,0 +1,44 @@
+/* Registration-only layout; shared authentication styles and tokens stay intact. */
+.register-page { padding: 32px 24px; }
+.register-shell { width: min(1120px, 100%); grid-template-columns: .82fr 1.18fr; }
+.register-brand { padding: 36px; }
+.register-brand .auth-brand-content { justify-content: flex-start; padding-top: 76px; }
+.register-brand h2 { margin: 18px 0 20px; font-size: clamp(30px, 3vw, 39px); line-height: 1.25; letter-spacing: -.035em; }
+.register-journey { display: grid; gap: 28px; margin-top: 46px; }
+.register-journey > div { display: flex; gap: 16px; align-items: center; }
+.register-journey p { margin: 0; color: #bfd2ef; font-size: 12px; line-height: 1.7; }
+.register-journey strong { display: block; color: white; font-size: 14px; font-weight: 600; }
+.register-panel { min-width: 0; padding: 30px 48px 24px; }
+.register-back { align-self: flex-start; display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; text-decoration: none; }
+.register-back:hover { color: var(--primary); }
+.register-panel .auth-form-content { padding: 30px 0 10px; justify-content: flex-start; }
+.register-panel h1 { margin: 0 0 14px; font-size: clamp(25px, 2.8vw, 32px); line-height: 1.25; letter-spacing: -.025em; }
+.register-panel .auth-description { margin-bottom: 24px; font-size: 13px; }
+.register-panel .auth-form { gap: 17px; }
+.register-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.register-field-row > div { min-width: 0; }
+.register-panel .auth-field { gap: 7px; }
+.register-error { color: #a6364b; font-size: 12px; line-height: 1.5; }
+.register-panel input[aria-invalid="true"] { border-color: var(--danger); background: #fffafb; }
+.register-panel input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px #d957681a; }
+.register-panel .auth-message { margin: 0 0 20px; }
+.register-panel .auth-submit { margin-top: 6px; }
+.register-login { margin: 0; text-align: center; color: var(--muted); font-size: 13px; }
+.register-login a { font-weight: 600; text-decoration: none; }
+.register-login a:hover { text-decoration: underline; }
+.register-spinner { width: 17px; height: 17px; border: 2px solid #ffffff60; border-top-color: white; border-radius: 50%; animation: register-spin .8s linear infinite; }
+.register-panel [aria-busy="true"] .register-submit-arrow { display: none; }
+.register-success-link { text-decoration: none; }
+@keyframes register-spin { to { transform: rotate(360deg); } }
+@media (max-width: 1000px) { .register-panel { padding: 30px; } .register-brand { padding: 30px; } }
+@media (max-width: 700px) {
+  .register-page { padding: 20px 16px; }
+  .register-shell { max-width: 540px; grid-template-columns: 1fr; }
+  .register-panel { padding: 26px; }
+  .register-panel .auth-form-content { padding-top: 26px; }
+}
+@media (max-width: 420px) {
+  .register-page { padding: 12px; }
+  .register-panel { padding: 24px 20px; }
+  .register-field-row { grid-template-columns: 1fr; gap: 17px; }
+}
