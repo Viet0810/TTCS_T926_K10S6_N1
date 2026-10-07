@@ -1,27 +1,31 @@
 document.addEventListener("DOMContentLoaded", function () {
+  const API_URL =
+    "http://localhost:5024/api/program-schedule";
 
   // =====================================================
-  // THÊM MENU "QUẢN LÝ CHƯƠNG TRÌNH" CHO HR
+  // MENU QUẢN LÝ CHƯƠNG TRÌNH CHO HR
   // =====================================================
 
-  const roleMenu = document.getElementById("roleMenu");
-  const roleBadge = document.getElementById("roleBadge");
+  const roleMenu =
+    document.getElementById("roleMenu");
+
+  const roleBadge =
+    document.getElementById("roleBadge");
 
   function addProgramSettingMenu() {
     if (!roleMenu || !roleBadge) {
       return;
     }
 
-    const role = roleBadge.textContent
-      .trim()
-      .toUpperCase();
+    const role =
+      roleBadge.textContent
+        .trim()
+        .toUpperCase();
 
-    // Chỉ HR mới được nhìn thấy chức năng này
     if (role !== "HR") {
       return;
     }
 
-    // Không thêm trùng menu
     if (
       document.getElementById(
         "programSettingMenuLink"
@@ -30,89 +34,107 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const link = document.createElement("a");
+    const link =
+      document.createElement("a");
 
-    link.id = "programSettingMenuLink";
-    link.href = "program-setting.html";
-    link.textContent = "Quản lý chương trình";
+    link.id =
+      "programSettingMenuLink";
+
+    link.href =
+      "program-setting.html";
+
+    link.textContent =
+      "Quản lý chương trình";
 
     roleMenu.appendChild(link);
   }
 
-  // Thử thêm ngay
   addProgramSettingMenu();
 
-  // dashboard.js có thể cập nhật role sau khi gọi API
   if (roleBadge) {
-    const observer = new MutationObserver(function () {
-      addProgramSettingMenu();
-    });
+    const observer =
+      new MutationObserver(function () {
+        addProgramSettingMenu();
+      });
 
-    observer.observe(roleBadge, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    observer.observe(
+      roleBadge,
+      {
+        childList: true,
+        subtree: true,
+        characterData: true
+      }
+    );
   }
 
-
   // =====================================================
-  // FORM QUẢN LÝ THỜI GIAN
+  // FORM
   // =====================================================
 
-  const form = document.getElementById("programDateForm");
+  const form =
+    document.getElementById(
+      "programDateForm"
+    );
 
-  /*
-   * dashboard.html không có form.
-   * Khi đó phần menu phía trên vẫn chạy,
-   * còn phần xử lý ngày sẽ dừng ở đây.
-   */
   if (!form) {
     return;
   }
 
-
   const startDateInput =
-    document.getElementById("programStartDate");
+    document.getElementById(
+      "programStartDate"
+    );
 
   const endDateInput =
-    document.getElementById("programEndDate");
+    document.getElementById(
+      "programEndDate"
+    );
 
   const durationElement =
-    document.getElementById("programDuration");
+    document.getElementById(
+      "programDuration"
+    );
 
   const statusElement =
-    document.getElementById("programStatus");
+    document.getElementById(
+      "programStatus"
+    );
 
   const messageElement =
-    document.getElementById("programDateMessage");
+    document.getElementById(
+      "programDateMessage"
+    );
 
   const saveButton =
-    document.getElementById("programSaveBtn");
+    document.getElementById(
+      "programSaveBtn"
+    );
 
   const cancelButton =
-    document.getElementById("programCancelBtn");
+    document.getElementById(
+      "programCancelBtn"
+    );
 
   const historyBody =
-    document.getElementById("programHistoryBody");
+    document.getElementById(
+      "programHistoryBody"
+    );
 
   const emptyHistory =
-    document.getElementById("emptyProgramHistory");
-
-
-  const HISTORY_KEY =
-    "internshipProgramHistory";
-
-  const OLD_KEY =
-    "internshipProgramTime";
-
+    document.getElementById(
+      "emptyProgramHistory"
+    );
 
   // =====================================================
   // THÔNG BÁO
   // =====================================================
 
-  function showMessage(message, type) {
-    messageElement.textContent = message;
+  function showMessage(
+    message,
+    type
+  ) {
+    messageElement.textContent =
+      message;
 
     messageElement.className =
       `program-date-message ${type}`;
@@ -125,21 +147,27 @@ document.addEventListener("DOMContentLoaded", function () {
       "program-date-message";
   }
 
-
   // =====================================================
-  // TÍNH SỐ NGÀY
+  // XỬ LÝ NGÀY
   // =====================================================
 
-  function getDuration(startValue, endValue) {
+  function getDuration(
+    startValue,
+    endValue
+  ) {
     if (!startValue || !endValue) {
       return 0;
     }
 
     const start =
-      new Date(startValue + "T00:00:00");
+      new Date(
+        startValue + "T00:00:00"
+      );
 
     const end =
-      new Date(endValue + "T00:00:00");
+      new Date(
+        endValue + "T00:00:00"
+      );
 
     if (end < start) {
       return 0;
@@ -147,18 +175,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     return (
       Math.floor(
-        (end.getTime() - start.getTime()) /
+        (
+          end.getTime() -
+          start.getTime()
+        ) /
         (1000 * 60 * 60 * 24)
       ) + 1
     );
   }
 
-
   function calculateDuration() {
-    const days = getDuration(
-      startDateInput.value,
-      endDateInput.value
-    );
+    const days =
+      getDuration(
+        startDateInput.value,
+        endDateInput.value
+      );
 
     durationElement.textContent =
       days > 0
@@ -166,16 +197,16 @@ document.addEventListener("DOMContentLoaded", function () {
         : "Chưa xác định";
   }
 
-
   // =====================================================
-  // TRẠNG THÁI CHƯƠNG TRÌNH
+  // TRẠNG THÁI
   // =====================================================
 
   function getProgramStatus(
     startValue,
     endValue
   ) {
-    const today = new Date();
+    const today =
+      new Date();
 
     today.setHours(
       0,
@@ -194,29 +225,25 @@ document.addEventListener("DOMContentLoaded", function () {
         endValue + "T23:59:59"
       );
 
-
     if (today < start) {
       return {
         text: "Sắp diễn ra",
-        className: "history-upcoming"
+        css: "history-upcoming"
       };
     }
-
 
     if (today > end) {
       return {
         text: "Đã kết thúc",
-        className: "history-ended"
+        css: "history-ended"
       };
     }
 
-
     return {
       text: "Đang diễn ra",
-      className: "history-active"
+      css: "history-active"
     };
   }
-
 
   function updateCurrentStatus() {
     if (
@@ -232,46 +259,39 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-
     const status =
       getProgramStatus(
         startDateInput.value,
         endDateInput.value
       );
 
-
     statusElement.textContent =
       status.text;
 
-
     if (
-      status.text === "Sắp diễn ra"
+      status.text ===
+      "Sắp diễn ra"
     ) {
       statusElement.className =
         "program-status status-upcoming";
-    }
-
-    else if (
-      status.text === "Đang diễn ra"
+    } else if (
+      status.text ===
+      "Đang diễn ra"
     ) {
       statusElement.className =
         "program-status status-active";
-    }
-
-    else {
+    } else {
       statusElement.className =
         "program-status status-ended";
     }
   }
 
-
   // =====================================================
-  // KIỂM TRA DỮ LIỆU
+  // VALIDATE
   // =====================================================
 
   function validateDates() {
     clearMessage();
-
 
     if (!startDateInput.value) {
       showMessage(
@@ -284,7 +304,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
-
     if (!endDateInput.value) {
       showMessage(
         "Vui lòng chọn ngày kết thúc.",
@@ -296,13 +315,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
-
     if (
       endDateInput.value <
       startDateInput.value
     ) {
       showMessage(
-        "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.",
+        "Ngày kết thúc không được trước ngày bắt đầu.",
         "error"
       );
 
@@ -311,13 +329,11 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
-
     return true;
   }
 
-
   // =====================================================
-  // FORMAT NGÀY
+  // FORMAT DATE
   // =====================================================
 
   function formatDate(dateValue) {
@@ -325,177 +341,85 @@ document.addEventListener("DOMContentLoaded", function () {
       return "";
     }
 
-    const [year, month, day] =
-      dateValue.split("-");
+    const dateOnly =
+      dateValue.split("T")[0];
+
+    const [
+      year,
+      month,
+      day
+    ] = dateOnly.split("-");
 
     return `${day}/${month}/${year}`;
   }
 
-
-  // =====================================================
-  // LOCAL STORAGE
-  // =====================================================
-
-  function getHistory() {
-    try {
-      const raw =
-        localStorage.getItem(
-          HISTORY_KEY
-        );
-
-      return raw
-        ? JSON.parse(raw)
-        : [];
-
-    } catch (error) {
-
-      console.error(
-        "Lỗi đọc danh sách chương trình:",
-        error
-      );
-
-      return [];
-    }
-  }
-
-
-  function saveHistory(history) {
-    localStorage.setItem(
-      HISTORY_KEY,
-      JSON.stringify(history)
-    );
-  }
-
-
-  // =====================================================
-  // CHUYỂN DỮ LIỆU CŨ
-  // =====================================================
-
-  function migrateOldData() {
-    const oldRaw =
-      localStorage.getItem(
-        OLD_KEY
-      );
-
-
-    if (!oldRaw) {
-      return;
+  function toInputDate(dateValue) {
+    if (!dateValue) {
+      return "";
     }
 
-
-    try {
-      const oldData =
-        JSON.parse(oldRaw);
-
-
-      if (
-        !oldData.startDate ||
-        !oldData.endDate
-      ) {
-        return;
-      }
-
-
-      const history =
-        getHistory();
-
-
-      const alreadyExists =
-        history.some(function (item) {
-          return (
-            item.startDate ===
-              oldData.startDate &&
-            item.endDate ===
-              oldData.endDate
-          );
-        });
-
-
-      if (!alreadyExists) {
-        history.push({
-          startDate:
-            oldData.startDate,
-
-          endDate:
-            oldData.endDate,
-
-          createdAt:
-            new Date().toISOString()
-        });
-
-
-        saveHistory(history);
-      }
-
-
-      localStorage.removeItem(
-        OLD_KEY
-      );
-
-
-    } catch (error) {
-      console.error(
-        "Không thể chuyển dữ liệu cũ:",
-        error
-      );
-    }
+    return dateValue.split("T")[0];
   }
-
 
   // =====================================================
   // HIỂN THỊ DANH SÁCH
   // =====================================================
 
-  function renderHistory() {
-    const history =
-      getHistory();
-
-
+  function renderPrograms(programs) {
     historyBody.innerHTML = "";
 
-
-    if (history.length === 0) {
+    if (
+      !Array.isArray(programs) ||
+      programs.length === 0
+    ) {
       emptyHistory.style.display =
         "block";
 
       return;
     }
 
-
     emptyHistory.style.display =
       "none";
 
-
-    history.forEach(
-      function (item, index) {
-
-        const duration =
-          getDuration(
-            item.startDate,
-            item.endDate
+    programs.forEach(
+      function (program, index) {
+        const startDate =
+          toInputDate(
+            program.startDate
           );
 
+        const endDate =
+          toInputDate(
+            program.endDate
+          );
 
         const status =
           getProgramStatus(
-            item.startDate,
-            item.endDate
+            startDate,
+            endDate
           );
 
+        const duration =
+          program.durationDays ??
+          getDuration(
+            startDate,
+            endDate
+          );
 
         const row =
           document.createElement("tr");
 
-
         row.innerHTML = `
-          <td>${index + 1}</td>
-
           <td>
-            ${formatDate(item.startDate)}
+            ${index + 1}
           </td>
 
           <td>
-            ${formatDate(item.endDate)}
+            ${formatDate(program.startDate)}
+          </td>
+
+          <td>
+            ${formatDate(program.endDate)}
           </td>
 
           <td>
@@ -504,7 +428,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           <td>
             <span
-              class="history-status ${status.className}"
+              class="history-status ${status.css}"
             >
               ${status.text}
             </span>
@@ -514,43 +438,88 @@ document.addEventListener("DOMContentLoaded", function () {
             <button
               type="button"
               class="btn-delete-program"
-              data-index="${index}"
+              data-id="${program.id}"
             >
               Xóa
             </button>
           </td>
         `;
 
-
-        historyBody.appendChild(row);
+        historyBody.appendChild(
+          row
+        );
       }
     );
   }
 
+  // =====================================================
+  // GET DANH SÁCH TỪ BACKEND
+  // =====================================================
+
+  async function loadPrograms() {
+    try {
+      const response =
+        await fetch(
+          API_URL,
+          {
+            method: "GET",
+            headers: {
+              "Accept":
+                "application/json"
+            }
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ||
+          "Không thể tải danh sách chương trình."
+        );
+      }
+
+      renderPrograms(
+        result.data
+      );
+
+    } catch (error) {
+      console.error(
+        "GET program schedules:",
+        error
+      );
+
+      showMessage(
+        error.message ||
+        "Không thể tải dữ liệu chương trình từ máy chủ.",
+        "error"
+      );
+
+      renderPrograms([]);
+    }
+  }
 
   // =====================================================
-  // THAY ĐỔI NGÀY BẮT ĐẦU
+  // CHANGE START DATE
   // =====================================================
 
   startDateInput.addEventListener(
     "change",
     function () {
-
       if (startDateInput.value) {
-
         endDateInput.min =
           startDateInput.value;
-
 
         if (
           endDateInput.value &&
           endDateInput.value <
-          startDateInput.value
+            startDateInput.value
         ) {
-          endDateInput.value = "";
+          endDateInput.value =
+            "";
         }
       }
-
 
       clearMessage();
 
@@ -560,15 +529,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 
-
   // =====================================================
-  // THAY ĐỔI NGÀY KẾT THÚC
+  // CHANGE END DATE
   // =====================================================
 
   endDateInput.addEventListener(
     "change",
     function () {
-
       clearMessage();
 
       calculateDuration();
@@ -577,90 +544,103 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 
-
   // =====================================================
-  // LƯU CHƯƠNG TRÌNH
+  // POST - THÊM CHƯƠNG TRÌNH
   // =====================================================
 
   form.addEventListener(
     "submit",
-    function (event) {
-
+    async function (event) {
       event.preventDefault();
-
 
       if (!validateDates()) {
         return;
       }
 
-
-      saveButton.disabled = true;
+      saveButton.disabled =
+        true;
 
       saveButton.textContent =
         "Đang lưu...";
 
-
       try {
-
-        const history =
-          getHistory();
-
-
-        history.push({
+        const requestData = {
           startDate:
             startDateInput.value,
 
           endDate:
-            endDateInput.value,
+            endDateInput.value
+        };
 
-          createdAt:
-            new Date().toISOString()
-        });
+        const response =
+          await fetch(
+            API_URL,
+            {
+              method: "POST",
 
+              headers: {
+                "Content-Type":
+                  "application/json",
 
-        saveHistory(history);
+                "Accept":
+                  "application/json"
+              },
 
+              body:
+                JSON.stringify(
+                  requestData
+                )
+            }
+          );
 
-        renderHistory();
+        const result =
+          await response.json();
 
+        if (!response.ok) {
+          throw new Error(
+            result.message ||
+            "Không thể lưu thời gian chương trình."
+          );
+        }
 
         showMessage(
+          result.message ||
           "Lưu thời gian chương trình thành công.",
           "success"
         );
 
+        startDateInput.value =
+          "";
 
-        // Xóa dữ liệu form
-        // sau khi lưu thành công
-
-        startDateInput.value = "";
-
-        endDateInput.value = "";
+        endDateInput.value =
+          "";
 
         endDateInput.removeAttribute(
           "min"
         );
 
-
         calculateDuration();
 
         updateCurrentStatus();
 
+        // Load lại toàn bộ danh sách
+        await loadPrograms();
 
       } catch (error) {
-
-        console.error(error);
-
+        console.error(
+          "POST program schedule:",
+          error
+        );
 
         showMessage(
+          error.message ||
           "Không thể lưu thời gian chương trình.",
           "error"
         );
 
-
       } finally {
-
-        saveButton.disabled = false;
+        saveButton.disabled =
+          false;
 
         saveButton.textContent =
           "Lưu thời gian";
@@ -668,6 +648,102 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 
+  // =====================================================
+  // DELETE
+  // =====================================================
+
+  historyBody.addEventListener(
+    "click",
+    async function (event) {
+      const deleteButton =
+        event.target.closest(
+          ".btn-delete-program"
+        );
+
+      if (!deleteButton) {
+        return;
+      }
+
+      const id =
+        deleteButton.dataset.id;
+
+      if (!id) {
+        return;
+      }
+
+      const confirmed =
+        confirm(
+          "Bạn có chắc muốn xóa thời gian chương trình này không?"
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      deleteButton.disabled =
+        true;
+
+      deleteButton.textContent =
+        "Đang xóa...";
+
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/${id}`,
+            {
+              method: "DELETE",
+
+              headers: {
+                "Accept":
+                  "application/json"
+              }
+            }
+          );
+
+        let result = {};
+
+        try {
+          result =
+            await response.json();
+        } catch {
+          result = {};
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            result.message ||
+            "Không thể xóa chương trình."
+          );
+        }
+
+        showMessage(
+          result.message ||
+          "Xóa chương trình thành công.",
+          "success"
+        );
+
+        await loadPrograms();
+
+      } catch (error) {
+        console.error(
+          "DELETE program schedule:",
+          error
+        );
+
+        showMessage(
+          error.message ||
+          "Không thể xóa chương trình.",
+          "error"
+        );
+
+        deleteButton.disabled =
+          false;
+
+        deleteButton.textContent =
+          "Xóa";
+      }
+    }
+  );
 
   // =====================================================
   // HỦY
@@ -676,16 +752,15 @@ document.addEventListener("DOMContentLoaded", function () {
   cancelButton.addEventListener(
     "click",
     function () {
+      startDateInput.value =
+        "";
 
-      startDateInput.value = "";
-
-      endDateInput.value = "";
-
+      endDateInput.value =
+        "";
 
       endDateInput.removeAttribute(
         "min"
       );
-
 
       clearMessage();
 
@@ -695,64 +770,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 
-
-  // =====================================================
-  // XÓA CHƯƠNG TRÌNH TRONG DANH SÁCH
-  // =====================================================
-
-  historyBody.addEventListener(
-    "click",
-    function (event) {
-
-      if (
-        !event.target.classList.contains(
-          "btn-delete-program"
-        )
-      ) {
-        return;
-      }
-
-
-      const index =
-        Number(
-          event.target.dataset.index
-        );
-
-
-      const history =
-        getHistory();
-
-
-      history.splice(
-        index,
-        1
-      );
-
-
-      saveHistory(history);
-
-
-      renderHistory();
-
-
-      showMessage(
-        "Đã xóa chương trình.",
-        "success"
-      );
-    }
-  );
-
-
   // =====================================================
   // KHỞI TẠO
   // =====================================================
-
-  migrateOldData();
 
   calculateDuration();
 
   updateCurrentStatus();
 
-  renderHistory();
-
+  loadPrograms();
 });
