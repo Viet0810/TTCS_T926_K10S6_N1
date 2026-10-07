@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý hợp đồng</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        /* HEADER */
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px #ddd;
+        }
+
+        .header h1 {
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #777;
+        }
+
+        /* THANH CÔNG CỤ */
+        .toolbar {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px #ddd;
+        }
+
+        .search {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            background: white;
+        }
+
+        /* BUTTON */
+        button {
+            border: none;
+            padding: 11px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-blue {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-view {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .btn-view:hover {
+            background: #dbeafe;
+        }
+
+        .btn-confirm {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #15803d;
+        }
+
+        .btn-confirm:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        /* HỢP ĐỒNG */
+        .contract {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px #ddd;
+        }
+
+        .contract-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .contract-title {
+            font-size: 19px;
+            font-weight: bold;
+        }
+
+        .contract-id {
+            color: #2563eb;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        /* TRẠNG THÁI */
+        .status {
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .pending {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+
+        .confirmed {
+            background: #ecfdf5;
+            color: #16a34a;
+        }
+
+        /* THÔNG TIN */
+        .info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            padding: 13px;
+            border-radius: 8px;
+        }
+
+        .info-box span {
+            display: block;
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        /* ACTION */
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #2563eb;
+        }
+
+        .close {
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            background: #eee;
+            font-size: 22px;
+        }
+
+        /* FORM */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #2563eb;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .total {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 17px;
+        }
+
+        .total strong {
+            float: right;
+            color: #2563eb;
+        }
+
+        /* CHI TIẾT */
+        .detail {
+            line-height: 1.8;
+        }
+
+        .detail h3 {
+            margin-top: 15px;
+            color: #2563eb;
+        }
+
+        .detail-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .agree {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        /* MOBILE */
+        @media(max-width: 700px) {
+
+            .toolbar {
+                flex-direction: column;
+            }
+
+            .info {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .contract-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .actions {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <h1>Quản lý hợp đồng</h1>
+
+        <p>
+            Quản lý, tạo và xác nhận hợp đồng thuê xe
+        </p>
+
+    </div>
+
+
+    <!-- TÌM KIẾM -->
+
+    <div class="toolbar">
+
+        <input
+            type="text"
+            id="search"
+            class="search"
+            placeholder="🔍 Tìm kiếm mã hợp đồng, khách hàng..."
+            onkeyup="searchContract()"
+        >
+
+        <select
+            id="statusFilter"
+            onchange="searchContract()">
+
+            <option value="all">
+                Tất cả trạng thái
+            </option>
+
+            <option value="pending">
+                Chờ xác nhận
+            </option>
+
+            <option value="confirmed">
+                Đã xác nhận
+            </option>
+
+        </select>
+
+
+        <button
+            class="btn-blue"
+            onclick="openCreateContract()">
+
+            + Tạo hợp đồng
+
+        </button>
+
+    </div>
+
+
+    <!-- DANH SÁCH HỢP ĐỒNG -->
+
+    <div id="contractList">
+
+
+        <!-- HỢP ĐỒNG 1 -->
+
+        <div
+            class="contract"
+            data-status="pending">
+
+            <div class="contract-top">
+
+                <div>
+
+                    <div class="contract-title">
+                        Hợp đồng thuê xe SUV
+                    </div>
+
+                    <div class="contract-id">
+                        Mã hợp đồng: HD001
+                    </div>
+
+                </div>
+
+                <span class="status pending">
+                    Chờ xác nhận
+                </span>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="info-box">
+
+                    <span>Khách hàng</span>
+
+                    <strong>
+                        Nguyễn Văn A
+                    </strong>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <span>Thời gian thuê</span>
+
+                    <strong>
+                        07/10/2026 - 09/10/2026
+                    </strong>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <span>Tổng tiền</span>
+
+                    <strong>
+                        1.000.000 VNĐ
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    class="btn-view"
+                    onclick="viewContract('HD001')">
+
+                    👁 Xem hợp đồng
+
+                </button>
+
+
+                <button
+                    class="btn-confirm"
+                    onclick="openConfirm('HD001')">
+
+                    ✓ Xác nhận
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- HỢP ĐỒNG 2 -->
+
+        <div
+            class="contract"
+            data-status="confirmed">
+
+            <div class="contract-top">
+
+                <div>
+
+                    <div class="contract-title">
+                        Hợp đồng thuê xe máy
+                    </div>
+
+                    <div class="contract-id">
+                        Mã hợp đồng: HD002
+                    </div>
+
+                </div>
+
+                <span class="status confirmed">
+                    Đã xác nhận
+                </span>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="info-box">
+
+                    <span>Khách hàng</span>
+
+                    <strong>
+                        Trần Văn B
+                    </strong>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <span>Thời gian thuê</span>
+
+                    <strong>
+                        05/10/2026 - 06/10/2026
+                    </strong>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <span>Tổng tiền</span>
+
+                    <strong>
+                        200.000 VNĐ
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    class="btn-view"
+                    onclick="viewContract('HD002')">
+
+                    👁 Xem hợp đồng
+
+                </button>
+
+
+                <button
+                    class="btn-confirm"
+                    disabled>
+
+                    ✓ Đã xác nhận
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================= -->
+<!-- FORM TẠO HỢP ĐỒNG -->
+<!-- ========================= -->
+
+<div
+    class="modal"
+    id="createModal">
+
+    <div class="modal-content">
+
+
+        <div class="modal-header">
+
+            <h2>
+                Tạo hợp đồng mới
+            </h2>
+
+            <button
+                class="close"
+                onclick="closeCreateContract()">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <form
+            onsubmit="createContract(event)">
+
+
+            <!-- MÃ -->
+
+            <div class="form-group">
+
+                <label>
+                    Mã hợp đồng
+                </label>
+
+                <input
+                    type="text"
+                    id="contractCode"
+                    placeholder="VD: HD003"
+                    required
+                >
+
+            </div>
+
+
+            <!-- KHÁCH HÀNG -->
+
+            <div class="form-group">
+
+                <label>
+                    Khách hàng
+                </label>
+
+                <select
+                    id="customer"
+                    required>
+
+                    <option value="">
+                        -- Chọn khách hàng --
+                    </option>
+
+                    <option>
+                        Nguyễn Văn A - 0123456789
+                    </option>
+
+                    <option>
+                        Trần Văn B - 0987654321
+                    </option>
+
+                    <option>
+                        Lê Văn C - 0366666666
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- XE -->
+
+            <div class="form-group">
+
+                <label>
+                    Xe
+                </label>
+
+                <select
+                    id="car"
+                    onchange="updatePrice()"
+                    required>
+
+                    <option value="">
+                        -- Chọn xe --
+                    </option>
+
+                    <option value="200000">
+                        XE01 - Xe máy - 200.000 VNĐ/ngày
+                    </option>
+
+                    <option value="500000">
+                        XE02 - Xe SUV - 500.000 VNĐ/ngày
+                    </option>
+
+                    <option value="700000">
+                        XE03 - Xe ô tô - 700.000 VNĐ/ngày
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- NGÀY -->
+
+            <div class="form-row">
+
+
+                <div class="form-group">
+
+                    <label>
+                        Ngày bắt đầu
+                    </label>
+
+                    <input
+                        type="date"
+                        id="startDate"
+                        onchange="calculateTotal()"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Ngày kết thúc
+                    </label>
+
+                    <input
+                        type="date"
+                        id="endDate"
+                        onchange="calculateTotal()"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- GIÁ -->
+
+            <div class="form-group">
+
+                <label>
+                    Giá thuê / ngày
+                </label>
+
+                <input
+                    type="number"
+                    id="price"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- TIỀN CỌC -->
+
+            <div class="form-group">
+
+                <label>
+                    Tiền cọc
+                </label>
+
+                <input
+                    type="number"
+                    id="deposit"
+                    value="0"
+                    min="0"
+                    placeholder="Nhập tiền cọc"
+                >
+
+            </div>
+
+
+            <!-- TỔNG TIỀN -->
+
+            <div class="total">
+
+                Tổng tiền
+
+                <strong id="total">
+                    0 VNĐ
+                </strong>
+
+            </div>
+
+
+            <!-- GHI CHÚ -->
+
+            <div class="form-group">
+
+                <label>
+                    Ghi chú
+                </label>
+
+                <textarea
+                    id="note"
+                    rows="4"
+                    placeholder="Nhập ghi chú..."
+                ></textarea>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="btn-blue"
+                style="width:100%;">
+
+                ✓ Tạo hợp đồng
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================= -->
+<!-- XEM HỢP ĐỒNG -->
+<!-- ========================= -->
+
+<div
+    class="modal"
+    id="viewModal">
+
+    <div class="modal-content">
+
+
+        <div class="modal-header">
+
+            <h2>
+                Chi tiết hợp đồng
+            </h2>
+
+            <button
+                class="close"
+                onclick="closeView()">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <div
+            class="detail"
+            id="contractDetail">
+
+        </div>
+
+
+        <div class="agree">
+
+            <input
+                type="checkbox"
+                id="agree">
+
+            <label>
+                Tôi đã đọc và đồng ý với nội dung hợp đồng.
+            </label>
+
+        </div>
+
+
+        <button
+            class="btn-confirm"
+            onclick="confirmContract()"
+            style="width:100%;">
+
+            ✓ Xác nhận hợp đồng
+
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+let currentContract = "";
+
+
+// ============================
+// MỞ FORM TẠO
+// ============================
+
+function openCreateContract() {
+
+    document.getElementById("createModal")
+        .style.display = "flex";
+
+}
+
+
+// ============================
+// ĐÓNG FORM TẠO
+// ============================
+
+function closeCreateContract() {
+
+    document.getElementById("createModal")
+        .style.display = "none";
+
+}
+
+
+// ============================
+// CHỌN XE
+// ============================
+
+function updatePrice() {
+
+    let car =
+        document.getElementById("car").value;
+
+    document.getElementById("price")
+        .value = car;
+
+    calculateTotal();
+
+}
+
+
+// ============================
+// TÍNH TIỀN
+// ============================
+
+function calculateTotal() {
+
+    let start =
+        document.getElementById("startDate").value;
+
+    let end =
+        document.getElementById("endDate").value;
+
+    let price =
+        Number(
+            document.getElementById("price").value
+        );
+
+
+    if (!start || !end || price === 0) {
+
+        document.getElementById("total")
+            .innerText = "0 VNĐ";
+
+        return;
+
+    }
+
+
+    let startDate =
+        new Date(start);
+
+    let endDate =
+        new Date(end);
+
+
+    let time =
+        endDate.getTime()
+        -
+        startDate.getTime();
+
+
+    let days =
+        Math.ceil(
+            time /
+            (1000 * 60 * 60 * 24)
+        );
+
+
+    if (days <= 0) {
+
+        document.getElementById("total")
+            .innerText = "Ngày không hợp lệ";
+
+        return;
+
+    }
+
+
+    let total =
+        days * price;
+
+
+    document.getElementById("total")
+        .innerText =
+        total.toLocaleString("vi-VN")
+        + " VNĐ";
+
+}
+
+
+// ============================
+// TẠO HỢP ĐỒNG
+// ============================
+
+function createContract(event) {
+
+    event.preventDefault();
+
+
+    let code =
+        document.getElementById("contractCode")
+        .value;
+
+
+    let customer =
+        document.getElementById("customer")
+        .value;
+
+
+    let car =
+        document.getElementById("car");
+
+
+    let carName =
+        car.options[
+            car.selectedIndex
+        ].text;
+
+
+    let start =
+        document.getElementById("startDate")
+        .value;
+
+
+    let end =
+        document.getElementById("endDate")
+        .value;
+
+
+    let price =
+        Number(
+            document.getElementById("price")
+            .value
+        );
+
+
+    let deposit =
+        Number(
+            document.getElementById("deposit")
+            .value
+        );
+
+
+    let totalText =
+        document.getElementById("total")
+        .innerText;
+
+
+    if (!price) {
+
+        alert("Vui lòng chọn xe!");
+
+        return;
+
+    }
+
+
+    // TẠO HỢP ĐỒNG
+
+    let contract =
+        document.createElement("div");
+
+
+    contract.className =
+        "contract";
+
+
+    contract.dataset.status =
+        "pending";
+
+
+    contract.innerHTML = `
+
+        <div class="contract-top">
+
+            <div>
+
+                <div class="contract-title">
+                    Hợp đồng thuê xe
+                </div>
+
+                <div class="contract-id">
+                    Mã hợp đồng: ${code}
+                </div>
+
+            </div>
+
+            <span class="status pending">
+                Chờ xác nhận
+            </span>
+
+        </div>
+
+
+        <div class="info">
+
+            <div class="info-box">
+
+                <span>Khách hàng</span>
+
+                <strong>
+                    ${customer}
+                </strong>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <span>Xe</span>
+
+                <strong>
+                    ${carName}
+                </strong>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <span>Tổng tiền</span>
+
+                <strong>
+                    ${totalText}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                class="btn-view"
+                onclick="viewContract('${code}')">
+
+                👁 Xem hợp đồng
+
+            </button>
+
+
+            <button
+                class="btn-confirm"
+                onclick="openConfirm('${code}')">
+
+                ✓ Xác nhận
+
+            </button>
+
+        </div>
+
+    `;
+
+
+    document
+        .getElementById("contractList")
+        .prepend(contract);
+
+
+    // LƯU DỮ LIỆU
+
+    localStorage.setItem(
+        "lastContract",
+        JSON.stringify({
+
+            code: code,
+            customer: customer,
+            car: carName,
+            start: start,
+            end: end,
+            price: price,
+            deposit: deposit,
+            total: totalText
+
+        })
+    );
+
+
+    closeCreateContract();
+
+
+    alert(
+        "Tạo hợp đồng "
+        + code
+        + " thành công!"
+    );
+
+
+    document
+        .querySelector("#createModal form")
+        .reset();
+
+
+    document.getElementById("price")
+        .value = "";
+
+
+    document.getElementById("total")
+        .innerText = "0 VNĐ";
+
+}
+
+
+// ============================
+// XEM HỢP ĐỒNG
+// ============================
+
+function viewContract(id) {
+
+    currentContract = id;
+
+
+    let data =
+        JSON.parse(
+            localStorage.getItem(
+                "lastContract"
+            )
+        );
+
+
+    let html = `
+
+        <h3>Thông tin hợp đồng</h3>
+
+        <div class="detail-box">
+
+            <p>
+                <b>Mã hợp đồng:</b>
+                ${id}
+            </p>
+
+            <p>
+                <b>Khách hàng:</b>
+                ${data
+                    ? data.customer
+                    : "Nguyễn Văn A"}
+            </p>
+
+            <p>
+                <b>Xe:</b>
+                ${data
+                    ? data.car
+                    : "Xe SUV"}
+            </p>
+
+            <p>
+                <b>Thời gian:</b>
+                ${data
+                    ? data.start
+                    + " → "
+                    + data.end
+                    : "07/10/2026 → 09/10/2026"}
+            </p>
+
+            <p>
+                <b>Tiền cọc:</b>
+                ${data
+                    ? Number(data.deposit)
+                        .toLocaleString("vi-VN")
+                    : "0"}
+                VNĐ
+            </p>
+
+            <p>
+                <b>Tổng tiền:</b>
+                ${data
+                    ? data.total
+                    : "1.000.000 VNĐ"}
+            </p>
+
+        </div>
+
+
+        <h3>Điều khoản hợp đồng</h3>
+
+        <div class="detail-box">
+
+            <p>
+                1. Khách hàng có trách nhiệm
+                bảo quản phương tiện trong
+                thời gian thuê.
+            </p>
+
+            <p>
+                2. Khách hàng phải trả xe đúng
+                thời gian đã thỏa thuận.
+            </p>
+
+            <p>
+                3. Mọi chi phí phát sinh do
+                khách hàng gây ra sẽ được
+                xử lý theo hợp đồng.
+            </p>
+
+            <p>
+                4. Hợp đồng có hiệu lực sau
+                khi được xác nhận.
+            </p>
+
+        </div>
+
+    `;
+
+
+    document.getElementById("contractDetail")
+        .innerHTML = html;
+
+
+    document.getElementById("viewModal")
+        .style.display = "flex";
+
+}
+
+
+// ============================
+// XÁC NHẬN
+// ============================
+
+function openConfirm(id) {
+
+    viewContract(id);
+
+}
+
+
+// ============================
+// XÁC NHẬN HỢP ĐỒNG
+// ============================
+
+function confirmContract() {
+
+    let agree =
+        document.getElementById("agree")
+        .checked;
+
+
+    if (!agree) {
+
+        alert(
+            "Vui lòng đọc và đồng ý với hợp đồng!"
+        );
+
+        return;
+
+    }
+
+
+    alert(
+        "Hợp đồng "
+        + currentContract
+        + " đã được xác nhận!"
+    );
+
+
+    closeView();
+
+}
+
+
+// ============================
+// ĐÓNG CHI TIẾT
+// ============================
+
+function closeView() {
+
+    document.getElementById("viewModal")
+        .style.display = "none";
+
+    document.getElementById("agree")
+        .checked = false;
+
+}
+
+
+// ============================
+// TÌM KIẾM
+// ============================
+
+function searchContract() {
+
+    let keyword =
+        document.getElementById("search")
+        .value
+        .toLowerCase();
+
+
+    let status =
+        document.getElementById("statusFilter")
+        .value;
+
+
+    let contracts =
+        document.querySelectorAll(
+            ".contract"
+        );
+
+
+    contracts.forEach(function(contract) {
+
+        let text =
+            contract.innerText
+            .toLowerCase();
+
+
+        let contractStatus =
+            contract.dataset.status;
+
+
+        let matchKeyword =
+            text.includes(keyword);
+
+
+        let matchStatus =
+            status === "all"
+            ||
+            contractStatus === status;
+
+
+        if (
+            matchKeyword
+            &&
+            matchStatus
+        ) {
+
+            contract.style.display =
+                "block";
+
+        } else {
+
+            contract.style.display =
+                "none";
+
+        }
+
+    });
+
+}
+
+
+// ============================
+// CLICK NGOÀI MODAL
+// ============================
+
+window.onclick =
+function(event) {
+
+    let createModal =
+        document.getElementById(
+            "createModal"
+        );
+
+
+    let viewModal =
+        document.getElementById(
+            "viewModal"
+        );
+
+
+    if (event.target === createModal) {
+
+        closeCreateContract();
+
+    }
+
+
+    if (event.target === viewModal) {
+
+        closeView();
+
+    }
+
+};
+
+</script>
+
+</body>
+</html>
