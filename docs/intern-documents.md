@@ -11,13 +11,13 @@ Email tài khoản phải trùng email hồ sơ thực tập sinh do HR tạo. N
 | PUT `/api/interns/me/documents/application` | Nộp/thay đơn xin thực tập |
 | GET `/api/interns/me/documents/{kind}` | Tải bản đã lưu với Bearer token |
 
-Backend tự tạo bảng `InternDocuments` khi khởi động. Nội dung lưu trong `VARBINARY(MAX)` của SQL Server cùng loại, tên và thời điểm UTC; dữ liệu được sao lưu cùng database. Không có thư mục tài liệu công khai. Thay thế dùng transaction và khóa để tránh tạo bản trùng khi gửi đồng thời.
+Backend tự tạo bảng `interndocuments` khi khởi động. Nội dung lưu dạng `BYTEA` trong PostgreSQL cùng tên tệp và thời điểm UTC; dữ liệu được sao lưu cùng database. Không có thư mục tài liệu công khai. Upsert trong transaction giữ một tài liệu cho mỗi hồ sơ và loại tài liệu.
 
 Truy cập SQL/validation/lưu tài liệu nằm trong `Services/InternDocumentService.cs`; hai controller tài liệu giữ request/response và kiểm tra quyền. `Infrastructure/ApiRequestMiddleware.cs` xử lý lỗi/log dùng chung và cấp header `X-Request-ID`; không còn các exception filter riêng bị lặp ở controller.
 
 HR và ADMIN mở **Xem và duyệt tài liệu**, tìm theo tên/mã/email hoặc lọc trạng thái. Nhấn **Tải để xem** để đọc PDF, sau đó **Duyệt / Nhận xét** để chấp nhận hoặc yêu cầu bổ sung. Yêu cầu bổ sung phải có lý do. Nhận xét và trạng thái hiển thị trên trang nộp tài liệu của thực tập sinh; nộp lại đưa tài liệu về chờ duyệt.
 
-API HR dùng quyền `APPROVE_DOCUMENTS`: GET `/api/document-reviews` lấy danh sách; GET `/api/document-reviews/{internId}/{kind}` tải PDF; PUT cùng đường dẫn gửi `status` (`approved`/`rejected`), `comment`, `version`. Phiên bản ROWVERSION ngăn quyết định cũ ghi đè bản mới (HTTP 409); HR cần tải lại nếu tài liệu thay đổi. SQL lưu trạng thái, nhận xét, tài khoản và thời điểm duyệt. Đây là kết quả duyệt hiện tại, chưa có lịch sử các quyết định trước đó.
+API HR dùng quyền `APPROVE_DOCUMENTS`: GET `/api/document-reviews` lấy danh sách; GET `/api/document-reviews/{internId}/{kind}` tải PDF; PUT cùng đường dẫn gửi `status` (`approved`/`rejected`), `comment`, `version`. Phiên bản dạng số tăng dần ngăn quyết định cũ ghi đè bản mới (HTTP 409); HR cần tải lại nếu tài liệu thay đổi. PostgreSQL lưu trạng thái, nhận xét, tài khoản, thời điểm duyệt và trạng thái email. PUT trả `{ message, notification: { status, message, attemptedAt } }`; `status` là `sent` hoặc `failed`. GET trả thêm `notificationStatus`, `notificationMessage`, `notificationAttemptedAt` trên mỗi tài liệu để trang HR hiển thị kết quả gửi. Khi tải lên bản mới, trạng thái duyệt và thông báo được đặt lại. Email dùng cấu hình `Smtp` hiện có. Đây là kết quả duyệt hiện tại, chưa có lịch sử các quyết định trước đó.
 
 Duyệt/từ chối trùng trạng thái hiện tại trả 409 và không cập nhật phiên bản. Tài liệu không còn tồn tại trả 404; loại tài liệu, trạng thái, nhận xét và phiên bản không hợp lệ trả 400. Từ chối vẫn yêu cầu lý do. HR và ADMIN giữ quyền duyệt hiện có; INTERN/MENTOR không được gọi trực tiếp API duyệt. Lỗi xử lý danh sách/tải file/lưu quyết định trả 500 với `message` an toàn, ghi exception cùng method/path/trace ID vào log máy chủ.
 

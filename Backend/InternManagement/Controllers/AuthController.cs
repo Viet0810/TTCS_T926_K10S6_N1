@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 using InternManagement.DTOs;
 using InternManagement.Infrastructure;
 using InternManagement.Services;
@@ -62,7 +63,7 @@ public sealed class AuthController : ControllerBase
             logger.LogWarning("Password recovery unavailable. Trace {TraceId}", HttpContext.TraceIdentifier);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = error.Message });
         }
-        catch (SqlException error)
+        catch (NpgsqlException error)
         {
             logger.LogError(error, "Password recovery database operation failed. Trace {TraceId}", HttpContext.TraceIdentifier);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau." });
@@ -79,7 +80,7 @@ public sealed class AuthController : ControllerBase
                 ? Ok(new { message = "Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới." })
                 : BadRequest(new { message = "Liên kết đã hết hạn hoặc đã được sử dụng. Vui lòng gửi lại yêu cầu quên mật khẩu." });
         }
-        catch (SqlException error)
+        catch (NpgsqlException error)
         {
             logger.LogError(error, "Password reset database operation failed. Trace {TraceId}", HttpContext.TraceIdentifier);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Không thể cập nhật mật khẩu. Vui lòng thử lại sau." });

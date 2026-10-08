@@ -9,4 +9,7 @@ public interface IInternService
     Task<InternResponse?> GetByEmailAsync(string email, CancellationToken cancellationToken);
     Task<InternResponse> CreateAsync(CreateInternRequest request, CancellationToken cancellationToken);
     Task<InternResponse?> UpdateAsync(int id, CreateInternRequest request, CancellationToken cancellationToken);
+    Task<InternStatusUpdateResult?> UpdateStatusAsync(int id, string? status, CancellationToken cancellationToken);
 }
+
+public sealed record InternStatusUpdateResult(InternResponse Intern, bool Changed);

@@ -1,7 +1,8 @@
 using System.Data;
 using System.Text;
 using InternManagement.DTOs;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace InternManagement.Services;
 
@@ -22,7 +23,7 @@ public sealed class InternFilterService : IInternFilterService
     public async Task<IReadOnlyList<InternResponse>> FilterInternsAsync(InternFilterRequest? filter, CancellationToken cancellationToken = default)
     {
         var interns = new List<InternResponse>();
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
 
@@ -31,19 +32,19 @@ public sealed class InternFilterService : IInternFilterService
         if (!string.IsNullOrWhiteSpace(filter?.Search))
         {
             sql.Append(" AND (FullName LIKE @search OR Email LIKE @search OR Phone LIKE @search OR School LIKE @search OR Major LIKE @search OR StudentCode LIKE @search OR ClassName LIKE @search OR Organization LIKE @search OR Position LIKE @search OR Mentor LIKE @search)");
-            command.Parameters.Add("@search", SqlDbType.NVarChar, 256).Value = $"%{filter.Search.Trim()}%";
+            command.Parameters.Add("@search", NpgsqlDbType.Varchar, 256).Value = $"%{filter.Search.Trim()}%";
         }
 
         if (!string.IsNullOrWhiteSpace(filter?.School))
         {
             sql.Append(" AND School = @school");
-            command.Parameters.Add("@school", SqlDbType.NVarChar, 200).Value = filter.School.Trim();
+            command.Parameters.Add("@school", NpgsqlDbType.Varchar, 200).Value = filter.School.Trim();
         }
 
         if (!string.IsNullOrWhiteSpace(filter?.Major))
         {
             sql.Append(" AND Major = @major");
-            command.Parameters.Add("@major", SqlDbType.NVarChar, 200).Value = filter.Major.Trim();
+            command.Parameters.Add("@major", NpgsqlDbType.Varchar, 200).Value = filter.Major.Trim();
         }
 
         sql.Append(" ORDER BY Id DESC");

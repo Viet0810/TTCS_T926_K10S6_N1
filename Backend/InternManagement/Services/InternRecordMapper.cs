@@ -1,14 +1,15 @@
 using System.Data;
 using InternManagement.DTOs;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 namespace InternManagement.Services;
 
 internal static class InternRecordMapper
 {
     public const string Columns = "Id, FullName, Email, Phone, School, Major, CreatedAt, StudentCode, ClassName, Faculty, DateOfBirth, Address, Organization, OrganizationAddress, Department, Position, Mentor, MentorEmail, MentorPhone, AcademicSupervisor, StartDate, EndDate, Status, InternshipTopic, Notes";
-    public static InternResponse Map(SqlDataReader reader) => new(
+    public static InternResponse Map(NpgsqlDataReader reader) => new(
         reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-        reader.GetString(4), reader.GetString(5), reader.GetDateTimeOffset(6),
+        reader.GetString(4), reader.GetString(5), new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(6), DateTimeKind.Utc)),
         reader.IsDBNull(7) ? null : reader.GetString(7),
         reader.IsDBNull(8) ? null : reader.GetString(8),
         reader.IsDBNull(9) ? null : reader.GetString(9),
@@ -28,7 +29,7 @@ internal static class InternRecordMapper
         reader.IsDBNull(23) ? null : reader.GetString(23),
         reader.IsDBNull(24) ? null : reader.GetString(24));
 
-    public static void AddParameters(SqlCommand command, CreateInternRequest request)
+    public static void AddParameters(NpgsqlCommand command, CreateInternRequest request)
     {
         AddText(command, "@fullName", 200, request.FullName);
         AddText(command, "@email", 254, request.Email);
@@ -38,7 +39,7 @@ internal static class InternRecordMapper
         AddText(command, "@studentCode", 50, request.StudentCode);
         AddText(command, "@className", 100, request.ClassName);
         AddText(command, "@faculty", 200, request.Faculty);
-        command.Parameters.Add("@dateOfBirth", SqlDbType.Date).Value = request.DateOfBirth.HasValue ? request.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
+        command.Parameters.Add("@dateOfBirth", NpgsqlDbType.Date).Value = request.DateOfBirth.HasValue ? request.DateOfBirth.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
         AddText(command, "@address", 500, request.Address);
         AddText(command, "@organization", 200, request.Organization);
         AddText(command, "@organizationAddress", 500, request.OrganizationAddress);
@@ -48,15 +49,15 @@ internal static class InternRecordMapper
         AddText(command, "@mentorEmail", 254, request.MentorEmail);
         AddText(command, "@mentorPhone", 20, request.MentorPhone);
         AddText(command, "@academicSupervisor", 200, request.AcademicSupervisor);
-        command.Parameters.Add("@startDate", SqlDbType.Date).Value = request.StartDate.HasValue ? request.StartDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
-        command.Parameters.Add("@endDate", SqlDbType.Date).Value = request.EndDate.HasValue ? request.EndDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
+        command.Parameters.Add("@startDate", NpgsqlDbType.Date).Value = request.StartDate.HasValue ? request.StartDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
+        command.Parameters.Add("@endDate", NpgsqlDbType.Date).Value = request.EndDate.HasValue ? request.EndDate.Value.ToDateTime(TimeOnly.MinValue) : DBNull.Value;
         AddText(command, "@status", 50, request.Status);
         AddText(command, "@internshipTopic", 500, request.InternshipTopic);
         AddText(command, "@notes", 2000, request.Notes);
     }
-    private static void AddText(SqlCommand command, string name, int length, string? value)
+    private static void AddText(NpgsqlCommand command, string name, int length, string? value)
     {
-        command.Parameters.Add(name, SqlDbType.NVarChar, length).Value =
+        command.Parameters.Add(name, NpgsqlDbType.Varchar, length).Value =
             string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
     }
 }

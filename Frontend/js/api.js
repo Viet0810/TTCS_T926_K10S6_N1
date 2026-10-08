@@ -1,4 +1,12 @@
-const BASE_URL = "http://localhost:5024/api";
+// By default, call the API using the host that served this page. This keeps
+// localhost development working when the UI is opened as localhost or 127.0.0.1.
+// Deployments can override this before api.js:
+// window.APP_CONFIG = { apiBaseUrl: "https://api.example.test/api" };
+const configuredApiUrl = window.APP_CONFIG?.apiBaseUrl?.trim();
+const apiProtocol = window.location.protocol === "https:" ? "https:" : "http:";
+const apiHost = window.location.hostname || "localhost";
+const apiPort = window.location.protocol === "https:" ? "7039" : "5024";
+const BASE_URL = (configuredApiUrl || `${apiProtocol}//${apiHost}:${apiPort}/api`).replace(/\/$/, "");
 
 class ApiError extends Error {
   constructor(message, status = 0, context = {}) {
@@ -126,13 +134,32 @@ const API = {
   reviewDocument: (id, kind, decision) => requestApi(`/document-reviews/${encodeURIComponent(id)}/${encodeURIComponent(kind)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(decision),
   }),
+  resendReviewEmail: (id, kind) => requestApi(`/document-reviews/${encodeURIComponent(id)}/${encodeURIComponent(kind)}/resend-email`, {
+    method: "POST", headers: getAuthHeader(),
+  }),
+  getNotifications: () => requestApi("/notifications", { headers: getAuthHeader() }),
+  readNotification: (id) => requestApi(`/notifications/${encodeURIComponent(id)}/read`, { method: "PUT", headers: getAuthHeader() }),
+  clearNotifications: () => requestApi("/notifications", { method: "DELETE", headers: getAuthHeader() }),
+  getPushPublicKey: () => requestApi("/push/public-key"),
+  savePushSubscription: (subscription) => requestApi("/push/subscriptions", {
+    method: "POST", headers: getAuthHeader(), body: JSON.stringify(subscription.toJSON()),
+  }),
+  removePushSubscription: (endpoint) => requestApi("/push/subscriptions", {
+    method: "DELETE", headers: getAuthHeader(), body: JSON.stringify({ endpoint }),
+  }),
   getInterns: () => requestApi("/interns", { headers: getAuthHeader() }),
   getMyInternProfile: () => requestApi("/interns/me", { headers: getAuthHeader() }),
+  createMyInternProfile: (intern) => requestApi("/interns/me", {
+    method: "POST", headers: getAuthHeader(), body: JSON.stringify(intern),
+  }),
   createIntern: (intern) => requestApi("/interns", {
     method: "POST", headers: getAuthHeader(), body: JSON.stringify(intern)
   }),
   updateIntern: (id, intern) => requestApi(`/interns/${encodeURIComponent(id)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(intern)
+  }),
+  updateInternStatus: (id, status) => requestApi(`/interns/${encodeURIComponent(id)}/status`, {
+    method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ status })
   }),
 
   getCurrentUser: () => requestApi("/auth/me", { headers: getAuthHeader() }),

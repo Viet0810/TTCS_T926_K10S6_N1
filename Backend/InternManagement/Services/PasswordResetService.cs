@@ -3,7 +3,8 @@ using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace InternManagement.Services;
 
@@ -32,11 +33,11 @@ public sealed class PasswordResetService(
         if (port is < 1 or > 65535)
             throw new PasswordRecoveryUnavailableException("Cổng SMTP không hợp lệ.");
 
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var lookup = connection.CreateCommand();
         lookup.CommandText = "SELECT Id FROM dbo.Users WHERE Email = @email";
-        lookup.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = email.Trim();
+        lookup.Parameters.Add("@email", NpgsqlDbType.Varchar, 254).Value = email.Trim();
         var result = await lookup.ExecuteScalarAsync(cancellationToken);
         if (result is not int userId) return;
 
@@ -46,15 +47,15 @@ public sealed class PasswordResetService(
         await using var create = connection.CreateCommand();
         create.CommandText = """
             INSERT INTO dbo.PasswordResetTokens (UserId, TokenHash, ExpiresAt)
-            SELECT @userId, @tokenHash, DATEADD(MINUTE, @lifetime, SYSUTCDATETIME())
+            SELECT @userId, @tokenHash, CURRENT_TIMESTAMP + (@lifetime * INTERVAL '1 minute')
             WHERE NOT EXISTS (
-                SELECT 1 FROM dbo.PasswordResetTokens WITH (UPDLOCK, HOLDLOCK)
-                WHERE UserId = @userId AND CreatedAt > DATEADD(MINUTE, -1, SYSUTCDATETIME())
+                SELECT 1 FROM dbo.PasswordResetTokens
+                WHERE UserId = @userId AND CreatedAt > CURRENT_TIMESTAMP - INTERVAL '1 minute'
             );
             """;
-        create.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
-        create.Parameters.Add("@tokenHash", SqlDbType.Binary, 32).Value = tokenHash;
-        create.Parameters.Add("@lifetime", SqlDbType.Int).Value = lifetime;
+        create.Parameters.Add("@userId", NpgsqlDbType.Integer).Value = userId;
+        create.Parameters.Add("@tokenHash", NpgsqlDbType.Bytea, 32).Value = tokenHash;
+        create.Parameters.Add("@lifetime", NpgsqlDbType.Integer).Value = lifetime;
         if (await create.ExecuteNonQueryAsync(cancellationToken) == 0) return;
 
         // A fragment keeps the secret out of HTTP request paths and Referer headers.
@@ -91,7 +92,7 @@ public sealed class PasswordResetService(
             // A failed delivery must never leave a usable reset link in storage.
             await using var remove = connection.CreateCommand();
             remove.CommandText = "DELETE FROM dbo.PasswordResetTokens WHERE TokenHash = @tokenHash";
-            remove.Parameters.Add("@tokenHash", SqlDbType.Binary, 32).Value = tokenHash;
+            remove.Parameters.Add("@tokenHash", NpgsqlDbType.Bytea, 32).Value = tokenHash;
             await remove.ExecuteNonQueryAsync(CancellationToken.None);
             logger.LogWarning("Không gửi được email đặt lại mật khẩu qua SMTP.");
             throw new PasswordRecoveryUnavailableException("Dịch vụ email hiện không khả dụng. Vui lòng thử lại sau hoặc liên hệ quản trị viên.");
@@ -100,18 +101,18 @@ public sealed class PasswordResetService(
 
     public async Task<bool> ResetAsync(string token, string password, CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
-        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        await using var transaction = (NpgsqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
         await using var claim = connection.CreateCommand();
         claim.Transaction = transaction;
         claim.CommandText = """
-            UPDATE dbo.PasswordResetTokens WITH (UPDLOCK)
-            SET UsedAt = SYSUTCDATETIME()
-            OUTPUT INSERTED.UserId
-            WHERE TokenHash = @tokenHash AND UsedAt IS NULL AND ExpiresAt > SYSUTCDATETIME();
+            UPDATE dbo.PasswordResetTokens
+            SET UsedAt = CURRENT_TIMESTAMP
+            WHERE TokenHash = @tokenHash AND UsedAt IS NULL AND ExpiresAt > CURRENT_TIMESTAMP
+            RETURNING UserId;
             """;
-        claim.Parameters.Add("@tokenHash", SqlDbType.Binary, 32).Value = HashToken(token);
+        claim.Parameters.Add("@tokenHash", NpgsqlDbType.Bytea, 32).Value = HashToken(token);
         var result = await claim.ExecuteScalarAsync(cancellationToken);
         if (result is not int userId)
         {
@@ -123,12 +124,15 @@ public sealed class PasswordResetService(
         update.Transaction = transaction;
         update.CommandText = """
             UPDATE dbo.Users SET PasswordHash = @passwordHash WHERE Id = @userId;
-            UPDATE dbo.PasswordResetTokens SET UsedAt = SYSUTCDATETIME()
-            WHERE UserId = @userId AND UsedAt IS NULL;
             """;
-        update.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
-        update.Parameters.Add("@passwordHash", SqlDbType.NVarChar, 512).Value = passwords.Hash(password);
+        update.Parameters.Add("@userId", NpgsqlDbType.Integer).Value = userId;
+        update.Parameters.Add("@passwordHash", NpgsqlDbType.Varchar, 512).Value = passwords.Hash(password);
         await update.ExecuteNonQueryAsync(cancellationToken);
+        await using var invalidate = connection.CreateCommand();
+        invalidate.Transaction = transaction;
+        invalidate.CommandText = "UPDATE dbo.PasswordResetTokens SET UsedAt = CURRENT_TIMESTAMP WHERE UserId = @userId AND UsedAt IS NULL";
+        invalidate.Parameters.Add("@userId", NpgsqlDbType.Integer).Value = userId;
+        await invalidate.ExecuteNonQueryAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return true;
     }

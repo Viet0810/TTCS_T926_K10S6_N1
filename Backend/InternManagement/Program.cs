@@ -3,6 +3,11 @@ using System.Threading.RateLimiting;
 using InternManagement.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Smtp.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile("appsettings.Push.json", optional: true, reloadOnChange: true);
+// Re-add these providers so environment variables and command-line values can override the local SMTP file.
+builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.AddCommandLine(args);
 builder.Logging.AddSimpleConsole(options =>
 {
     options.TimestampFormat = "yyyy-MM-dd HH:mm:ss 'UTC' ";
@@ -20,6 +25,10 @@ builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>()
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
+builder.Services.AddScoped<InternManagement.Services.ReviewEmailService>();
+builder.Services.AddScoped<InternManagement.Services.NotificationService>();
+builder.Services.AddSingleton<Lib.Net.Http.WebPush.PushServiceClient>();
+builder.Services.AddScoped<InternManagement.Services.WebPushService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 builder.Services.AddRateLimiter(options =>
@@ -51,8 +60,6 @@ if (string.IsNullOrWhiteSpace(connectionString))
 await app.Services.GetRequiredService<InternManagement.Services.DatabaseInitializer>()
     .InitializeAsync(connectionString);
 
-app.UseMiddleware<ApiRequestMiddleware>();
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -61,6 +68,9 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseCors();
+// Keep CORS outside the error handler so browser clients can read JSON errors
+// produced when an API action fails while talking to PostgreSQL.
+app.UseMiddleware<ApiRequestMiddleware>();
 app.UseRateLimiter();
 app.MapControllers();
 
@@ -71,10 +81,10 @@ app.MapGet("/api/database/status", async () =>
 
     try
     {
-        await using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+        await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT DB_NAME() AS DatabaseName, SUSER_SNAME() AS LoginName";
+        command.CommandText = "SELECT current_database(), current_user";
         await using var reader = await command.ExecuteReaderAsync();
         await reader.ReadAsync();
         return Results.Ok(new

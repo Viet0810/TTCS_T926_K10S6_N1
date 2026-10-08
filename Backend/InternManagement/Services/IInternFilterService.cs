@@ -4,7 +4,7 @@ namespace InternManagement.Services;
 
 /// <summary>
 /// Chức năng: Tìm kiếm và lọc thực tập sinh (K10S6N1-48)
-/// Interface định nghĩa nghiệp vụ tìm kiếm và lọc dữ liệu từ SQL Server
+/// Interface định nghĩa nghiệp vụ tìm kiếm và lọc dữ liệu từ PostgreSQL
 /// </summary>
 public interface IInternFilterService
 {

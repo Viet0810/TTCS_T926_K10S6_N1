@@ -3,6 +3,21 @@
 
 Hướng dẫn cấu hình đăng nhập và email đặt lại mật khẩu: [docs/password-recovery.md](docs/password-recovery.md).
 
+Backend dùng PostgreSQL; cấu hình và hướng dẫn chạy: [docs/postgresql.md](docs/postgresql.md).
+Hướng dẫn thông báo đẩy Web Push trên thiết bị: [docs/web-push.md](docs/web-push.md).
+Đã tạo thành công 4 tài khoản trong PostgreSQL database QL_TTS. Có thể đăng nhập bằng email dưới đây làm username:
+Vai trò	Tài khoản
+ADMIN	admin@ql-tts.test
+HR	hr@ql-tts.test
+MENTOR	mentor@ql-tts.test
+INTERN	intern@ql-tts.test
+
+
+Mật khẩu chung: 6fQmhSsdr48BGL3rH7J!Xhma_Hxg
+chạy backend:
+dotnet run --project Backend/InternManagement
+chạy frontend:
+python -m http.server 5500 --bind 127.0.0.1
 Cấu trúc backend, API hồ sơ và quyền HR: [docs/backend-frontend-contract.md](docs/backend-frontend-contract.md).
 
 ## 1. Tổng quan dự án

@@ -30,7 +30,7 @@
           <button id="logoutBtn" class="btn-danger">Đăng xuất</button>
         </div>
       </header>
-      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html">Hồ sơ cá nhân</a><a href="intern-manage.html" aria-current="page">Quản lý thực tập sinh</a></nav>
+      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html">Hồ sơ cá nhân</a><a href="intern-manage.html" aria-current="page">Quản lý thực tập sinh</a><a id="reviewDocumentsLink" href="document-reviews.html" hidden>Xem và duyệt hồ sơ</a></nav>
 
       <!-- MAIN -->
       <main>
@@ -46,6 +46,7 @@
 
         <!-- THÔNG BÁO -->
         <div id="messageBox" class="message-box" role="status" aria-live="polite"></div>
+        <p id="reviewProfilesLink" hidden><a class="btn-secondary" href="document-reviews.html">Mở danh sách duyệt hồ sơ và trạng thái thực tập sinh</a></p>
 
         <!-- FORM THÊM HỒ SƠ -->
         <section id="internFormSection" class="card form-card hidden">
@@ -127,6 +128,7 @@
 
     <script src="../js/api.js"></script><script src="../js/intern-profile.js"></script>
     <script src="../js/intern.js"></script>
+    <script src="../js/notifications.js"></script>
   <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle"><div class="card-header"><h2 id="profileDialogTitle">Hồ sơ thực tập sinh</h2><button type="button" id="closeProfileDialog" class="btn-secondary">Đóng</button></div><div id="profileDialogDetails"></div></dialog>
 </body>
 </html>

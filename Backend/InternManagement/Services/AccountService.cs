@@ -1,7 +1,8 @@
 using System.Data;
 using InternManagement.DTOs;
 using InternManagement.Models;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace InternManagement.Services;
 
@@ -12,7 +13,7 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
 
     public async Task<User?> AuthenticateAsync(LoginRequest request, CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
@@ -37,7 +38,7 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
 
     public async Task<IReadOnlyList<UserResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT Id, Username, FullName, Email, Role FROM dbo.Users ORDER BY Id DESC";
@@ -49,24 +50,24 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
 
     public async Task<UserResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT Id, Username, FullName, Email, Role FROM dbo.Users WHERE Id = @id";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        command.Parameters.Add("@id", NpgsqlDbType.Integer).Value = id;
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
     public async Task<UserResponse> CreateAsync(CreateUserRequest request, string role, CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO dbo.Users (Username, FullName, Email, PasswordHash, Role)
-            OUTPUT INSERTED.Id, INSERTED.Username, INSERTED.FullName, INSERTED.Email, INSERTED.Role
-            VALUES (@username, @fullName, @email, @passwordHash, @role);
+            VALUES (@username, @fullName, @email, @passwordHash, @role)
+            RETURNING Id, Username, FullName, Email, Role;
             """;
         command.Parameters.AddWithValue("@username", request.Email.Trim());
         command.Parameters.AddWithValue("@fullName", request.FullName.Trim());
@@ -80,14 +81,14 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM dbo.Users WHERE Id = @id AND Role <> 'ADMIN'";
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        command.Parameters.Add("@id", NpgsqlDbType.Integer).Value = id;
         return await command.ExecuteNonQueryAsync(cancellationToken) != 0;
     }
 
-    private static UserResponse MapUser(SqlDataReader reader) => new(
+    private static UserResponse MapUser(NpgsqlDataReader reader) => new(
         reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4));
 }

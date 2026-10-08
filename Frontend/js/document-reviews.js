@@ -1,8 +1,12 @@
 const reviewStatuses = { pending: "Chờ duyệt", approved: "Đã duyệt", rejected: "Từ chối · Cần bổ sung" };
+const notificationStatuses = { sent: "Đã gửi", failed: "Gửi thất bại", not_sent: "Chưa gửi" };
+const internshipStatuses = ["Chưa xác định", "Chờ tiếp nhận", "Đang thực tập", "Đã hoàn thành", "Đã dừng"];
 let reviewDocuments = [];
+let reviewInterns = [];
 let selectedDocument = null;
 let reviewing = false;
 let allowed = false;
+let loadingReviews = false;
 const reviewDialog = document.getElementById("reviewDialog");
 const reviewMessage = document.getElementById("reviewMessage");
 const utcDisplay = (value) => value ? new Date(value + (/[Z+]/.test(value) ? "" : "Z")).toLocaleString("vi-VN") : "";
@@ -50,10 +54,10 @@ function renderReviews() {
   const search = document.getElementById("reviewSearch").value.trim().toLocaleLowerCase("vi"), status = document.getElementById("reviewFilter").value;
   const rows = document.getElementById("reviewRows"); rows.replaceChildren();
   const visible = reviewDocuments.filter((item) => (!status || item.status === status) && [item.fullName, item.studentCode, item.email].some((text) => (text || "").toLocaleLowerCase("vi").includes(search)));
-  if (!visible.length) { const cell = rows.insertRow().insertCell(); cell.colSpan = 6; cell.textContent = "Chưa có tài liệu phù hợp."; return; }
+  if (!visible.length) { const cell = rows.insertRow().insertCell(); cell.colSpan = 7; cell.textContent = "Chưa có tài liệu phù hợp."; return; }
   for (const item of visible) {
     const row = rows.insertRow();
-    for (const value of [`${item.fullName}\n${item.studentCode || ""}\n${item.email}`, `${item.kind === "cv" ? "CV" : "Đơn xin thực tập"}\n${item.fileName}\n${(item.size / 1048576).toFixed(2)} MB`, utcDisplay(item.uploadedAt), reviewStatuses[item.status], `${item.comment || ""}\n${item.reviewer || ""}\n${utcDisplay(item.reviewedAt)}`]) { const cell = row.insertCell(); cell.textContent = value; cell.style.whiteSpace = "pre-wrap"; }
+    for (const value of [`${item.fullName}\n${item.studentCode || ""}\n${item.email}`, `${item.kind === "cv" ? "CV" : "Đơn xin thực tập"}\n${item.fileName}\n${(item.size / 1048576).toFixed(2)} MB`, utcDisplay(item.uploadedAt), reviewStatuses[item.status], `${item.comment || ""}\n${item.reviewer || ""}\n${utcDisplay(item.reviewedAt)}`, `${notificationStatuses[item.notificationStatus] || "Chưa gửi"}\n${item.notificationMessage || ""}\n${utcDisplay(item.notificationAttemptedAt)}`]) { const cell = row.insertCell(); cell.textContent = value; cell.style.whiteSpace = "pre-wrap"; }
     const actions = row.insertCell();
     const download = document.createElement("button"); download.type = "button"; download.className = "btn-secondary btn-compact"; download.textContent = "Tải để xem";
     download.onclick = () => downloadReview(item, download);
@@ -61,14 +65,104 @@ function renderReviews() {
     review.disabled = !item.version;
     review.onclick = () => openReview(item);
     actions.append(download, review);
+    if (item.status !== "pending" && item.notificationStatus !== "sent") {
+      const resend = document.createElement("button"); resend.type = "button"; resend.className = "btn-secondary btn-compact";
+      resend.textContent = "Gửi lại email";
+      resend.addEventListener("click", async () => {
+        resend.disabled = true; resend.textContent = "Đang gửi…";
+        try {
+          const result = await API.resendReviewEmail(item.internId, item.kind);
+          reviewMessage.textContent = result.notification?.message || "Đã thử gửi lại email.";
+          await loadReviews();
+        } catch (error) {
+          reviewMessage.textContent = reviewErrorMessage(error);
+          resend.disabled = false; resend.textContent = "Gửi lại email";
+        }
+      });
+      actions.append(resend);
+    }
+  }
+}
+function renderInternStatuses() {
+  const rows = document.getElementById("internStatusRows");
+  rows.replaceChildren();
+  const keyword = document.getElementById("reviewSearch").value.trim().toLocaleLowerCase("vi");
+  const visible = reviewInterns.filter((intern) =>
+    [intern.fullName, intern.studentCode || "", intern.email].some((value) => (value || "").toLocaleLowerCase("vi").includes(keyword)));
+  if (!visible.length) {
+    const cell = rows.insertRow().insertCell();
+    cell.colSpan = 6;
+    cell.className = "empty-state";
+    cell.textContent = keyword ? "Không tìm thấy hồ sơ phù hợp." : "Chưa có hồ sơ thực tập sinh.";
+    return;
+  }
+  const documentsByIntern = new Map();
+  for (const document of reviewDocuments) {
+    if (!documentsByIntern.has(document.internId)) documentsByIntern.set(document.internId, {});
+    documentsByIntern.get(document.internId)[document.kind] = document;
+  }
+  const statusLabels = { pending: "Chờ duyệt", approved: "Đã duyệt", rejected: "Cần bổ sung" };
+  for (const intern of visible) {
+    const row = rows.insertRow();
+    for (const value of [intern.studentCode || "—", `${intern.fullName}\n${intern.email}`, intern.organization || "—"]) {
+      const cell = row.insertCell();
+      cell.textContent = value;
+      cell.style.whiteSpace = "pre-wrap";
+    }
+    const statusCell = row.insertCell();
+    const statusPicker = document.createElement("select");
+    statusPicker.setAttribute("aria-label", `Trạng thái thực tập của ${intern.fullName}`);
+    for (const status of internshipStatuses) {
+      const option = document.createElement("option");
+      option.value = status; option.textContent = status;
+      statusPicker.append(option);
+    }
+    statusPicker.value = intern.status || "Chưa xác định";
+    const saveStatus = document.createElement("button");
+    saveStatus.type = "button"; saveStatus.className = "btn-secondary btn-compact";
+    saveStatus.textContent = "Lưu trạng thái"; saveStatus.disabled = true;
+    statusPicker.addEventListener("change", () => { saveStatus.disabled = statusPicker.value === (intern.status || "Chưa xác định"); });
+    saveStatus.addEventListener("click", async () => {
+      saveStatus.disabled = true; statusPicker.disabled = true; saveStatus.textContent = "Đang lưu…";
+      let result;
+      try { result = await API.updateInternStatus(intern.id, statusPicker.value); }
+      catch (error) {
+        reviewMessage.textContent = reviewErrorMessage(error);
+        saveStatus.disabled = false; statusPicker.disabled = false; saveStatus.textContent = "Lưu trạng thái";
+        return;
+      }
+      reviewMessage.textContent = result.changed
+        ? result.notificationCreated
+          ? `Đã cập nhật trạng thái của ${intern.fullName}; thông báo đã gửi tới tài khoản thực tập sinh.`
+          : `Đã cập nhật trạng thái của ${intern.fullName}, nhưng chưa tìm thấy tài khoản thực tập sinh để gửi thông báo.`
+        : `Trạng thái của ${intern.fullName} không thay đổi.`;
+      intern.status = result.intern.status || "Chưa xác định";
+      try { await loadReviews(); }
+      catch (error) {
+        reviewMessage.textContent += ` Danh sách chưa tải lại được: ${reviewErrorMessage(error)}`;
+        statusPicker.disabled = false; saveStatus.disabled = true;
+      }
+      saveStatus.textContent = "Lưu trạng thái";
+    });
+    statusCell.append(statusPicker, saveStatus);
+    for (const kind of ["cv", "application"]) {
+      const document = documentsByIntern.get(intern.id)?.[kind];
+      row.insertCell().textContent = document ? statusLabels[document.status] || "Chưa xác định" : "Chưa nộp";
+    }
   }
 }
 async function loadReviews() {
-  if (!allowed) return;
-  reviewDocuments = await API.getDocumentReviews();
-  renderReviews();
+  if (!allowed || loadingReviews || reviewing || reviewDialog.open) return;
+  loadingReviews = true;
+  try {
+    const [documents, interns] = await Promise.all([API.getDocumentReviews(), API.getInterns()]);
+    reviewDocuments = documents;
+    reviewInterns = interns;
+    renderReviews();
+    renderInternStatuses();
+  } finally { loadingReviews = false; }
 }
-document.getElementById("reviewSearch").addEventListener("input", renderReviews);
+document.getElementById("reviewSearch").addEventListener("input", () => { renderReviews(); renderInternStatuses(); });
 document.getElementById("reviewFilter").addEventListener("change", renderReviews);
 document.getElementById("refreshBtn").onclick = async (event) => {
   if (!allowed || reviewing) return;
@@ -88,10 +182,14 @@ document.getElementById("reviewForm").addEventListener("submit", async (event) =
   if (validation) { message.textContent = validation; return; }
   setReviewBusy(true);
   try {
-    await API.reviewDocument(selectedDocument.internId, selectedDocument.kind, { status, comment, version: selectedDocument.version });
+    const result = await API.reviewDocument(selectedDocument.internId, selectedDocument.kind, { status, comment, version: selectedDocument.version });
     selectedDocument.status = status; selectedDocument.comment = comment; selectedDocument.version = null;
     renderReviews();
-    reviewDialog.close(); reviewMessage.textContent = "Đã lưu kết quả duyệt.";
+    reviewDialog.close();
+    setReviewBusy(false);
+    reviewMessage.textContent = result.notification?.message
+      ? `Đã lưu kết quả duyệt. ${result.notification.message}`
+      : "Đã lưu kết quả duyệt; chưa có trạng thái gửi email.";
     try { await loadReviews(); }
     catch (error) { reviewMessage.textContent = `Đã lưu kết quả duyệt, nhưng chưa tải lại được danh sách: ${reviewErrorMessage(error)}`; }
   } catch (error) { message.textContent = reviewErrorMessage(error); reviewMessage.textContent = message.textContent; }
@@ -108,3 +206,9 @@ async function initializeReviews() {
   } catch (error) { reviewMessage.textContent = reviewErrorMessage(error); }
 }
 initializeReviews();
+window.addEventListener("focus", () => {
+  loadReviews().catch((error) => { reviewMessage.textContent = reviewErrorMessage(error); });
+});
+window.setInterval(() => {
+  if (!document.hidden) loadReviews().catch((error) => { reviewMessage.textContent = reviewErrorMessage(error); });
+}, 30000);

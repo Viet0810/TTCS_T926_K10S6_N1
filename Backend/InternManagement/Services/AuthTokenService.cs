@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text;
 using System.Security.Cryptography;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 using Microsoft.AspNetCore.DataProtection;
 using InternManagement.Models;
 
@@ -38,11 +39,11 @@ public sealed class AuthTokenService
                 return false;
 
             // Reject sessions issued before a password reset or account change.
-            using var connection = new SqlConnection(connectionString);
+            using var connection = new NpgsqlConnection(connectionString);
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT Username, Role, PasswordHash FROM dbo.Users WHERE Id = @id";
-            command.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = payload.Id;
+            command.Parameters.Add("@id", NpgsqlTypes.NpgsqlDbType.Integer).Value = payload.Id;
             using var reader = command.ExecuteReader();
             if (!reader.Read() || payload.PasswordVersion != PasswordVersion(reader.GetString(2)))
                 return false;

@@ -12,6 +12,8 @@
 .env
 .env.*
 !.env.example
+Backend/InternManagement/appsettings.Smtp.json
+Backend/InternManagement/appsettings.Push.json
 
 # Log
 *.log

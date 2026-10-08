@@ -6,7 +6,8 @@ namespace InternManagement.Controllers;
 
 [ApiController]
 [Route("api/interns/me/documents")]
-public sealed class InternDocumentsController(InternDocumentService documents, RequestAuthorizationService authorization) : ControllerBase
+public sealed class InternDocumentsController(InternDocumentService documents, NotificationService notifications,
+    RequestAuthorizationService authorization, ILogger<InternDocumentsController> logger) : ControllerBase
 {
     private async Task<int?> OwnProfile(CancellationToken cancellationToken)
     {
@@ -42,6 +43,14 @@ public sealed class InternDocumentsController(InternDocumentService documents, R
         var ownerId = await OwnProfile(cancellationToken);
         if (ownerId is null) return Denied();
         var validation = await documents.UploadAsync(ownerId.Value, kind, file, cancellationToken);
+        if (validation is null)
+        {
+            try { await notifications.NotifyReviewersOfUploadAsync(ownerId.Value, kind, cancellationToken); }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                logger.LogWarning(error, "Could not create HR notification for an uploaded intern document.");
+            }
+        }
         return validation is null
             ? Ok(new { message = "Đã lưu tài liệu vào hệ thống." })
             : BadRequest(new { message = validation });

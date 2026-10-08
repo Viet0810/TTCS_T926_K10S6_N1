@@ -1,6 +1,6 @@
 # Hồ sơ thực tập sinh
 
-Hồ sơ có 23 trường, đồng bộ giữa biểu mẫu tạo/sửa, hộp thoại xem chi tiết, hồ sơ cá nhân, xuất CSV, API và SQL Server.
+Hồ sơ có 23 trường, đồng bộ giữa biểu mẫu tạo/sửa, hộp thoại xem chi tiết, hồ sơ cá nhân, xuất CSV, API và PostgreSQL.
 
 | Nhóm | Thông tin |
 | --- | --- |

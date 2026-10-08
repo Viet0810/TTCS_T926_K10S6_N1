@@ -82,3 +82,8 @@ public sealed record CreateInternRequest : IValidatableObject
             yield return new ValidationResult("Ngày bắt đầu thực tập phải sau ngày sinh.", [nameof(StartDate)]);
     }
 }
+
+public sealed record UpdateInternStatusRequest(
+    [Required]
+    [RegularExpression("^(Chờ tiếp nhận|Đang thực tập|Đã hoàn thành|Đã dừng|Chưa xác định)$")]
+    string Status);

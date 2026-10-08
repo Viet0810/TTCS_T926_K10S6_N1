@@ -2,7 +2,7 @@
 
 ## Cấu trúc backend
 
-`Controllers/` chứa các endpoint; `Services/` xử lý truy cập SQL Server và phân quyền; `DTOs/` khai báo dữ liệu nhận/trả về và các giới hạn kiểm tra. API tìm kiếm sử dụng `Controllers/InternFilterController.cs`, `Services/InternFilterService.cs`, `Services/IInternFilterService.cs` và `DTOs/InternFilterRequest.cs`.
+`Controllers/` chứa các endpoint; `Services/` xử lý truy cập PostgreSQL qua Npgsql và phân quyền; `DTOs/` khai báo dữ liệu nhận/trả về và các giới hạn kiểm tra. API tìm kiếm sử dụng `Controllers/InternFilterController.cs`, `Services/InternFilterService.cs`, `Services/IInternFilterService.cs` và `DTOs/InternFilterRequest.cs`.
 
 ## Quyền và màn hình
 
@@ -13,7 +13,7 @@
 | `MANAGE_INTERNS` | Có | Có | Không | Không | Thêm hồ sơ |
 | `EDIT_INTERNS` | Có | Có | Không | Không | Chỉnh sửa hồ sơ, bao gồm từ kết quả tìm kiếm |
 
-HR có quyền tìm kiếm và chỉnh sửa riêng. MENTOR giữ quyền tìm kiếm trước đây và chỉ xem hồ sơ. Frontend lấy quyền từ `GET /api/auth/me`; backend kiểm tra lại quyền cho mỗi yêu cầu, dựa vào tài khoản đang có trong SQL Server.
+HR có quyền tìm kiếm và chỉnh sửa riêng. MENTOR giữ quyền tìm kiếm trước đây và chỉ xem hồ sơ. Frontend lấy quyền từ `GET /api/auth/me`; backend kiểm tra lại quyền cho mỗi yêu cầu, dựa vào tài khoản đang có trong PostgreSQL.
 
 ## API và dữ liệu
 
@@ -40,4 +40,4 @@ SQL và nghiệp vụ tài khoản do `AccountService` xử lý; tài liệu do 
 
 ## Kiểm tra
 
-Chạy `dotnet run --project Backend/InternManagement.Tests` để kiểm tra quyền từng vai trò và việc lưu dữ liệu qua API trên database SQL Server tạm. Chạy `python tests/check_permissions_ui.py` để kiểm tra các nút theo quyền, liên kết mở hồ sơ và dữ liệu gửi từ biểu mẫu trong Chrome.
+Project `Backend/InternManagement.Tests` hiện vẫn dùng SQL Server và chưa được chuyển sang PostgreSQL. Chạy `python tests/check_permissions_ui.py` để kiểm tra các nút theo quyền, liên kết mở hồ sơ và dữ liệu gửi từ biểu mẫu trong Chrome.

@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+using Npgsql;
 
 namespace InternManagement.Services;
 
@@ -6,108 +6,113 @@ public sealed class DatabaseInitializer
 {
     public async Task InitializeAsync(string connectionString, CancellationToken cancellationToken = default)
     {
-        await using var connection = new SqlConnection(connectionString);
+        await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = """
-            IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
-            BEGIN
-                CREATE TABLE dbo.Users (
-                    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Users PRIMARY KEY,
-                    Username NVARCHAR(100) NOT NULL CONSTRAINT UQ_Users_Username UNIQUE,
-                    FullName NVARCHAR(200) NOT NULL,
-                    Email NVARCHAR(254) NOT NULL CONSTRAINT UQ_Users_Email UNIQUE,
-                    PasswordHash NVARCHAR(512) NOT NULL,
-                    Role VARCHAR(10) NOT NULL CONSTRAINT CK_Users_Role CHECK (Role IN ('ADMIN', 'HR', 'MENTOR', 'INTERN')),
-                    CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME()
-                );
-            END;
-
-            IF OBJECT_ID(N'dbo.Interns', N'U') IS NULL
-            BEGIN
-                CREATE TABLE dbo.Interns (
-                    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Interns PRIMARY KEY,
-                    FullName NVARCHAR(200) NOT NULL,
-                    Email NVARCHAR(254) NOT NULL CONSTRAINT UQ_Interns_Email UNIQUE,
-                    Phone NVARCHAR(20) NOT NULL,
-                    School NVARCHAR(200) NOT NULL,
-                    Major NVARCHAR(200) NOT NULL,
-                    CreatedAt DATETIMEOFFSET NOT NULL CONSTRAINT DF_Interns_CreatedAt DEFAULT SYSDATETIMEOFFSET()
-                );
-            END;
-
-            IF OBJECT_ID(N'dbo.PasswordResetTokens', N'U') IS NULL
-            BEGIN
-                CREATE TABLE dbo.PasswordResetTokens (
-                    Id BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PasswordResetTokens PRIMARY KEY,
-                    UserId INT NOT NULL CONSTRAINT FK_PasswordResetTokens_Users REFERENCES dbo.Users(Id) ON DELETE CASCADE,
-                    TokenHash BINARY(32) NOT NULL CONSTRAINT UQ_PasswordResetTokens_Hash UNIQUE,
-                    CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_PasswordResetTokens_Created DEFAULT SYSUTCDATETIME(),
-                    ExpiresAt DATETIME2 NOT NULL,
-                    UsedAt DATETIME2 NULL
-                );
-                CREATE INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens(UserId, CreatedAt);
-            END;
-            """;
+        command.CommandText = "CREATE SCHEMA IF NOT EXISTS dbo";
         await command.ExecuteNonQueryAsync(cancellationToken);
+
         command.CommandText = """
-            IF COL_LENGTH(N'dbo.Interns', N'StudentCode') IS NULL
-                ALTER TABLE dbo.Interns ADD [StudentCode] NVARCHAR(50) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'ClassName') IS NULL
-                ALTER TABLE dbo.Interns ADD [ClassName] NVARCHAR(100) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Faculty') IS NULL
-                ALTER TABLE dbo.Interns ADD [Faculty] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'DateOfBirth') IS NULL
-                ALTER TABLE dbo.Interns ADD [DateOfBirth] DATE NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Address') IS NULL
-                ALTER TABLE dbo.Interns ADD [Address] NVARCHAR(500) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Organization') IS NULL
-                ALTER TABLE dbo.Interns ADD [Organization] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'OrganizationAddress') IS NULL
-                ALTER TABLE dbo.Interns ADD [OrganizationAddress] NVARCHAR(500) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Department') IS NULL
-                ALTER TABLE dbo.Interns ADD [Department] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Position') IS NULL
-                ALTER TABLE dbo.Interns ADD [Position] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Mentor') IS NULL
-                ALTER TABLE dbo.Interns ADD [Mentor] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'MentorEmail') IS NULL
-                ALTER TABLE dbo.Interns ADD [MentorEmail] NVARCHAR(254) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'MentorPhone') IS NULL
-                ALTER TABLE dbo.Interns ADD [MentorPhone] NVARCHAR(20) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'AcademicSupervisor') IS NULL
-                ALTER TABLE dbo.Interns ADD [AcademicSupervisor] NVARCHAR(200) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'StartDate') IS NULL
-                ALTER TABLE dbo.Interns ADD [StartDate] DATE NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'EndDate') IS NULL
-                ALTER TABLE dbo.Interns ADD [EndDate] DATE NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Status') IS NULL
-                ALTER TABLE dbo.Interns ADD [Status] NVARCHAR(50) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'InternshipTopic') IS NULL
-                ALTER TABLE dbo.Interns ADD [InternshipTopic] NVARCHAR(500) NULL;
-            IF COL_LENGTH(N'dbo.Interns', N'Notes') IS NULL
-                ALTER TABLE dbo.Interns ADD [Notes] NVARCHAR(2000) NULL;
-            """;
-        await command.ExecuteNonQueryAsync(cancellationToken);
-        command.CommandText = """
-            IF OBJECT_ID(N'dbo.InternDocuments', N'U') IS NULL
-            CREATE TABLE dbo.InternDocuments (
-                InternId INT NOT NULL REFERENCES dbo.Interns(Id) ON DELETE CASCADE,
-                Kind VARCHAR(20) NOT NULL CHECK (Kind IN ('cv','application')),
-                FileName NVARCHAR(255) NOT NULL,
-                Content VARBINARY(MAX) NOT NULL CHECK (DATALENGTH(Content) BETWEEN 1 AND 5242880),
-                UploadedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-                CONSTRAINT PK_InternDocuments PRIMARY KEY (InternId,Kind)
+            CREATE TABLE IF NOT EXISTS dbo.users (
+                id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                username VARCHAR(100) NOT NULL UNIQUE,
+                fullname VARCHAR(200) NOT NULL,
+                email VARCHAR(254) NOT NULL UNIQUE,
+                passwordhash VARCHAR(512) NOT NULL,
+                role VARCHAR(10) NOT NULL CHECK (role IN ('ADMIN','HR','MENTOR','INTERN')),
+                createdat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS dbo.interns (
+                id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                fullname VARCHAR(200) NOT NULL,
+                email VARCHAR(254) NOT NULL UNIQUE,
+                phone VARCHAR(20) NOT NULL,
+                school VARCHAR(200) NOT NULL,
+                major VARCHAR(200) NOT NULL,
+                createdat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                studentcode VARCHAR(50), classname VARCHAR(100), faculty VARCHAR(200),
+                dateofbirth DATE, address VARCHAR(500), organization VARCHAR(200),
+                organizationaddress VARCHAR(500), department VARCHAR(200), position VARCHAR(200),
+                mentor VARCHAR(200), mentoremail VARCHAR(254), mentorphone VARCHAR(20),
+                academicsupervisor VARCHAR(200), startdate DATE, enddate DATE, status VARCHAR(50),
+                internshiptopic VARCHAR(500), notes VARCHAR(2000)
+            );
+            CREATE TABLE IF NOT EXISTS dbo.passwordresettokens (
+                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                userid INTEGER NOT NULL REFERENCES dbo.users(id) ON DELETE CASCADE,
+                tokenhash BYTEA NOT NULL UNIQUE,
+                createdat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expiresat TIMESTAMPTZ NOT NULL,
+                usedat TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS ix_passwordresettokens_userid ON dbo.passwordresettokens(userid, createdat);
+            CREATE TABLE IF NOT EXISTS dbo.interndocuments (
+                internid INTEGER NOT NULL REFERENCES dbo.interns(id) ON DELETE CASCADE,
+                kind VARCHAR(20) NOT NULL CHECK (kind IN ('cv','application')),
+                filename VARCHAR(255) NOT NULL,
+                content BYTEA NOT NULL CHECK (octet_length(content) BETWEEN 1 AND 5242880),
+                uploadedat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                reviewstatus VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (reviewstatus IN ('pending','approved','rejected')),
+                reviewcomment VARCHAR(2000),
+                reviewedat TIMESTAMPTZ,
+                reviewedby INTEGER REFERENCES dbo.users(id) ON DELETE SET NULL,
+                notificationstatus VARCHAR(20) NOT NULL DEFAULT 'not_sent',
+                notificationmessage VARCHAR(500),
+                notificationattemptedat TIMESTAMPTZ,
+                version BIGINT NOT NULL DEFAULT 1,
+                PRIMARY KEY (internid, kind)
+            );
+            CREATE TABLE IF NOT EXISTS dbo.notifications (
+                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                userid INTEGER NOT NULL REFERENCES dbo.users(id) ON DELETE CASCADE,
+                title VARCHAR(150) NOT NULL,
+                message VARCHAR(1000) NOT NULL,
+                actionurl VARCHAR(300),
+                createdat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                readat TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS ix_notifications_user_created ON dbo.notifications(userid, createdat DESC);
+            CREATE TABLE IF NOT EXISTS dbo.pushsubscriptions (
+                id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                userid INTEGER NOT NULL REFERENCES dbo.users(id) ON DELETE CASCADE,
+                endpoint TEXT NOT NULL UNIQUE,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                createdat TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS ix_pushsubscriptions_userid ON dbo.pushsubscriptions(userid);
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        // These idempotent alterations also upgrade existing PostgreSQL databases.
         command.CommandText = """
-            IF COL_LENGTH('dbo.InternDocuments','ReviewStatus') IS NULL
-                ALTER TABLE dbo.InternDocuments ADD ReviewStatus VARCHAR(20) NOT NULL CONSTRAINT DF_DocumentReviewStatus DEFAULT 'pending' CHECK (ReviewStatus IN ('pending','approved','rejected'));
-            IF COL_LENGTH('dbo.InternDocuments','ReviewComment') IS NULL ALTER TABLE dbo.InternDocuments ADD ReviewComment NVARCHAR(2000) NULL;
-            IF COL_LENGTH('dbo.InternDocuments','ReviewedAt') IS NULL ALTER TABLE dbo.InternDocuments ADD ReviewedAt DATETIME2 NULL;
-            IF COL_LENGTH('dbo.InternDocuments','ReviewedBy') IS NULL ALTER TABLE dbo.InternDocuments ADD ReviewedBy INT NULL REFERENCES dbo.Users(Id) ON DELETE SET NULL;
-            IF COL_LENGTH('dbo.InternDocuments','Version') IS NULL ALTER TABLE dbo.InternDocuments ADD Version ROWVERSION;
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS studentcode VARCHAR(50);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS classname VARCHAR(100);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS faculty VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS dateofbirth DATE;
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS address VARCHAR(500);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS organization VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS organizationaddress VARCHAR(500);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS department VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS position VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS mentor VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS mentoremail VARCHAR(254);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS mentorphone VARCHAR(20);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS academicsupervisor VARCHAR(200);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS startdate DATE;
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS enddate DATE;
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS status VARCHAR(50);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS internshiptopic VARCHAR(500);
+            ALTER TABLE dbo.interns ADD COLUMN IF NOT EXISTS notes VARCHAR(2000);
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS reviewstatus VARCHAR(20) NOT NULL DEFAULT 'pending';
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS reviewcomment VARCHAR(2000);
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS reviewedat TIMESTAMPTZ;
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS reviewedby INTEGER REFERENCES dbo.users(id) ON DELETE SET NULL;
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS notificationstatus VARCHAR(20) NOT NULL DEFAULT 'not_sent';
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS notificationmessage VARCHAR(500);
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS notificationattemptedat TIMESTAMPTZ;
+            ALTER TABLE dbo.interndocuments ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 1;
+            ALTER TABLE dbo.notifications ADD COLUMN IF NOT EXISTS actionurl VARCHAR(300);
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }

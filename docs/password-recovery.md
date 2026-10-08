@@ -4,7 +4,7 @@ Mở `Frontend/index.html` bằng Live Server hoặc máy chủ web. Trang đăn
 
 Backend sử dụng connection string `ConnectionStrings:InternManagement` hiện có. Khi khởi động, backend bổ sung bảng `dbo.PasswordResetTokens` nếu chưa tồn tại. Không tự tạo tài khoản hoặc hồ sơ thực tập sinh.
 
-Instance SQL Server cục bộ được cấu hình là `.\SQLEXPRESS`, tương ứng với dịch vụ đang chạy trên máy. Nếu triển khai lên máy khác, cập nhật connection string theo instance/database thực tế.
+Backend dùng PostgreSQL. Cấu hình connection string qua biến môi trường; xem [hướng dẫn PostgreSQL](postgresql.md).
 
 ## Cấu hình email thật
 
@@ -56,4 +56,4 @@ Kiểm tra giao diện và thao tác biểu mẫu bằng Chrome:
 python tests/check_frontend.py
 ```
 
-Bộ kiểm thử cần quyền tạo database trong SQL Server, tạo một database có tên `InternManagement_AuthTests_<mã ngẫu nhiên>` rồi tự xóa sau khi chạy. Chỉ ghi vào database kiểm thử này. Email được nhận bằng SMTP cục bộ trong bộ kiểm thử. Có thể đặt `INTERN_TEST_SQL_SERVER` nếu muốn kiểm thử trên instance riêng.
+Bộ kiểm thử backend hiện vẫn chứa mã khởi tạo SQL Server cũ; chưa chuyển sang PostgreSQL. Các script kiểm tra giao diện vẫn dùng mock API.

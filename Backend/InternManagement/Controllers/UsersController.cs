@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Npgsql;
+using NpgsqlTypes;
 using InternManagement.DTOs;
 using InternManagement.Services;
 using InternManagement.Infrastructure;
@@ -64,7 +65,7 @@ public sealed class UsersController : ControllerBase
             return CreatedAtAction(nameof(GetUserById), new { id = user.Id },
                 new { success = true, message = "Tạo tài khoản thành công.", data = user });
         }
-        catch (SqlException error) when (error.Number is 2601 or 2627)
+        catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.UniqueViolation)
         {
             return Conflict(new ApiErrorResponse(false, "Email hoặc tên đăng nhập đã tồn tại.", null));
         }

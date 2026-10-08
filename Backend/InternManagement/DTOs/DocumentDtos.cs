@@ -7,7 +7,10 @@ public sealed record InternDocumentResponse(string Kind, string FileName, long S
 
 public sealed record DocumentReviewResponse(int InternId, string FullName, string? StudentCode, string Email,
     string Kind, string FileName, long Size, DateTime UploadedAt, string Status, string? Comment,
-    DateTime? ReviewedAt, string? Reviewer, string Version);
+    DateTime? ReviewedAt, string? Reviewer, string Version, string NotificationStatus,
+    string? NotificationMessage, DateTime? NotificationAttemptedAt);
+
+public sealed record ReviewNotificationResult(string Status, string Message, DateTime AttemptedAt);
 
 public sealed record ReviewDocumentRequest(
     [Required(ErrorMessage = "Vui lòng chọn kết quả duyệt.")]

@@ -110,6 +110,7 @@ form.addEventListener("submit", async (event) => {
     saving = false;
     closeForm();
     showMessage("Đã lưu hồ sơ vào hệ thống.", "success");
+    document.getElementById("reviewProfilesLink").hidden = false;
     try { await loadInterns(); }
     catch (error) { showMessage(`Đã lưu hồ sơ, nhưng chưa thể tải lại danh sách: ${error.message}`); }
   } catch (error) { showMessage(error.message); }
@@ -125,6 +126,8 @@ async function initializeInternPage() {
     canCreate = Session.hasPermission(session, "MANAGE_INTERNS");
     canEdit = Session.hasPermission(session, "EDIT_INTERNS");
     openFormBtn.hidden = !canCreate;
+    document.getElementById("reviewDocumentsLink").hidden = !Session.hasPermission(session, "APPROVE_DOCUMENTS");
+    document.getElementById("reviewProfilesLink").hidden = !Session.hasPermission(session, "APPROVE_DOCUMENTS");
     document.getElementById("searchInternLink").hidden = !Session.hasPermission(session, "SEARCH_INTERNS");
   } catch (error) { showMessage(`Không thể xác thực phiên: ${error.message}`); return; }
   try {
