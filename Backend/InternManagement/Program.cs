@@ -21,6 +21,7 @@ builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddScoped<InternManagement.Services.IAssignmentService, InternManagement.Services.AssignmentService>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 builder.Services.AddRateLimiter(options =>
 {
