@@ -26,6 +26,40 @@ const InternService = {
     return body;
   },
 
+  async getContract(internId) {
+    return this.apiRequest(`/interns/${encodeURIComponent(internId)}/contract`);
+  },
+
+  async uploadContract(internId, file) {
+    const token = localStorage.getItem("token");
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch(`${this.API_BASE_URL}/interns/${encodeURIComponent(internId)}/contract`, {
+      method: "POST",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+      body: form
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(body.message || `Lỗi HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    return body;
+  },
+
+  async downloadContract(contractId, inline = false) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${this.API_BASE_URL}/contracts/${encodeURIComponent(contractId)}/download?inline=${inline}`, {
+      headers: { Authorization: token ? `Bearer ${token}` : "" }
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || `Lỗi HTTP ${response.status}`);
+    }
+    return response.blob();
+  },
+
   initStorage() {
     if (!localStorage.getItem(STORAGE_KEY)) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_INTERNS));

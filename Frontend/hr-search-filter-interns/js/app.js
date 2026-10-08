@@ -20,6 +20,8 @@ const AppState = {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
+  setupContractEvents();
+  setupHrWorkspace();
   initDropdownOptions().then(renderApp).catch(error => showToast(error.message || "Không tải được danh mục."));
 });
 
@@ -195,6 +197,7 @@ function renderTable(list) {
             <button onclick="openDetailDrawer(${item.id})" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="Xem chi tiết hồ sơ">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
+            <button onclick="openInternContract(${item.id})" class="px-2 py-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition" title="Mở hợp đồng thực tập" aria-label="Hợp đồng của ${item.name}">Hợp đồng</button>
             <button onclick="openEditModal(${item.id})" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition" title="Chỉnh sửa thông tin">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
@@ -266,6 +269,7 @@ function renderGrid(list) {
           <button onclick="openDetailDrawer(${item.id})" class="flex-1 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition text-center">
             Xem hồ sơ
           </button>
+          <button onclick="openInternContract(${item.id})" class="flex-1 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition text-center">Hợp đồng</button>
           <a href="tel:${item.phone}" class="px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition flex items-center justify-center">
             📞
           </a>
@@ -496,25 +500,121 @@ async function handleBatchAction(action) {
   } else if (action === 'email') {
     showToast(`Đang mở giao diện gửi email tới ${ids.length} sinh viên...`);
   } else if (action === 'mentor') {
-    const mentors = await InternService.getMentors();
-    if (!mentors.length) {
-      showToast("Chưa có tài khoản Mentor. Hãy nhờ Admin tạo tài khoản Mentor trước.");
-      return;
-    }
-    const promptText = mentors.map((mentor, index) => `${index + 1}. ${mentor.name} · ${mentor.email}`).join("\n");
-    const selection = prompt(`Nhập số thứ tự Mentor muốn phân công:\n${promptText}`);
-    if (selection) {
-      const mentor = mentors[Number(selection) - 1];
-      if (!mentor) {
-        showToast("Số thứ tự Mentor không hợp lệ.");
-        return;
-      }
-      const result = await InternService.bulkAssignMentor(ids, mentor.id);
-      showToast(result.message || `Đã gán ${ids.length} thực tập sinh cho ${mentor.name}.`);
-      AppState.selectedIds.clear();
-      updateSelectionUI();
-      await renderApp();
-    }
+    openMentorAssignment(ids);
+  }
+}
+
+function setupHrWorkspace() {
+  const shell = document.getElementById("hrShell");
+  const toggle = document.getElementById("hrSidebarToggle");
+  const savedCollapsed = localStorage.getItem("hrSidebarCollapsed") === "true";
+  if (shell && savedCollapsed) shell.classList.add("is-collapsed");
+  if (toggle) toggle.setAttribute("aria-expanded", String(!savedCollapsed));
+  if (toggle) toggle.addEventListener("click", () => {
+    shell.classList.toggle("is-collapsed");
+    toggle.setAttribute("aria-expanded", String(!shell.classList.contains("is-collapsed")));
+    localStorage.setItem("hrSidebarCollapsed", String(shell.classList.contains("is-collapsed")));
+  });
+  document.getElementById("hrLogout")?.addEventListener("click", () => {
+    localStorage.clear();
+    window.location.replace("../index.html");
+  });
+  document.getElementById("openMentorAssignment")?.addEventListener("click", () => openMentorAssignment());
+  document.getElementById("openMentorAssignmentHero")?.addEventListener("click", () => openMentorAssignment());
+  document.querySelectorAll("[data-close-mentor-modal]").forEach(button => button.addEventListener("click", closeMentorAssignment));
+  document.getElementById("hr-assignment-select-all")?.addEventListener("change", event => {
+    document.querySelectorAll(".hr-assignment-check").forEach(input => { input.checked = event.target.checked; });
+    updateMentorAssignmentCount();
+  });
+  document.getElementById("hr-assignment-rows")?.addEventListener("change", event => {
+    if (event.target.matches(".hr-assignment-check")) updateMentorAssignmentCount();
+  });
+  document.getElementById("mentor-assignment-form")?.addEventListener("submit", saveMentorAssignment);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeMentorAssignment();
+  });
+}
+
+function hrEscape(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+}
+
+async function openMentorAssignment(preselectedIds = []) {
+  const modal = document.getElementById("mentor-assignment-modal");
+  const mentorSelect = document.getElementById("hr-assignment-mentor");
+  const rows = document.getElementById("hr-assignment-rows");
+  const message = document.getElementById("hr-assignment-message");
+  modal.hidden = false;
+  message.textContent = "";
+  rows.innerHTML = '<tr><td colspan="5">Đang tải danh sách hồ sơ…</td></tr>';
+  mentorSelect.innerHTML = '<option value="">Đang tải danh sách Mentor…</option>';
+  try {
+    const data = await InternService.apiRequest("/mentor/assignment-options");
+    const mentors = data.mentors || [];
+    const interns = data.interns || [];
+    const assignments = new Map((data.assignments || []).map(item => [item.internId ?? item.InternId, item.mentorName ?? item.MentorName ?? ""]));
+    mentorSelect.innerHTML = '<option value="">Chọn Mentor phụ trách</option>' + mentors.map(mentor => {
+      const id = mentor.id ?? mentor.Id;
+      const name = mentor.name ?? mentor.Name ?? "Mentor";
+      const email = mentor.email ?? mentor.Email ?? "";
+      return `<option value="${hrEscape(id)}">${hrEscape(name)}${email ? ` · ${hrEscape(email)}` : ""}</option>`;
+    }).join("");
+    rows.innerHTML = interns.map(intern => {
+      const id = intern.id ?? intern.Id;
+      const name = intern.name ?? intern.Name ?? "";
+      const mssv = intern.mssv ?? intern.Mssv ?? "";
+      const email = intern.email ?? intern.Email ?? "";
+      const currentMentor = assignments.get(id) || "Chưa phân công";
+      const checked = preselectedIds.map(Number).includes(Number(id)) ? "checked" : "";
+      return `<tr><td><input type="checkbox" class="hr-assignment-check" value="${hrEscape(id)}" ${checked} aria-label="Chọn ${hrEscape(name)}"></td><td>${hrEscape(name)}</td><td>${hrEscape(mssv)}</td><td>${hrEscape(email)}</td><td>${hrEscape(currentMentor)}</td></tr>`;
+    }).join("") || '<tr><td colspan="5">Chưa có hồ sơ thực tập sinh.</td></tr>';
+    document.getElementById("hr-assignment-select-all").checked = interns.length > 0 && preselectedIds.length === interns.length;
+    updateMentorAssignmentCount();
+    if (!mentors.length) message.textContent = "Chưa có tài khoản Mentor. Hãy nhờ Admin tạo tài khoản Mentor trước.";
+  } catch (error) {
+    mentorSelect.innerHTML = '<option value="">Không tải được danh sách</option>';
+    rows.innerHTML = `<tr><td colspan="5">${hrEscape(error.message || "Không tải được danh sách.")}</td></tr>`;
+    message.textContent = error.message || "Không tải được dữ liệu phân công.";
+  }
+}
+
+function updateMentorAssignmentCount() {
+  const count = document.querySelectorAll(".hr-assignment-check:checked").length;
+  const label = document.getElementById("hr-assignment-selected-count");
+  if (label) label.textContent = `Đã chọn ${count} thực tập sinh`;
+}
+
+function closeMentorAssignment() {
+  const modal = document.getElementById("mentor-assignment-modal");
+  if (modal) modal.hidden = true;
+}
+
+async function saveMentorAssignment(event) {
+  event.preventDefault();
+  const internIds = [...document.querySelectorAll(".hr-assignment-check:checked")].map(input => Number(input.value));
+  const mentorId = Number(document.getElementById("hr-assignment-mentor").value);
+  const message = document.getElementById("hr-assignment-message");
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  if (!internIds.length || !mentorId) {
+    message.textContent = "Chọn ít nhất một thực tập sinh và một Mentor.";
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Đang lưu…";
+  message.textContent = "Đang lưu phân công…";
+  try {
+    const result = await InternService.bulkAssignMentor(internIds, mentorId);
+    message.textContent = result.message || "Đã lưu phân công Mentor.";
+    AppState.selectedIds.clear();
+    updateSelectionUI();
+    await renderApp();
+    showToast(result.message || `Đã phân công Mentor cho ${internIds.length} thực tập sinh.`);
+    setTimeout(closeMentorAssignment, 500);
+  } catch (error) {
+    message.textContent = error.message || "Không thể lưu phân công Mentor.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Lưu phân công";
   }
 }
 
@@ -545,6 +645,15 @@ async function openDetailDrawer(id) {
   }
 
   document.getElementById("detail-drawer").classList.remove("hidden");
+  loadDrawerContract(intern.id);
+}
+
+async function openInternContract(id) {
+  await openDetailDrawer(id);
+  const contractSection = document.getElementById("drawer-contract-title");
+  if (contractSection && !document.getElementById("detail-drawer").classList.contains("hidden")) {
+    contractSection.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 function closeDetailDrawer() {
@@ -666,6 +775,97 @@ async function handleEditInternSubmit(event) {
   } finally {
     saveButton.disabled = false;
     saveButton.textContent = originalText;
+  }
+}
+
+function setupContractEvents() {
+  const fileInput = document.getElementById("drawer-contract-file");
+  const uploadButton = document.getElementById("drawer-contract-upload");
+  const viewButton = document.getElementById("drawer-contract-view");
+  const downloadButton = document.getElementById("drawer-contract-download");
+  if (fileInput) fileInput.addEventListener("change", () => {
+    const file = fileInput.files?.[0];
+    document.getElementById("drawer-contract-file-name").textContent = file ? file.name : "";
+  });
+  if (uploadButton) uploadButton.addEventListener("click", uploadDrawerContract);
+  if (viewButton) viewButton.addEventListener("click", () => openDrawerContract(true));
+  if (downloadButton) downloadButton.addEventListener("click", () => openDrawerContract(false));
+}
+
+async function loadDrawerContract(internId) {
+  const status = document.getElementById("drawer-contract-status");
+  const actions = document.getElementById("drawer-contract-actions");
+  status.textContent = "Đang tải thông tin hợp đồng…";
+  actions.classList.add("hidden");
+  try {
+    const contract = await InternService.getContract(internId);
+    if (AppState.currentViewingId !== internId) return;
+    AppState.currentContract = contract;
+    const date = contract.uploadedAt ? new Date(contract.uploadedAt).toLocaleDateString("vi-VN") : "";
+    const size = contract.fileSize ? `${(contract.fileSize / 1024 / 1024).toFixed(2)} MiB` : "";
+    status.textContent = `Đã có: ${contract.fileName}${date ? ` · cập nhật ${date}` : ""}${size ? ` · ${size}` : ""}`;
+    actions.classList.remove("hidden");
+  } catch (error) {
+    if (AppState.currentViewingId !== internId) return;
+    AppState.currentContract = null;
+    status.textContent = error.status === 404 ? "Hồ sơ này chưa có hợp đồng. HR có thể tải PDF lên bên dưới." : (error.message || "Không tải được thông tin hợp đồng.");
+  }
+}
+
+async function uploadDrawerContract() {
+  const internId = AppState.currentViewingId;
+  const input = document.getElementById("drawer-contract-file");
+  const button = document.getElementById("drawer-contract-upload");
+  const status = document.getElementById("drawer-contract-status");
+  const file = input?.files?.[0];
+  if (!internId) return;
+  if (!file) { showToast("Vui lòng chọn tệp hợp đồng PDF."); return; }
+  if (!file.name.toLowerCase().endsWith(".pdf") || file.type && !["application/pdf", "application/octet-stream"].includes(file.type)) {
+    showToast("Chỉ chấp nhận hợp đồng định dạng PDF."); return;
+  }
+  if (file.size === 0 || file.size > 10 * 1024 * 1024) { showToast("Tệp phải có dung lượng từ 1 byte đến 10 MiB."); return; }
+  button.disabled = true;
+  button.textContent = "Đang tải lên…";
+  try {
+    await InternService.uploadContract(internId, file);
+    input.value = "";
+    document.getElementById("drawer-contract-file-name").textContent = "";
+    await loadDrawerContract(internId);
+    status.textContent = `Đã tải hợp đồng “${file.name}” lên thành công.`;
+    showToast("Đã lưu hợp đồng thực tập.");
+  } catch (error) {
+    status.textContent = error.message || "Không tải được hợp đồng lên.";
+    showToast(status.textContent);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Tải hợp đồng lên";
+  }
+}
+
+async function openDrawerContract(inline) {
+  const contract = AppState.currentContract;
+  if (!contract) return;
+  const previewTab = inline ? window.open("about:blank", "_blank") : null;
+  try {
+    const blob = await InternService.downloadContract(contract.contractId, inline);
+    const url = URL.createObjectURL(blob);
+    if (inline && previewTab) {
+      previewTab.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } else if (inline) {
+      window.location.href = url;
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = contract.fileName || "hop-dong.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+  } catch (error) {
+    if (previewTab) previewTab.close();
+    showToast(error.message || "Không mở được hợp đồng.");
   }
 }
 

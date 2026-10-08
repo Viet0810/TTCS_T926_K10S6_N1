@@ -6,58 +6,40 @@
   <title>HR - Tìm kiếm & Lọc Thực tập sinh theo Trường / Ngành | InternFlow</title>
   <!-- Tailwind CSS -->
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body data-required-roles="HR,ADMIN" data-denied-redirect="../pages/role-dashboard.html" class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-
-  <!-- TOP HEADER -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo & Brand -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-100">
-            IM
-          </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="font-bold text-lg text-slate-900 tracking-tight">InternFlow</span>
-              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Phân hệ HR</span>
-            </div>
-            <p class="text-xs text-slate-500">Mô-đun: Tìm kiếm & Lọc Thực tập sinh theo Trường / Chuyên ngành</p>
-          </div>
-        </div>
-
-        <!-- Navigation Links -->
-        <nav class="hidden md:flex items-center space-x-1 lg:space-x-2">
-          <a href="#" class="px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg">Danh sách Thực tập sinh</a>
-          <a href="#" class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition">Đợt thực tập</a>
-          <a href="#" class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition">Trường đào tạo</a>
-          <a href="#" class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition">Người hướng dẫn</a>
-        </nav>
-
-        <!-- HR Profile & Notification -->
-        <div class="flex items-center space-x-3">
-          <button class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition" title="Thông báo mới">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
-          </button>
-          <div class="h-6 w-px bg-slate-200"></div>
-          <div class="flex items-center space-x-2.5">
-            <img class="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-100" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="HR Avatar">
-            <div class="hidden sm:block text-left">
-              <p class="text-xs font-bold text-slate-900 leading-tight">HR Quản trị</p>
-              <p class="text-2xs text-slate-400">Bộ phận Tiếp nhận & Đào tạo</p>
-            </div>
-          </div>
-        </div>
+<body data-required-roles="HR,ADMIN" data-denied-redirect="../pages/role-dashboard.html" class="hr-page">
+  <div class="hr-shell" id="hrShell">
+    <aside class="hr-sidebar">
+      <div class="hr-sidebar-brand-row">
+        <a class="hr-brand" href="#page-top" aria-label="InternFlow HR">
+          <span class="hr-brand-mark">IM</span>
+          <span class="hr-brand-copy"><strong>InternFlow</strong><small>HR WORKSPACE</small></span>
+        </a>
+        <button type="button" id="hrSidebarToggle" class="hr-sidebar-toggle" aria-label="Thu gọn thanh công cụ" aria-expanded="true" title="Thu gọn thanh công cụ">☰</button>
       </div>
-    </div>
-  </header>
-
-  <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div class="hr-workspace"><span class="hr-workspace-icon">✦</span><span><small>KHÔNG GIAN</small><strong>Quản lý thực tập</strong></span></div>
+      <p class="hr-sidebar-label">CHỨC NĂNG</p>
+      <nav class="hr-side-nav" aria-label="Điều hướng HR">
+        <a class="hr-nav-item is-active" href="#intern-list"><span class="hr-nav-icon">▤</span><span class="hr-nav-copy"><strong>Hồ sơ &amp; hợp đồng</strong><small>Danh sách thực tập sinh</small></span></a>
+        <button type="button" class="hr-nav-item" id="openMentorAssignment"><span class="hr-nav-icon">♧</span><span class="hr-nav-copy"><strong>Phân công Mentor</strong><small>Giao người hướng dẫn</small></span></button>
+        <button type="button" class="hr-nav-item" onclick="openAddModal()"><span class="hr-nav-icon">＋</span><span class="hr-nav-copy"><strong>Tiếp nhận TTS</strong><small>Tạo hồ sơ mới</small></span></button>
+      </nav>
+      <div class="hr-sidebar-bottom">
+        <div class="hr-sidebar-help"><span>i</span><div><strong>Quản lý tập trung</strong><small>Hồ sơ và hợp đồng TTS</small></div></div>
+        <div class="hr-profile"><span class="hr-profile-avatar" data-role-label>HR</span><div><strong data-user-name>Nhân sự</strong><small>PHÂN HỆ HR</small></div></div>
+        <button type="button" id="hrLogout" class="hr-logout"><span>↪</span> Đăng xuất</button>
+      </div>
+    </aside>
+    <div class="hr-main-column">
+      <header class="hr-topbar" id="page-top">
+        <div><span class="hr-topbar-kicker">PHÂN HỆ NHÂN SỰ</span><strong>Quản lý thực tập sinh</strong></div>
+        <div class="hr-topbar-status"><i></i> Hệ thống an toàn <span class="hr-topbar-avatar" data-role-label>HR</span></div>
+      </header>
+      <!-- MAIN CONTAINER -->
+      <main class="hr-content max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- PAGE TITLE & HEADER ACTIONS -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -73,11 +55,15 @@
           Quản Lý & Phân Tuyển Thực Tập Sinh
           <span id="total-badge" class="text-xs font-semibold px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">12 hồ sơ</span>
         </h1>
-        <p class="text-sm text-slate-500 mt-0.5">Tìm kiếm đa năng, phân lọc sinh viên theo cơ sở đào tạo, chuyên ngành, trạng thái và người hướng dẫn</p>
+        <p class="text-sm text-slate-500 mt-0.5">Tìm kiếm và lọc hồ sơ theo trường, chuyên ngành, trạng thái, người hướng dẫn. Bấm <strong class="font-semibold text-emerald-700">Hợp đồng</strong> ở từng hồ sơ để tải lên, xem hoặc tải hợp đồng PDF.</p>
       </div>
 
       <!-- Action buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <button type="button" id="openMentorAssignmentHero" class="inline-flex items-center px-3.5 py-2 text-sm font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 shadow-xs transition">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m6-11a4 4 0 110-8 4 4 0 010 8zm10 3v6m3-3h-6"/></svg>
+          Phân công Mentor
+        </button>
         <button onclick="handleExportExcel()" class="inline-flex items-center px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs transition">
           <svg class="w-4 h-4 mr-1.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Xuất file Excel (.xls)
@@ -279,6 +265,7 @@
 
     <!-- MAIN DATA DISPLAY AREA -->
     <!-- 1. TABLE VIEW -->
+    <div id="intern-list" class="scroll-mt-20">
     <div id="table-container" class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
       <div class="overflow-x-auto custom-scrollbar">
         <table class="w-full text-left border-collapse text-sm">
@@ -325,6 +312,7 @@
     <!-- 2. GRID / CARDS VIEW -->
     <div id="grid-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <!-- Dynamic Intern Cards -->
+    </div>
     </div>
 
   </main>
@@ -428,6 +416,27 @@
               </div>
             </div>
           </div>
+
+          <!-- Contract management for HR -->
+          <section class="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4" aria-labelledby="drawer-contract-title">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h4 id="drawer-contract-title" class="text-sm font-bold text-slate-800">Hợp đồng thực tập</h4>
+                <p id="drawer-contract-status" class="mt-1 text-xs text-slate-500" aria-live="polite">Đang tải thông tin hợp đồng…</p>
+              </div>
+              <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-indigo-700">PDF · tối đa 10 MiB</span>
+            </div>
+            <div id="drawer-contract-actions" class="hidden flex-wrap gap-2">
+              <button type="button" id="drawer-contract-view" class="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">Xem hợp đồng</button>
+              <button type="button" id="drawer-contract-download" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">Tải xuống</button>
+            </div>
+            <div class="space-y-2 border-t border-indigo-100 pt-3">
+              <label for="drawer-contract-file" class="block text-xs font-semibold text-slate-700">Thêm hoặc thay hợp đồng</label>
+              <input id="drawer-contract-file" type="file" accept="application/pdf,.pdf" class="block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+              <p id="drawer-contract-file-name" class="min-h-4 text-xs text-slate-500"></p>
+              <button type="button" id="drawer-contract-upload" class="rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">Tải hợp đồng lên</button>
+            </div>
+          </section>
         </div>
 
         <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end space-x-2">
@@ -653,10 +662,41 @@
     </div>
   </div>
 
+  <!-- MODAL: PHÂN CÔNG MENTOR NGAY TRONG PHÂN HỆ HR -->
+  <div id="mentor-assignment-modal" class="hr-modal" hidden>
+    <button type="button" class="hr-modal-backdrop" data-close-mentor-modal aria-label="Đóng cửa sổ phân công Mentor"></button>
+    <section class="hr-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="mentor-modal-title">
+      <header class="hr-modal-header">
+        <div><span class="hr-modal-kicker">ĐIỀU PHỐI THỰC TẬP</span><h2 id="mentor-modal-title">Phân công Mentor</h2><p>Chọn thực tập sinh và người hướng dẫn trong cùng một màn hình.</p></div>
+        <button type="button" class="hr-modal-close" data-close-mentor-modal aria-label="Đóng">×</button>
+      </header>
+      <form id="mentor-assignment-form">
+        <div class="hr-modal-body">
+          <label class="hr-field-label" for="hr-assignment-mentor">Mentor phụ trách</label>
+          <select id="hr-assignment-mentor" class="hr-select" required><option value="">Đang tải danh sách Mentor…</option></select>
+          <div class="hr-assignment-table-wrap">
+            <table class="hr-assignment-table">
+              <thead><tr><th><input type="checkbox" id="hr-assignment-select-all" aria-label="Chọn tất cả thực tập sinh"></th><th>Thực tập sinh</th><th>MSSV</th><th>Email</th><th>Mentor hiện tại</th></tr></thead>
+              <tbody id="hr-assignment-rows"><tr><td colspan="5">Đang tải danh sách hồ sơ…</td></tr></tbody>
+            </table>
+          </div>
+          <p id="hr-assignment-message" class="hr-assignment-message" role="status" aria-live="polite"></p>
+        </div>
+        <footer class="hr-modal-footer">
+          <span id="hr-assignment-selected-count">Đã chọn 0 thực tập sinh</span>
+          <div><button type="button" class="hr-button-secondary" data-close-mentor-modal>Đóng</button><button type="submit" class="hr-button-primary">Lưu phân công</button></div>
+        </footer>
+      </form>
+    </section>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 transform transition-all duration-300 translate-y-16 opacity-0">
     <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
     <span id="toast-message" class="text-xs font-medium">Thông báo hệ thống</span>
+  </div>
+
+    </div>
   </div>
 
   <!-- Scripts trong thư mục của bạn -->

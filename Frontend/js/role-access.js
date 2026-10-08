@@ -17,6 +17,11 @@
     return;
   }
 
+  if (role === "HR" && /\/pages\/role-dashboard\.html$/i.test(window.location.pathname)) {
+    window.location.replace("../hr-search-filter-interns/index.html");
+    return;
+  }
+
   window.CurrentAccess = { user, role, ...access };
   const requiredRoles = document.body.dataset.requiredRoles;
   if (requiredRoles && !requiredRoles.split(",").map((value) => value.trim()).includes(role)) {
