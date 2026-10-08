@@ -79,6 +79,8 @@ internal static class DocumentChecks
         var missingRoute="/api/document-reviews/2147483647/cv";
         var decision=new {status="approved",comment="",version="AAAAAAAAAAA="};
         check((await http.PutAsJsonAsync(missingRoute,decision)).StatusCode==HttpStatusCode.Forbidden,"intern direct review is forbidden");
+        check((await http.PutAsJsonAsync(missingRoute + "/approve",new {version="AAAAAAAAAAA="})).StatusCode==HttpStatusCode.Forbidden,"intern cannot call explicit approve endpoint");
+        check((await http.PutAsJsonAsync(missingRoute + "/reject",new {version="AAAAAAAAAAA=",comment="Not allowed"})).StatusCode==HttpStatusCode.Forbidden,"intern cannot call explicit reject endpoint");
         await Login("mentor");
         check((await http.GetAsync("/api/document-reviews")).StatusCode==HttpStatusCode.Forbidden,"mentor cannot review documents");
         check((await http.PutAsJsonAsync(missingRoute,decision)).StatusCode==HttpStatusCode.Forbidden,"mentor direct review is forbidden");
@@ -90,6 +92,8 @@ internal static class DocumentChecks
         var route=$"/api/document-reviews/{cv.GetProperty("internId").GetInt32()}/cv";
         var version=cv.GetProperty("version").GetString();
         check(queue.RootElement.GetArrayLength()==2 && queue.RootElement.EnumerateArray().All(item=>item.GetProperty("status").GetString()=="pending"),"HR sees both uploaded documents pending");
+        check(cv.GetProperty("phone").GetString()!.Length > 0 && cv.TryGetProperty("school",out _) && cv.TryGetProperty("major",out _) && cv.TryGetProperty("createdAt",out _), "review queue includes candidate contact, education and registration date");
+        check((await http.GetAsync($"/api/interns/{cv.GetProperty("internId").GetInt32()}")).IsSuccessStatusCode, "HR can view full candidate details through existing profile endpoint");
         check((await http.GetAsync(missingRoute)).StatusCode==HttpStatusCode.NotFound,"missing file returns 404 on download");
         check((await http.PutAsJsonAsync(missingRoute,decision)).StatusCode==HttpStatusCode.NotFound,"missing document returns 404 on review");
         check((await http.PutAsJsonAsync(route,new {status="invalid",version})).StatusCode==HttpStatusCode.BadRequest,"invalid review status is rejected");
@@ -98,6 +102,8 @@ internal static class DocumentChecks
         check((await http.PutAsJsonAsync(route.Replace("/cv","/unknown"),decision)).StatusCode==HttpStatusCode.BadRequest,"invalid review kind is rejected");
         check((await http.GetAsync(route)).IsSuccessStatusCode,"HR can download submitted documents");
         check((await http.PutAsJsonAsync(route,new{status="rejected",comment="",version})).StatusCode==HttpStatusCode.BadRequest,"rejection requires a reason");
+        check((await http.PutAsJsonAsync(route + "/approve",new {})).StatusCode==HttpStatusCode.BadRequest,"approve endpoint requires version");
+        check((await http.PutAsJsonAsync(route + "/reject",new {version,comment=""})).StatusCode==HttpStatusCode.BadRequest,"reject endpoint requires reason");
         check((await http.PutAsJsonAsync(route,new{status="approved",comment="Complete",version})).IsSuccessStatusCode,"HR can approve the current version");
         check((await http.PutAsJsonAsync(route,new{status="rejected",comment="Stale",version})).StatusCode==HttpStatusCode.Conflict,"stale review cannot overwrite a newer decision");
         async Task<string> CurrentVersion() {
@@ -106,6 +112,11 @@ internal static class DocumentChecks
         }
         version=await CurrentVersion();
         check((await http.PutAsJsonAsync(route,new{status="approved",version})).StatusCode==HttpStatusCode.Conflict,"already approved document rejects repeat approval");
+        check((await http.PutAsJsonAsync(route + "/reject",new{comment="Change decision",version})).StatusCode==HttpStatusCode.Conflict,"approved document cannot be changed to rejected even with fresh version");
+        await Login("intern");
+        await Upload("cv",pdf);
+        await Login("hr");
+        version=await CurrentVersion();
         await using(var fault=sql.CreateCommand()) {
             fault.CommandText="CREATE TRIGGER dbo.DocumentReviewTestFailure ON dbo.InternDocuments AFTER UPDATE AS THROW 51000, 'Private review failure', 1;";
             await fault.ExecuteNonQueryAsync();
@@ -118,12 +129,23 @@ internal static class DocumentChecks
         } finally {
             await using var restore=sql.CreateCommand();restore.CommandText="DROP TRIGGER dbo.DocumentReviewTestFailure";await restore.ExecuteNonQueryAsync();
         }
-        check((await http.PutAsJsonAsync(route,new{status="rejected",comment="Missing details",version})).IsSuccessStatusCode,"HR rejection is persisted");
+        check((await http.PutAsJsonAsync(route + "/reject",new{comment="Missing details",version})).IsSuccessStatusCode,"HR rejection is persisted through explicit reject endpoint");
         version=await CurrentVersion();
         check((await http.PutAsJsonAsync(route,new{status="rejected",comment="Missing details",version})).StatusCode==HttpStatusCode.Conflict,"already rejected document rejects repeat rejection");
         using(var persisted=JsonDocument.Parse(await http.GetStringAsync("/api/document-reviews")))
             check(persisted.RootElement.EnumerateArray().Any(item=>item.GetProperty("status").GetString()=="rejected" && item.GetProperty("comment").GetString()=="Missing details"),"reload returns persisted rejection and reason");
-        check((await http.PutAsJsonAsync(route,new{status="approved",comment="Complete",version})).IsSuccessStatusCode,"HR can change a rejection to approval");
+        check((await http.PutAsJsonAsync(route + "/approve",new{comment="Complete",version})).StatusCode==HttpStatusCode.Conflict,"HR cannot change rejection to approval");
+        await Login("intern");
+        await Upload("cv",pdf);
+        await Login("hr");
+        version=await CurrentVersion();
+        var concurrent=await Task.WhenAll(http.PutAsJsonAsync(route + "/approve",new{version}),http.PutAsJsonAsync(route + "/reject",new{comment="Concurrent rejection",version}));
+        check(concurrent.Count(response=>response.IsSuccessStatusCode)==1 && concurrent.Count(response=>response.StatusCode==HttpStatusCode.Conflict)==1,"concurrent decisions process pending document exactly once");
+        await Login("intern");
+        await Upload("cv",pdf);
+        await Login("hr");
+        version=await CurrentVersion();
+        check((await http.PutAsJsonAsync(route + "/approve",new{version})).IsSuccessStatusCode,"explicit approve endpoint processes pending upload");
         await Login("intern");
         using var approved=JsonDocument.Parse(await http.GetStringAsync("/api/interns/me/documents"));
         check(approved.RootElement.EnumerateArray().Any(item=>item.GetProperty("status").GetString()=="approved"),"intern sees persisted approval status");
@@ -134,7 +156,8 @@ internal static class DocumentChecks
         var tooBig=await Upload("cv",oversized);
         check(tooBig.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.RequestEntityTooLarge,"oversized documents are rejected");
         await Login("admin");
-        check((await http.GetAsync("/api/document-reviews")).IsSuccessStatusCode,"admin retains existing review access");
+        check((await http.GetAsync("/api/document-reviews")).StatusCode==HttpStatusCode.Forbidden,"admin cannot access HR-only review queue");
+        check((await http.PutAsJsonAsync(route + "/approve",new{version})).StatusCode==HttpStatusCode.Forbidden,"admin cannot approve documents");
         var applicationRoute=route.Replace("/cv","/application");
         await using(var remove=sql.CreateCommand()) {
             remove.CommandText="DELETE FROM dbo.InternDocuments WHERE InternId=@id AND Kind='application'";

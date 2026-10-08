@@ -108,7 +108,8 @@ public sealed class InternDocumentService(IConfiguration configuration)
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT d.InternId,i.FullName,i.StudentCode,i.Email,d.Kind,d.FileName,DATALENGTH(d.Content),d.UploadedAt,
-                d.ReviewStatus,d.ReviewComment,d.ReviewedAt,u.FullName,d.Version
+                d.ReviewStatus,d.ReviewComment,d.ReviewedAt,u.FullName,d.Version,
+                i.Phone,i.School,i.Major,i.CreatedAt
             FROM dbo.InternDocuments d JOIN dbo.Interns i ON i.Id=d.InternId
             LEFT JOIN dbo.Users u ON u.Id=d.ReviewedBy ORDER BY d.UploadedAt DESC
             """;
@@ -127,7 +128,7 @@ public sealed class InternDocumentService(IConfiguration configuration)
         // A changed upload or decision must not be overwritten by an old review dialog.
         command.CommandText = """
             UPDATE dbo.InternDocuments SET ReviewStatus=@status,ReviewComment=@comment,ReviewedAt=SYSUTCDATETIME(),ReviewedBy=@user
-            WHERE InternId=@id AND Kind=@kind AND Version=@version AND ReviewStatus<>@status
+            WHERE InternId=@id AND Kind=@kind AND Version=@version AND ReviewStatus='pending'
             """;
         AddDocumentKey(command, ownerId, kind);
         command.Parameters.Add("@status", SqlDbType.VarChar, 20).Value = request.Status;
@@ -139,7 +140,7 @@ public sealed class InternDocumentService(IConfiguration configuration)
         command.CommandText = "SELECT ReviewStatus FROM dbo.InternDocuments WHERE InternId=@id AND Kind=@kind";
         var current = await command.ExecuteScalarAsync(cancellationToken);
         if (current is null) return DocumentReviewResult.NotFound;
-        return (string)current == request.Status ? DocumentReviewResult.AlreadyReviewed : DocumentReviewResult.Changed;
+        return (string)current != "pending" ? DocumentReviewResult.AlreadyReviewed : DocumentReviewResult.Changed;
     }
 
     private static void AddDocumentKey(SqlCommand command, int ownerId, string kind)
@@ -153,5 +154,6 @@ public sealed class InternDocumentService(IConfiguration configuration)
         reader.GetString(3), reader.GetString(4), reader.GetString(5), reader.GetInt64(6), reader.GetDateTime(7),
         reader.GetString(8), reader.IsDBNull(9) ? null : reader.GetString(9),
         reader.IsDBNull(10) ? null : reader.GetDateTime(10), reader.IsDBNull(11) ? null : reader.GetString(11),
-        Convert.ToBase64String((byte[])reader[12]));
+        Convert.ToBase64String((byte[])reader[12]), reader.GetString(13), reader.GetString(14),
+        reader.GetString(15), reader.GetFieldValue<DateTimeOffset>(16));
 }

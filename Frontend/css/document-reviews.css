@@ -1,0 +1,16 @@
+/* Scoped US7 styles; preserve the shared theme. */
+#reviewRows td { overflow-wrap: anywhere; }
+#reviewRows .review-status { display: inline-block; padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+#reviewRows .review-status.pending { color: #805600; background: #fff4d8; }
+#reviewRows .review-status.approved { color: #17694d; background: #e6f6ed; }
+#reviewRows .review-status.rejected { color: #a6364b; background: #fff0f3; }
+#reviewRows button { margin: 4px; }
+#reviewDialog #reviewDetails { margin: 22px 0; }
+#reviewDialog .review-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#reviewDialog .review-dialog-close { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 28px; line-height: 1; transition: background .15s, color .15s; }
+#reviewDialog .review-dialog-close:hover:not(:disabled) { background: var(--input); color: var(--ink); }
+#reviewDialog #reviewForm { margin-top: 24px; }
+#reviewDialog textarea { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; resize: vertical; }
+#reviewDialog [aria-busy="true"] { opacity: .8; }
+#dialogMessage { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 700px) { #reviewDialog { padding: 18px; } #reviewDialog .profile-details { grid-template-columns: 1fr; } }

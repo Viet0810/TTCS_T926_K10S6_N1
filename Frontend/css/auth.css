@@ -1,4 +1,4 @@
-/* Shared layout for login and password recovery. */
+/* Shared layout for login, registration and password recovery. */
 .auth-page { display: grid; place-items: center; padding: 40px 24px; background: #eef2f8; }
 .auth-shell { width: min(1100px, 100%); min-height: 700px; display: grid; grid-template-columns: 1.05fr 1fr; border: 1px solid #dfe6f0; border-radius: 24px; overflow: hidden; background: var(--surface); box-shadow: 0 24px 80px #14345a12; }
 .auth-brand-panel { position: relative; display: flex; flex-direction: column; overflow: hidden; padding: 36px 42px 28px; color: white; background: linear-gradient(155deg, #163b78, #214f9b 58%, #2e66c3); }
@@ -83,3 +83,12 @@
   .auth-copyright { margin-top: 18px; }
 }
 @media (max-width: 380px) { .auth-page { padding: 12px; } .auth-form-panel { padding: 22px 18px; } }
+
+.auth-field.has-error label { color: #a6364b; }
+.auth-field input[aria-invalid="true"] { border-color: var(--danger); background: #fffafb; }
+.auth-field input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px #d957681a; }
+.auth-field-error { position: relative; padding-left: 18px; color: #a6364b; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.auth-field-error::before { content: "⚠"; position: absolute; left: 0; top: 0; }
+.auth-field:has(.auth-field-error) { padding-bottom: 25px; }
+.auth-field.has-error:has(.auth-field-error) { padding-bottom: 0; }
+.auth-message.auth-notification:not(.is-success) { padding: 6px 0; border: 0; background: transparent; font-size: 12px; }

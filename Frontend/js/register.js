@@ -1,28 +1,27 @@
 const registerForm = document.getElementById("registerForm");
 const registerFields = ["fullName", "email", "password", "phone", "school", "major"];
+const validationFields = ["fullName", "email", "password", "confirmPassword", "phone", "school", "major"];
 const fieldLabels = { fullName: "họ và tên", email: "email", password: "mật khẩu", phone: "số điện thoại", school: "trường", major: "chuyên ngành" };
-const touchedFields = new Set();
 let registering = false;
 let emailConflict = false;
 
 function setFieldError(name, text) {
-  const input = registerForm.elements[name];
-  const error = document.getElementById(`${name}Error`);
-  input.setAttribute("aria-invalid", String(Boolean(text)));
-  error.textContent = text;
-  error.hidden = !text;
+  Validation.showFieldError(registerForm.elements[name], text);
 }
 
 function validateRegisterField(name) {
   const input = registerForm.elements[name];
-  const value = name === "password" ? input.value : input.value.trim();
+  const value = ["password", "confirmPassword"].includes(name) ? input.value : input.value.trim();
   let error = "";
-  if (!value.trim()) error = `Vui lòng nhập ${fieldLabels[name]}.`;
-  else if (name === "email" && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(value)) error = "Vui lòng nhập đúng địa chỉ Gmail.";
-  else if (name === "password" && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(value)) error = "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.";
-  else if (name === "phone" && !/^0[35789]\d{8}$/.test(value)) error = "Số điện thoại phải gồm 10 chữ số và đúng định dạng số di động Việt Nam.";
-  else if (input.maxLength > 0 && value.length > input.maxLength) error = `Vui lòng nhập tối đa ${input.maxLength} ký tự.`;
-  else if (name === "email" && emailConflict) error = "Email đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.";
+  if (name === "email") error = Validation.validateEmail(value);
+  else if (name === "password") error = Validation.validatePassword(value);
+  else if (name === "phone") error = Validation.validatePhone(value);
+  else if (name === "confirmPassword") {
+    if (!value) error = "Vui lòng xác nhận mật khẩu.";
+    else if (value !== registerForm.elements.password.value) error = "Xác nhận mật khẩu không khớp.";
+  } else if (!value.trim()) error = `Vui lòng nhập ${fieldLabels[name]}.`;
+  if (!error && input.maxLength > 0 && value.length > input.maxLength) error = `Vui lòng nhập tối đa ${input.maxLength} ký tự.`;
+  if (!error && name === "email" && emailConflict) error = "Email đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.";
   setFieldError(name, error);
   return !error;
 }
@@ -34,12 +33,11 @@ function setRegisterBusy(busy) {
   registerForm.querySelector(".register-spinner").hidden = !busy;
 }
 
-for (const name of registerFields) {
+for (const name of validationFields) {
   const input = registerForm.elements[name];
   input.addEventListener("blur", () => {
     if (registering) return;
-    if (name !== "password") input.value = input.value.trim();
-    touchedFields.add(name);
+    if (!["password", "confirmPassword"].includes(name)) input.value = input.value.trim();
     validateRegisterField(name);
   });
   input.addEventListener("input", () => {
@@ -56,7 +54,8 @@ for (const name of registerFields) {
       }
     }
     if (name === "email") emailConflict = false;
-    if (touchedFields.has(name)) validateRegisterField(name);
+    Validation.clearFieldError(input);
+    if (name === "password") Validation.clearFieldError(registerForm.elements.confirmPassword);
     AuthUI.message("registerMessage", "");
   });
 }
@@ -66,9 +65,8 @@ registerForm.addEventListener("submit", async (event) => {
   if (registering || registerForm.hidden) return;
   AuthUI.message("registerMessage", "");
   let firstInvalid = null;
-  for (const name of registerFields) {
-    if (name !== "password") registerForm.elements[name].value = registerForm.elements[name].value.trim();
-    touchedFields.add(name);
+  for (const name of validationFields) {
+    if (!["password", "confirmPassword"].includes(name)) registerForm.elements[name].value = registerForm.elements[name].value.trim();
     if (!validateRegisterField(name) && !firstInvalid) firstInvalid = registerForm.elements[name];
   }
   if (firstInvalid) { firstInvalid.focus(); return; }
@@ -85,11 +83,10 @@ registerForm.addEventListener("submit", async (event) => {
     AuthUI.message("registerMessage", "Đăng ký thành công! Đăng nhập bằng email của bạn để nộp CV và đơn xin thực tập.", true);
     document.getElementById("registerMessage").focus();
   } catch (error) {
-    AuthUI.message("registerMessage", error.message || "Không thể đăng ký lúc này. Vui lòng thử lại.");
     if (error.status === 409) {
       emailConflict = true;
       validateRegisterField("email");
-    }
+    } else AuthUI.message("registerMessage", Validation.requestMessage(error, "Không thể đăng ký lúc này. Vui lòng thử lại."));
   } finally {
     registering = false;
     setRegisterBusy(false);

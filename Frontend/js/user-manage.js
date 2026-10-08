@@ -1,5 +1,7 @@
 const tableBody = document.getElementById("userTableBody");
 const searchInput = document.getElementById("userSearchInput");
+const createForm = document.getElementById("createUserForm");
+const createLink = document.getElementById("createUserLink");
 let users = [];
 let creatingUser = false;
 let canCreateUser = false;
@@ -60,7 +62,12 @@ async function initializePage() {
     }
     canCreateUser = Session.hasPermission(session, "CREATE_USER");
     canDeleteUser = Session.hasPermission(session, "DELETE_USER");
-    await loadUsers();
+    if (createForm && !canCreateUser) {
+      window.location.href = "user-manage.html";
+      return;
+    }
+    if (createLink) createLink.hidden = !canCreateUser;
+    if (tableBody) await loadUsers();
   } catch (error) {
     if (!Session.redirectIfExpired(error)) alert(error.message);
   }
@@ -68,9 +75,9 @@ async function initializePage() {
 
 document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 
-searchInput.addEventListener("input", renderUsers);
+searchInput?.addEventListener("input", renderUsers);
 
-tableBody.addEventListener("click", async (event) => {
+tableBody?.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-user-id]");
   if (!button || button.disabled || !canDeleteUser || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
 
@@ -88,9 +95,7 @@ tableBody.addEventListener("click", async (event) => {
 
 initializePage();
 
-document
-  .getElementById("createUserForm")
-  .addEventListener("submit", async function (event) {
+createForm?.addEventListener("submit", async function (event) {
     event.preventDefault();
     if (creatingUser || !canCreateUser) return;
 
@@ -123,8 +128,10 @@ document
 
       this.reset();
 
-      try { await loadUsers(); }
-      catch (error) { alert(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+      if (tableBody) {
+        try { await loadUsers(); }
+        catch (error) { alert(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+      }
     } catch (error) {
       alert(error.message);
     }

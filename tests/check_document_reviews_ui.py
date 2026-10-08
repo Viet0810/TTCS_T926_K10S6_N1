@@ -1,4 +1,4 @@
-"""Exercise HR document decisions in Chrome with an isolated mocked API."""
+"""US7 browser checks using a mocked API; no real database writes."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import os, re, subprocess
@@ -7,51 +7,48 @@ root = Path(__file__).resolve().parents[1] / 'Frontend'
 chrome = Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe'
 setup = '''<script>
 localStorage.clear();localStorage.setItem('token','review-test');
-let items=['cv','application'].map((kind,i)=>({internId:1,fullName:'Test intern',email:'test@example.invalid',kind,fileName:kind+'.pdf',size:100,uploadedAt:'2026-10-02T00:00:00',status:'pending',version:'v'+i}));
+let role='HR',items=['cv','application'].map((kind,i)=>({internId:1,fullName:'Test intern',email:'test@example.invalid',phone:'0912345678',school:'Test school',major:'Test major',createdAt:'2026-10-01T00:00:00+07:00',kind,fileName:kind+'.pdf',size:100,uploadedAt:'2026-10-02T00:00:00',status:'pending',version:'v'+i}));
 let puts=0,downloaded=false,failList=false,failStatus=0,offline=false,hold=false,releaseReview,lastBody;
 window.fetch=async(url,options={})=>{
 if(offline)throw new TypeError('network');
-if(url.endsWith('/auth/me'))return{ok:true,json:async()=>({permissions:['APPROVE_DOCUMENTS']})};
+if(url.endsWith('/auth/me'))return{ok:true,json:async()=>({user:{role},permissions:['APPROVE_DOCUMENTS']})};
 if(failStatus)return{ok:false,status:failStatus,json:async()=>({message:'Test API error'})};
 if(options.method==='PUT'){
 puts++;lastBody=JSON.parse(options.body);if(hold)await new Promise(resolve=>releaseReview=resolve);
-const item=items.find(item=>item.kind===url.split('/').pop());Object.assign(item,lastBody,{version:'new-'+puts});
+const parts=url.split('/'),item=items.find(item=>item.kind===parts.at(-2));
+Object.assign(item,lastBody,{status:parts.at(-1)==='approve'?'approved':'rejected',version:'new-'+puts});
 return{ok:true,json:async()=>({message:'saved'})};
 }
-if(url.endsWith('/document-reviews')){
-if(failList)throw new TypeError('list unavailable');
-return{ok:true,json:async()=>structuredClone(items)};
-}
+if(url.endsWith('/document-reviews')){if(failList)throw new TypeError('list unavailable');return{ok:true,json:async()=>structuredClone(items)}}
+if(url.endsWith('/interns/1'))return{ok:true,json:async()=>({...items[0],id:1})};
 return{ok:true,blob:async()=>new Blob(['%PDF-1.4'],{type:'application/pdf'})};
 };
 HTMLAnchorElement.prototype.click=function(){downloaded=this.download==='cv.pdf'};
 </script>'''
 checks = '''<pre id="result"></pre><script>(async()=>{try{
-const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
-const settle=async()=>{await tick();await tick();await tick()};
+const tick=()=>new Promise(resolve=>setTimeout(resolve,0)),settle=async()=>{await tick();await tick();await tick()};
 const assert=(ok,label)=>{if(!ok)throw Error(label)};
-const open=()=>document.querySelector('#reviewRows tr button:nth-child(2)').click();
+const open=async(index=0)=>{document.querySelectorAll('#reviewRows tr')[index].querySelector('button:nth-child(2)').click();await settle()};
 const submit=status=>{const button=document.querySelector('#reviewForm button[value="'+status+'"]');document.getElementById('reviewForm').dispatchEvent(new SubmitEvent('submit',{cancelable:true,submitter:button}))};
-await settle();assert(document.querySelectorAll('#reviewRows tr').length===2,'CV and application visible');
-assert(document.getElementById('reviewRows').textContent.includes('Test intern'),'owner visible');
-document.querySelector('#reviewRows tr button').click();await settle();assert(downloaded,'download with original filename');
-open();submit('rejected');await settle();assert(puts===0&&document.getElementById('dialogMessage').textContent.includes('lý do'),'reason required');
-hold=true;submit('approved');submit('approved');assert(puts===1&&document.querySelector('#reviewForm button').disabled,'repeat requests blocked');
+await settle();assert(document.querySelectorAll('#reviewRows tr').length===2,'CV and application listed');
+assert(['Test intern','0912345678','Test school','Test major'].every(text=>document.getElementById('reviewRows').textContent.includes(text)),'candidate summary fields');
+document.querySelector('#reviewRows tr button').click();await settle();assert(downloaded,'PDF download');
+await open();assert(document.getElementById('reviewDetails').textContent.includes('Test school'),'full candidate details');
+submit('rejected');assert(puts===0&&document.getElementById('dialogMessage').textContent.includes('lý do'),'rejection reason required');
+hold=true;submit('approved');submit('approved');assert(puts===1&&document.querySelector('#reviewForm button').disabled,'loading and double submit guard');
 hold=false;releaseReview();await settle();assert(!document.getElementById('reviewDialog').open&&document.getElementById('reviewRows').textContent.includes('Đã duyệt'),'approval updates table');
-assert(lastBody.version==='v0','existing version contract');
-document.getElementById('refreshBtn').click();await settle();assert(document.getElementById('reviewRows').textContent.includes('Đã duyệt'),'reload preserves status');
-open();assert(document.querySelector('#reviewForm button[value="approved"]').disabled,'repeat approval disabled');
-document.getElementById('reviewComment').value='Missing details';submit('rejected');await settle();assert(document.getElementById('reviewRows').textContent.includes('Từ chối')&&document.getElementById('reviewRows').textContent.includes('Missing details'),'rejection and reason visible');
-open();assert(document.querySelector('#reviewForm button[value="rejected"]').disabled,'repeat rejection disabled');
-failStatus=500;submit('approved');await settle();assert(document.getElementById('reviewDialog').open&&document.getElementById('dialogMessage').textContent==='Test API error'&&!document.querySelector('#reviewForm button').disabled,'save error restores dialog');
-failStatus=0;failList=true;submit('approved');await settle();assert(!document.getElementById('reviewDialog').open&&document.getElementById('reviewMessage').textContent.includes('Đã lưu kết quả duyệt, nhưng'),'successful save with failed reload is clear');
-assert(document.querySelector('#reviewRows tr button:nth-child(2)').disabled,'no stale version resubmission');
+assert(lastBody.version==='v0'&&!('status' in lastBody),'explicit decision contract');
+await open();assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'processed document hides actions');
+submit('rejected');assert(puts===1,'processed document cannot submit');document.getElementById('closeReview').click();
+await open(1);failStatus=500;document.getElementById('reviewComment').value='Missing details';submit('rejected');await settle();
+assert(document.getElementById('reviewDialog').open&&document.getElementById('dialogMessage').textContent==='Test API error'&&!document.querySelector('#reviewForm button').disabled,'server failure keeps dialog and restores controls');
+failStatus=0;failList=true;submit('rejected');await settle();assert(!document.getElementById('reviewDialog').open&&document.getElementById('reviewMessage').textContent.includes('Đã lưu kết quả duyệt, nhưng'),'successful save with failed refresh');
+await open(1);assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'saved status prevents stale resubmission');document.getElementById('closeReview').click();
 failList=false;document.getElementById('refreshBtn').click();await settle();
-for(const [status,part] of [[401,'đăng nhập lại'],[403,'không có quyền'],[404,'Không tìm thấy'],[400,'Test API error'],[500,'Test API error']]){
-failStatus=status;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes(part),'HTTP '+status+' feedback');
-}
-failStatus=0;offline=true;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes('Không thể kết nối'),'network feedback');
-document.getElementById('result').textContent='PASS: HR list/download/approval/rejection/reload, reason validation, repeated decisions and requests, failed save/reload, HTTP 401/403/404/400/500 and network feedback';
+for(const [status,part] of [[401,'đăng nhập lại'],[403,'không có quyền'],[404,'Không tìm thấy'],[409,'Test API error'],[500,'Test API error']]){failStatus=status;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes(part),'HTTP '+status+' feedback')}
+failStatus=0;offline=true;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes('Không thể kết nối'),'network error');offline=false;
+document.getElementById('reviewRows').replaceChildren();role='ADMIN';await initializeReviews();assert(!allowed&&document.getElementById('reviewRows').children.length===0,'admin blocked despite permission');
+document.getElementById('result').textContent='PASS: HR-only list/details/download, pending approval/rejection, locked final states, loading, API contract and error handling';
 }catch(error){document.getElementById('result').textContent='FAIL: '+error.message}})();</script>'''
 with TemporaryDirectory(prefix='intern-review-ui-') as temporary:
     temporary = Path(temporary)
@@ -59,7 +56,8 @@ with TemporaryDirectory(prefix='intern-review-ui-') as temporary:
     html = html.replace('<head>', '<head><base href="'+(root/'pages').as_uri()+'/">'+setup).replace('</body>', checks+'</body>')
     target = temporary/'reviews.html'
     target.write_text(html, encoding='utf-8')
-    result = subprocess.run([str(chrome), '--headless', '--disable-gpu', '--no-sandbox', '--window-size=1100,900', '--user-data-dir='+str(temporary/'profile'), '--virtual-time-budget=5000', '--dump-dom', target.as_uri()], capture_output=True, timeout=30)
-    match = re.search(r'<pre id="result">(.*?)</pre>', result.stdout.decode('utf-8', errors='replace'), re.S)
-    assert match and match.group(1).startswith('PASS:'), 'Browser failed' if not match else match.group(1)
-    print(match.group(1))
+    for width in (390, 768, 1440):
+        result = subprocess.run([str(chrome), '--headless', '--disable-gpu', '--no-sandbox', f'--window-size={width},900', '--user-data-dir='+str(temporary/f'profile-{width}'), '--virtual-time-budget=5000', '--dump-dom', target.as_uri()], capture_output=True, timeout=30)
+        match = re.search(r'<pre id="result">(.*?)</pre>', result.stdout.decode('utf-8', errors='replace'), re.S)
+        assert match and match.group(1).startswith('PASS:'), 'Browser failed' if not match else match.group(1)
+        print(f'{width}px: {match.group(1)}')

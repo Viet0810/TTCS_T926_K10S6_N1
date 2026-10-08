@@ -6,6 +6,7 @@
     <title>Ma trận phân quyền | Hệ thống quản lý thực tập sinh</title>
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/permissions.css" />
   </head>
   <body>
     <div class="dashboard">
@@ -37,17 +38,7 @@
               </p>
             </div>
           </div>
-          <div class="table-container">
-            <table class="user-table">
-              <thead>
-                <tr>
-                  <th>Role</th>
-                  <th>Permissions</th>
-                </tr>
-              </thead>
-              <tbody id="rolePermissionTable"></tbody>
-            </table>
-          </div>
+          <div id="rolePermissionCards" class="permission-card-grid" aria-label="Quyền theo vai trò"></div>
           <p
             id="permissionsMessage"
             class="dashboard-message"
