@@ -87,6 +87,10 @@ builder.Services.AddScoped<
     InternManagement.Services.IAttendanceReportService,
     InternManagement.Services.AttendanceReportService
 >();
+builder.Services.AddScoped<
+    InternManagement.Services.IInternAssignmentService,
+    InternManagement.Services.InternAssignmentService
+>();
 
 var app = builder.Build();
 
