@@ -73,7 +73,6 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
-
 builder.Services.AddScoped<
     InternManagement.Services.IInternService,
     InternManagement.Services.InternService
@@ -84,6 +83,10 @@ builder.Services.AddScoped<
     InternManagement.Services.InternFilterService
 >();
 
+builder.Services.AddScoped<
+    InternManagement.Services.IAttendanceReportService,
+    InternManagement.Services.AttendanceReportService
+>();
 
 var app = builder.Build();
 
