@@ -8,7 +8,12 @@ namespace InternManagement.Controllers;
 [Route("api/document-reviews")]
 public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization) : ControllerBase
 {
-    private AuthorizationDecision Access() => authorization.Evaluate(Request, PermissionNames.ApproveDocuments);
+    private AuthorizationDecision Access()
+    {
+        var decision = authorization.Evaluate(Request, PermissionNames.ApproveDocuments);
+        return decision.Status == AuthorizationStatus.Authorized && decision.User!.Role != "HR"
+            ? new AuthorizationDecision(AuthorizationStatus.Forbidden, decision.User) : decision;
+    }
 
     private IActionResult Denied(AuthorizationDecision decision) => StatusCode(
         decision.Status == AuthorizationStatus.Unauthenticated ? 401 : 403,
@@ -42,7 +47,7 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
         if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
         if (!InternDocumentService.ValidKind(kind)) return BadRequest(new { message = "Loại tài liệu không hợp lệ." });
         if (request.Status == "rejected" && string.IsNullOrWhiteSpace(request.Comment))
-            return BadRequest(new { message = "Vui lòng nhập lý do yêu cầu bổ sung." });
+            return BadRequest(new { message = "Vui lòng nhập lý do từ chối." });
         if (!TryVersion(request.Version, out var version))
             return BadRequest(new { message = "Phiên bản tài liệu không hợp lệ." });
 
@@ -51,10 +56,18 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
         {
             DocumentReviewResult.Updated => Ok(new { message = "Đã lưu kết quả duyệt." }),
             DocumentReviewResult.NotFound => NotFound(new { message = "Không tìm thấy tài liệu. Vui lòng tải lại danh sách." }),
-            DocumentReviewResult.AlreadyReviewed => Conflict(new { message = "Tài liệu đã có kết quả này. Vui lòng tải lại danh sách." }),
+            DocumentReviewResult.AlreadyReviewed => Conflict(new { message = "Tài liệu đã được xử lý, không thể xét duyệt lại." }),
             _ => Conflict(new { message = "Tài liệu đã thay đổi. Vui lòng tải lại trước khi duyệt." })
         };
     }
+
+    [HttpPut("{id:int}/{kind}/approve")]
+    public Task<IActionResult> Approve(int id, string kind, DocumentDecisionRequest request, CancellationToken cancellationToken)
+        => Review(id, kind, new ReviewDocumentRequest("approved", request.Comment, request.Version), cancellationToken);
+
+    [HttpPut("{id:int}/{kind}/reject")]
+    public Task<IActionResult> Reject(int id, string kind, DocumentDecisionRequest request, CancellationToken cancellationToken)
+        => Review(id, kind, new ReviewDocumentRequest("rejected", request.Comment, request.Version), cancellationToken);
 
     private static bool TryVersion(string value, out byte[] version)
     {

@@ -7,7 +7,8 @@ public sealed record InternDocumentResponse(string Kind, string FileName, long S
 
 public sealed record DocumentReviewResponse(int InternId, string FullName, string? StudentCode, string Email,
     string Kind, string FileName, long Size, DateTime UploadedAt, string Status, string? Comment,
-    DateTime? ReviewedAt, string? Reviewer, string Version);
+    DateTime? ReviewedAt, string? Reviewer, string Version,
+    string Phone, string School, string Major, DateTimeOffset CreatedAt);
 
 public sealed record ReviewDocumentRequest(
     [Required(ErrorMessage = "Vui lòng chọn kết quả duyệt.")]
@@ -16,3 +17,7 @@ public sealed record ReviewDocumentRequest(
     [Required(ErrorMessage = "Thiếu phiên bản tài liệu. Vui lòng tải lại danh sách.")] string Version);
 
 public sealed record StoredDocument(string FileName, byte[] Content);
+
+public sealed record DocumentDecisionRequest(
+    [StringLength(2000)] string? Comment,
+    [Required] string Version);

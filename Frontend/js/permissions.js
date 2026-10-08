@@ -13,6 +13,14 @@ const permissionLabels = {
   MANAGE_PERMISSIONS: "Quản lý phân quyền",
 };
 
+const permissionGroups = [
+  { label: "Quản lý tài khoản", keys: ["MANAGE_USERS", "CREATE_USER", "DELETE_USER"] },
+  { label: "Hồ sơ thực tập sinh", keys: ["VIEW_INTERNS", "MANAGE_INTERNS", "SEARCH_INTERNS", "EDIT_INTERNS"] },
+  { label: "Tài liệu", keys: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS", "APPROVE_DOCUMENTS"] },
+  { label: "Hồ sơ cá nhân", keys: ["VIEW_PROFILE"] },
+  { label: "Phân quyền hệ thống", keys: ["MANAGE_PERMISSIONS"] },
+];
+
 async function loadRolePermissions() {
   if (!localStorage.getItem("token")) {
     window.location.href = "../index.html";
@@ -21,19 +29,56 @@ async function loadRolePermissions() {
 
   try {
     const roles = await API.getRolePermissions();
-    const body = document.getElementById("rolePermissionTable");
+    const body = document.getElementById("rolePermissionCards");
     body.replaceChildren();
 
     Object.entries(roles).forEach(([role, permissions]) => {
-      const row = document.createElement("tr");
-      const roleCell = document.createElement("td");
-      const permissionsCell = document.createElement("td");
-      roleCell.textContent = role;
-      permissionsCell.textContent = permissions
-        .map((permission) => permissionLabels[permission] || permission)
-        .join(", ");
-      row.append(roleCell, permissionsCell);
-      body.appendChild(row);
+      const card = document.createElement("article");
+      card.className = "permission-role-card";
+      const header = document.createElement("header");
+      header.className = "permission-role-header";
+      const title = document.createElement("h3");
+      title.className = "permission-role-badge";
+      if (["ADMIN", "HR", "MENTOR", "INTERN"].includes(role)) title.classList.add(role.toLowerCase());
+      title.textContent = role;
+      const count = document.createElement("span");
+      count.className = "permission-count";
+      count.textContent = `${permissions.length} quyền`;
+      header.append(title, count);
+      card.appendChild(header);
+      const groups = new Map();
+      for (const permission of permissions) {
+        const label = permissionGroups.find((group) => group.keys.includes(permission))?.label || "Quyền khác";
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push(permission);
+      }
+      for (const [label, entries] of groups) {
+        const section = document.createElement("section");
+        section.className = "permission-group";
+        const heading = document.createElement("h4");
+        heading.textContent = label;
+        const list = document.createElement("ul");
+        for (const permission of entries) {
+          const item = document.createElement("li");
+          const check = document.createElement("span");
+          check.className = "permission-check";
+          check.setAttribute("aria-hidden", "true");
+          check.textContent = "✓";
+          const text = document.createElement("span");
+          text.textContent = permissionLabels[permission] || permission;
+          item.append(check, text);
+          list.appendChild(item);
+        }
+        section.append(heading, list);
+        card.appendChild(section);
+      }
+      if (!permissions.length) {
+        const empty = document.createElement("p");
+        empty.className = "permission-count";
+        empty.textContent = "Chưa được cấp quyền.";
+        card.appendChild(empty);
+      }
+      body.appendChild(card);
     });
   } catch (error) {
     document.getElementById("permissionsMessage").textContent = error.message;

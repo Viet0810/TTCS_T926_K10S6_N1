@@ -30,19 +30,24 @@
         <span class="auth-form-kicker">TÀI KHOẢN THỰC TẬP SINH</span>
         <h1 id="registerTitle">Đăng ký tài khoản<br>thực tập sinh</h1>
         <p class="auth-description">Điền thông tin của bạn để tạo tài khoản. Sau khi đăng nhập, bạn có thể nộp CV và đơn xin thực tập.</p>
-        <p id="registerMessage" class="auth-message" role="status" aria-live="polite" tabindex="-1" hidden></p>
+        <p id="registerMessage" class="auth-message auth-notification" role="status" aria-live="polite" tabindex="-1" hidden></p>
         <form id="registerForm" class="auth-form" aria-labelledby="registerTitle" novalidate>
-          <div class="auth-field"><label for="fullName">Họ và tên</label><input id="fullName" name="fullName" autocomplete="name" required maxlength="200" placeholder="Nhập họ và tên" aria-describedby="fullNameError"><span id="fullNameError" class="register-error" hidden></span></div>
-          <div class="auth-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="100" placeholder="Nhập Gmail, ví dụ: example@gmail.com" aria-describedby="emailError"><span id="emailError" class="register-error" hidden></span></div>
+          <div class="auth-field"><label for="fullName">Họ và tên</label><input id="fullName" name="fullName" autocomplete="name" required maxlength="200" placeholder="Nhập họ và tên" aria-describedby="fullNameError"><span id="fullNameError" class="register-error auth-field-error" aria-live="polite" hidden></span></div>
+          <div class="auth-field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="100" placeholder="example@gmail.com hoặc example@ictu.edu.vn" aria-describedby="emailError"><span id="emailError" class="register-error auth-field-error" aria-live="polite" hidden></span></div>
           <div class="auth-field"><label for="password">Mật khẩu</label>
             <div class="password-field"><input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="200" placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt" aria-describedby="passwordError">
               <button type="button" class="password-toggle" data-password-toggle="password" aria-controls="password" aria-label="Hiển thị mật khẩu" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="m4 4 16 16"/></svg></button>
-            </div><span id="passwordError" class="register-error" hidden></span>
+            </div><span id="passwordError" class="register-error auth-field-error" aria-live="polite" hidden></span>
           </div>
-          <div class="auth-field"><label for="phone">Số điện thoại</label><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" required pattern="0[35789][0-9]{8}" maxlength="10" placeholder="Nhập 10 chữ số, ví dụ: 0912345678" aria-describedby="phoneError"><span id="phoneError" class="register-error" hidden></span></div>
+          <div class="auth-field"><label for="confirmPassword">Xác nhận mật khẩu</label>
+            <div class="password-field"><input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required maxlength="200" placeholder="Nhập lại mật khẩu" aria-describedby="confirmPasswordError">
+              <button type="button" class="password-toggle" data-password-toggle="confirmPassword" aria-controls="confirmPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="m4 4 16 16"/></svg></button>
+            </div><span id="confirmPasswordError" class="register-error auth-field-error" aria-live="polite" hidden></span>
+          </div>
+          <div class="auth-field"><label for="phone">Số điện thoại</label><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" required pattern="0[35789][0-9]{8}" maxlength="10" placeholder="Nhập 10 chữ số, ví dụ: 0912345678" aria-describedby="phoneError"><span id="phoneError" class="register-error auth-field-error" aria-live="polite" hidden></span></div>
           <div class="register-field-row">
-            <div class="auth-field"><label for="school">Trường</label><input id="school" name="school" required maxlength="200" placeholder="Tên trường của bạn" aria-describedby="schoolError"><span id="schoolError" class="register-error" hidden></span></div>
-            <div class="auth-field"><label for="major">Chuyên ngành</label><input id="major" name="major" required maxlength="200" placeholder="Ngành bạn đang học" aria-describedby="majorError"><span id="majorError" class="register-error" hidden></span></div>
+            <div class="auth-field"><label for="school">Trường</label><input id="school" name="school" required maxlength="200" placeholder="Tên trường của bạn" aria-describedby="schoolError"><span id="schoolError" class="register-error auth-field-error" aria-live="polite" hidden></span></div>
+            <div class="auth-field"><label for="major">Chuyên ngành</label><input id="major" name="major" required maxlength="200" placeholder="Ngành bạn đang học" aria-describedby="majorError"><span id="majorError" class="register-error auth-field-error" aria-live="polite" hidden></span></div>
           </div>
           <button type="submit" class="auth-submit"><span class="register-spinner" aria-hidden="true" hidden></span><span id="registerSubmitLabel">Đăng ký tài khoản</span><span class="register-submit-arrow" aria-hidden="true">→</span></button>
           <p class="register-login">Đã có tài khoản? <a href="index.html">Đăng nhập</a></p>
@@ -54,6 +59,7 @@
   </main>
   <script src="js/api.js"></script>
   <script src="js/auth-ui.js"></script>
+  <script src="js/validation.js"></script>
   <script src="js/register.js"></script>
 </body>
 </html>

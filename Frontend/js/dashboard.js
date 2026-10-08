@@ -71,7 +71,7 @@ async function initializeDashboard() {
     document.getElementById("roleBadge").textContent = user.role;
     document.getElementById("welcomeTitle").textContent =
       `Xin chào, ${user.fullName}`;
-    renderMenu(session.permissions);
+    renderMenu(session.permissions.filter(permission => permission !== "APPROVE_DOCUMENTS" || user.role === "HR"));
   } catch (error) {
     document.getElementById("dashboardMessage").textContent = error.message;
     document.getElementById("dashboardMessage").hidden = false;

@@ -181,17 +181,20 @@
             <p class="auth-description">
                 Sử dụng tài khoản của bạn để truy cập hệ thống.
             </p>
-            <form id="loginForm" class="auth-form" aria-labelledby="loginTitle">
+            <form id="loginForm" class="auth-form" aria-labelledby="loginTitle" novalidate>
               <div class="auth-field">
-                <label for="username">Tên đăng nhập</label
+                <label for="username">Email</label
                 ><input
                   id="username"
                   name="username"
+                  type="email"
                   autocomplete="username"
                   required
                   maxlength="254"
-                  placeholder="Nhập tên đăng nhập"
+                  placeholder="example@gmail.com hoặc example@ictu.edu.vn"
+                  aria-describedby="usernameError"
                 />
+                <span id="usernameError" class="auth-field-error" aria-live="polite" hidden></span>
               </div>
               <div class="auth-field">
                 <label for="password">Mật khẩu</label>
@@ -212,7 +215,8 @@
                     autocomplete="current-password"
                     required
                     maxlength="200"
-                    placeholder="Nhập mật khẩu của bạn"
+                    placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+                    aria-describedby="passwordError"
                   />
                   <button
                     id="togglePassword"
@@ -232,6 +236,7 @@
                     </svg>
                   </button>
                 </div>
+                <span id="passwordError" class="auth-field-error" aria-live="polite" hidden></span>
               </div>
               <div class="auth-form-options">
                 <button
@@ -244,7 +249,7 @@
               </div>
               <div
                 id="loginMessage"
-                class="auth-message"
+                class="auth-message auth-notification"
                 role="status"
                 aria-live="polite"
                 hidden
@@ -334,6 +339,7 @@
     </main>
     <script src="js/api.js"></script>
     <script src="js/auth-ui.js"></script>
+    <script src="js/validation.js"></script>
     <script src="js/login.js"></script>
   </body>
 </html>

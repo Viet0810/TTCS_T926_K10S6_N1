@@ -1,5 +1,20 @@
 const loginForm = document.getElementById("loginForm");
 const forgotForm = document.getElementById("forgotForm");
+const loginFields = [document.getElementById("username"), document.getElementById("password")];
+function validateLoginField(input) {
+  const message = input.id === "username" ? Validation.validateEmail(input.value) : Validation.validatePassword(input.value);
+  Validation.showFieldError(input, message);
+  return !message;
+}
+for (const input of loginFields) {
+  input.addEventListener("blur", () => {
+    if (loginForm.getAttribute("aria-busy") !== "true") validateLoginField(input);
+  });
+  input.addEventListener("input", () => {
+    Validation.clearFieldError(input);
+    AuthUI.message("loginMessage", "");
+  });
+}
 function showRecovery(show) {
   document.getElementById("loginView").hidden = show;
   document.getElementById("forgotView").hidden = !show;
@@ -17,7 +32,13 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (loginForm.getAttribute("aria-busy") === "true") return;
   AuthUI.message("loginMessage", "");
-  AuthUI.busy(loginForm, true, "Đang đăng nhập…");
+  let firstInvalid = null;
+  for (const input of loginFields) {
+    if (!validateLoginField(input) && !firstInvalid) firstInvalid = input;
+  }
+  if (firstInvalid) { firstInvalid.focus(); return; }
+  AuthUI.busy(loginForm, true, "Đang đăng nhập...");
+  let invalidField = null;
   try {
     const data = await API.login({username: document.getElementById("username").value.trim(), password: document.getElementById("password").value});
     const role = data.user?.role?.toUpperCase();
@@ -28,8 +49,21 @@ loginForm.addEventListener("submit", async (event) => {
     location.href = "pages/dashboard.html";
   } catch (error) {
     AuthUI.clearSession();
-    AuthUI.message("loginMessage", error.message);
-  } finally { AuthUI.busy(loginForm, false, "Đăng nhập"); }
+    const code = error.code || error.message;
+    if (code === "ACCOUNT_NOT_FOUND") {
+      invalidField = loginFields[0];
+      Validation.showFieldError(invalidField, "Tài khoản này không tồn tại.");
+    } else if (code === "INVALID_PASSWORD") {
+      invalidField = loginFields[1];
+      Validation.showFieldError(invalidField, "Mật khẩu bạn nhập không chính xác.");
+    } else {
+      AuthUI.message("loginMessage", Validation.requestMessage(error,
+        error.status === 401 ? "Tên đăng nhập hoặc mật khẩu không đúng." : "Không thể đăng nhập lúc này. Vui lòng thử lại."));
+    }
+  } finally {
+    AuthUI.busy(loginForm, false, "Đăng nhập");
+    if (invalidField) invalidField.focus();
+  }
 });
 forgotForm.addEventListener("submit", async (event) => {
   event.preventDefault();

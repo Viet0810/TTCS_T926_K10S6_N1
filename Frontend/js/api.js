@@ -8,6 +8,7 @@ class ApiError extends Error {
     this.endpoint = (context.path || "").split(/[?#]/)[0];
     this.method = context.method || "GET";
     this.traceId = context.traceId || null;
+    this.code = context.code || null;
     this.timestamp = new Date().toISOString();
     this.category = status === 0 ? "connection" : status === 401 ? "authentication"
       : status === 403 ? "permission" : status === 404 ? "not_found"
@@ -74,7 +75,7 @@ async function handleResponse(response, context = {}) {
   if (!response.ok) {
     const validation = data?.errors ? Object.values(data.errors).flat().join(" ") : "";
     const message = data?.message || validation || (response.status < 500 ? data?.detail : "") || defaultApiMessage(response.status);
-    throw reportApiError(new ApiError(message, response.status, context));
+    throw reportApiError(new ApiError(message, response.status, { ...context, code: data?.code }));
   }
 
   return data;
