@@ -30,6 +30,7 @@ builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>()
 
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
+builder.Services.AddScoped<InternManagement.Services.InternAttendanceService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 
 // THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH

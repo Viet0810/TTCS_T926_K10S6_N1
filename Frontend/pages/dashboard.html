@@ -41,6 +41,34 @@
           </div>
           <p id="dashboardMessage" class="dashboard-message" role="status" hidden></p>
         </section>
+        <section id="attendanceCard" class="card" aria-labelledby="attendanceTitle" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-label">CHẤM CÔNG</span>
+              <h2 id="attendanceTitle">Chấm công hôm nay</h2>
+              <p>Ghi nhận thời gian làm việc trong ngày.</p>
+            </div>
+          </div>
+          <dl class="attendance-details">
+            <div>
+              <dt>Trạng thái</dt>
+              <dd id="attendanceStatus">Đang tải…</dd>
+            </div>
+            <div>
+              <dt>Giờ check-in</dt>
+              <dd id="attendanceCheckIn">—</dd>
+            </div>
+            <div>
+              <dt>Giờ check-out</dt>
+              <dd id="attendanceCheckOut">—</dd>
+            </div>
+          </dl>
+          <p id="attendanceMessage" class="attendance-message" role="status" aria-live="polite" hidden></p>
+          <div class="attendance-actions">
+            <button type="button" id="checkInBtn" class="btn-primary" disabled>Check-in</button>
+            <button type="button" id="checkOutBtn" class="btn-secondary" disabled>Check-out</button>
+          </div>
+        </section>
       </main>
       <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
     </div>

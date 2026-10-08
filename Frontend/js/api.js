@@ -128,6 +128,13 @@ const API = {
   }),
   getInterns: () => requestApi("/interns", { headers: getAuthHeader() }),
   getMyInternProfile: () => requestApi("/interns/me", { headers: getAuthHeader() }),
+  getMyTodayAttendance: () => requestApi("/interns/me/attendance/today", { headers: getAuthHeader() }),
+  checkInToday: () => requestApi("/interns/me/attendance/check-in", {
+    method: "POST", headers: getAuthHeader(),
+  }),
+  checkOutToday: () => requestApi("/interns/me/attendance/check-out", {
+    method: "POST", headers: getAuthHeader(),
+  }),
   createIntern: (intern) => requestApi("/interns", {
     method: "POST", headers: getAuthHeader(), body: JSON.stringify(intern)
   }),
