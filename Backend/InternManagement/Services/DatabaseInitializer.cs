@@ -90,6 +90,20 @@ public sealed class DatabaseInitializer
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
         command.CommandText = """
+            IF OBJECT_ID(N'dbo.InternAttendances', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.InternAttendances (
+                    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_InternAttendances PRIMARY KEY,
+                    InternId INT NOT NULL CONSTRAINT FK_InternAttendances_Interns REFERENCES dbo.Interns(Id) ON DELETE CASCADE,
+                    WorkDate DATE NOT NULL,
+                    CheckInAt DATETIMEOFFSET NOT NULL,
+                    CheckOutAt DATETIMEOFFSET NULL,
+                    CONSTRAINT UQ_InternAttendances_InternId_WorkDate UNIQUE (InternId, WorkDate)
+                );
+            END;
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        command.CommandText = """
             IF OBJECT_ID(N'dbo.InternDocuments', N'U') IS NULL
             CREATE TABLE dbo.InternDocuments (
                 InternId INT NOT NULL REFERENCES dbo.Interns(Id) ON DELETE CASCADE,

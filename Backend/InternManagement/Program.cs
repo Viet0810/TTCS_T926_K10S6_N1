@@ -19,6 +19,7 @@ builder.Services.AddSingleton<InternManagement.Services.AuthTokenService>();
 builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>();
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
+builder.Services.AddScoped<InternManagement.Services.InternAttendanceService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
