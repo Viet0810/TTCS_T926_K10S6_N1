@@ -43,6 +43,7 @@ internal static class ApiChecks
             await RolePermissionChecks.RunAsync(http, connectionString, check);
             await AccountChecks.RunAsync(http, connectionString, check);
             await DocumentChecks.RunAsync(http, connectionString, check);
+            await AttendanceReportChecks.RunAsync(http, connectionString, check);
             using var noSession = await http.GetAsync("/api/auth/me");
             check(noSession.StatusCode==HttpStatusCode.Unauthorized,"authenticated endpoints reject missing sessions");
             using var invalidEmail = await http.PostAsJsonAsync("/api/auth/forgot-password",new {email="not-an-email"});

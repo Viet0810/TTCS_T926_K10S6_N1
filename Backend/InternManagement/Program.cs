@@ -41,6 +41,7 @@ builder.Services.AddRateLimiter(options =>
 });
 builder.Services.AddScoped<InternManagement.Services.IInternService, InternManagement.Services.InternService>();
 builder.Services.AddScoped<InternManagement.Services.IInternFilterService, InternManagement.Services.InternFilterService>();
+builder.Services.AddScoped<InternManagement.Services.IAttendanceReportService, InternManagement.Services.AttendanceReportService>();
 
 var app = builder.Build();
 var connectionString = builder.Configuration.GetConnectionString("InternManagement");

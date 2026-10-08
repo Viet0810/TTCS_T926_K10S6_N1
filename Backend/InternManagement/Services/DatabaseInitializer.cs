@@ -110,5 +110,25 @@ public sealed class DatabaseInitializer
             IF COL_LENGTH('dbo.InternDocuments','Version') IS NULL ALTER TABLE dbo.InternDocuments ADD Version ROWVERSION;
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        command.CommandText = """
+            IF OBJECT_ID(N'dbo.AttendanceRecords', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.AttendanceRecords (
+                    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_AttendanceRecords PRIMARY KEY,
+                    InternId INT NOT NULL CONSTRAINT FK_AttendanceRecords_Interns REFERENCES dbo.Interns(Id) ON DELETE CASCADE,
+                    Date DATE NOT NULL,
+                    CheckIn NVARCHAR(10) NULL,
+                    CheckOut NVARCHAR(10) NULL,
+                    WorkingHours DECIMAL(4,1) NOT NULL DEFAULT 0.0,
+                    Status VARCHAR(30) NOT NULL CONSTRAINT CK_Attendance_Status CHECK (Status IN ('ON_TIME', 'LATE', 'EARLY', 'LEAVE_APPROVED', 'ABSENT')),
+                    Note NVARCHAR(500) NULL,
+                    Approver NVARCHAR(200) NULL,
+                    CreatedAt DATETIMEOFFSET NOT NULL CONSTRAINT DF_Attendance_CreatedAt DEFAULT SYSDATETIMEOFFSET()
+                );
+                CREATE INDEX IX_AttendanceRecords_InternId_Date ON dbo.AttendanceRecords(InternId, Date);
+            END;
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 }
