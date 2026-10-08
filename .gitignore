@@ -1,0 +1,24 @@
+# ASP.NET Core
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# VS Code
+.vscode/
+
+# Environment và thông tin bí mật
+.env
+.env.*
+!.env.example
+
+# Log
+*.log
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store

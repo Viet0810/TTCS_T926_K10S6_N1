@@ -1,0 +1,110 @@
+@InternManagement_HostAddress = http://localhost:5024
+
+
+
+@adminToken =
+@userId =
+@internId =
+@fullName =
+@email =
+@password =
+@role =
+@internEmail =
+@phone =
+@school =
+@major =
+@resetToken =
+
+### Thông tin phiên và permission hiện tại
+GET {{InternManagement_HostAddress}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Ma trận role-permission (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/auth/roles/permissions
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Danh sách tài khoản (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/users
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Tạo tài khoản (chỉ ADMIN; role chỉ nhận HR, MENTOR, INTERN)
+POST {{InternManagement_HostAddress}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+	"fullName": "{{fullName}}",
+	"email": "{{email}}",
+	"password": "{{password}}",
+	"role": "{{role}}"
+}
+
+### Lấy tài khoản theo ID (chỉ ADMIN)
+GET {{InternManagement_HostAddress}}/api/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Xóa tài khoản theo ID (chỉ ADMIN; response 204)
+DELETE {{InternManagement_HostAddress}}/api/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+### Danh sách thực tập sinh
+GET {{InternManagement_HostAddress}}/api/interns
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Hồ sơ gắn với tài khoản đang đăng nhập
+GET {{InternManagement_HostAddress}}/api/interns/me
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Chi tiết thực tập sinh
+GET {{InternManagement_HostAddress}}/api/interns/{{internId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Tạo hồ sơ thực tập sinh
+POST {{InternManagement_HostAddress}}/api/interns
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+	"fullName": "{{fullName}}",
+	"email": "{{internEmail}}",
+	"phone": "{{phone}}",
+	"school": "{{school}}",
+	"major": "{{major}}"
+}
+
+
+### Chỉnh sửa hồ sơ (ADMIN hoặc HR, quyền EDIT_INTERNS)
+PUT {{InternManagement_HostAddress}}/api/interns/{{internId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "fullName": "{{fullName}}", "email": "{{internEmail}}", "phone": "{{phone}}", "school": "{{school}}", "major": "{{major}}" }
+
+### Tìm kiếm hồ sơ (quyền SEARCH_INTERNS)
+GET {{InternManagement_HostAddress}}/api/interns/search?search={{fullName}}&school={{school}}&major={{major}}
+Authorization: Bearer {{adminToken}}
+
+### Đăng nhập bằng tài khoản thật
+POST {{InternManagement_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "{{email}}", "password": "{{password}}" }
+
+### Gửi liên kết đặt lại mật khẩu qua SMTP đã cấu hình
+POST {{InternManagement_HostAddress}}/api/auth/forgot-password
+Content-Type: application/json
+
+{ "email": "{{email}}" }
+
+### Đặt lại mật khẩu bằng mã nhận trong email
+POST {{InternManagement_HostAddress}}/api/auth/reset-password
+Content-Type: application/json
+
+{ "token": "{{resetToken}}", "password": "{{password}}" }

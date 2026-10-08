@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý tài khoản | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <!-- HEADER -->
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
+
+          <div class="dashboard-title">
+            <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+            <h1>Hệ thống quản lý tài khoản</h1>
+          </div>
+        </div>
+
+        <button type="button" id="logoutBtn" class="btn-danger">
+          <span class="logout-icon">↪</span>
+          Đăng xuất
+        </button>
+      </header>
+      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html">Hồ sơ cá nhân</a><a href="user-manage.html" aria-current="page">Quản lý tài khoản</a></nav>
+
+      <!-- MAIN CONTENT -->
+      <main class="dashboard-main">
+        <!-- CREATE USER -->
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
+              <h2>Tạo tài khoản mới</h2>
+              <p>Thêm tài khoản và phân quyền sử dụng hệ thống.</p>
+            </div>
+            <div class="section-icon">＋</div>
+          </div>
+
+          <form id="createUserForm" class="create-user-form">
+            <div class="form-group">
+              <label for="fullName">Họ và tên</label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                placeholder="Nhập họ và tên"
+                autocomplete="name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="example@email.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="password">Mật khẩu</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Ít nhất 8 ký tự"
+                minlength="8"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Xác nhận mật khẩu</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                placeholder="Nhập lại mật khẩu"
+                minlength="8"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="role">Vai trò</label>
+              <select id="role" name="role" required>
+                <option value="HR">HR</option>
+                <option value="MENTOR">Mentor</option>
+                <option value="INTERN">Thực tập sinh</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                <span>＋</span>
+                Tạo tài khoản
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- USER LIST -->
+        <section class="card">
+          <div class="section-heading user-list-heading">
+            <div>
+              <span class="section-label">DANH SÁCH</span>
+              <h2>Quản lý tài khoản</h2>
+              <p>Danh sách tài khoản đang được quản lý trong hệ thống.</p>
+            </div>
+            <div class="user-list-icon">☷</div>
+          </div>
+
+          <div class="user-search">
+            <input
+              id="userSearchInput"
+              type="search"
+              placeholder="Tìm theo tên, email hoặc vai trò..."
+              aria-label="Tìm tài khoản"
+            />
+          </div>
+
+          <div class="table-container">
+            <table class="user-table">
+              <thead>
+                <tr>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+
+              <tbody id="userTableBody">
+                <!-- JavaScript sẽ hiển thị danh sách tài khoản tại đây -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/user-manage.js"></script>
+  </body>
+</html>

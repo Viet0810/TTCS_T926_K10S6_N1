@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tìm kiếm thực tập sinh | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css"><link rel="stylesheet" href="../css/hr-search-filter.css">
+</head>
+<body>
+<div class="dashboard">
+  <header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Tìm kiếm & Lọc hồ sơ</h1></div></div><div class="dashboard-session"><span id="roleBadge" class="badge hr"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div></header>
+  <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="intern-manage.html">Quản lý thực tập sinh</a><a href="hr-search-filter.html" aria-current="page">Tìm kiếm & Lọc</a><a href="profile.html">Hồ sơ cá nhân</a></nav>
+  <main class="dashboard-main">
+    <section class="card">
+      <div class="section-heading"><div><span class="section-label">TRA CỨU HỒ SƠ</span><h2>Tìm kiếm thực tập sinh</h2><p>Tìm theo họ tên, email, số điện thoại, trường hoặc chuyên ngành.</p></div><a id="addInternLink" href="intern-manage.html" class="btn-primary" hidden>+ Thêm hồ sơ</a></div>
+      <div class="search-summary"><div><span>Tổng hồ sơ</span><strong id="totalCount">—</strong></div><div><span>Trường đào tạo</span><strong id="schoolCount">—</strong></div><div><span>Chuyên ngành</span><strong id="majorCount">—</strong></div></div>
+      <form id="filterForm" class="search-filters">
+        <div class="form-group"><label for="searchInput">Từ khóa</label><input type="search" id="searchInput" placeholder="Nhập tên, email, số điện thoại…" maxlength="254"></div>
+        <div class="form-group"><label for="schoolFilter">Trường đào tạo</label><select id="schoolFilter"><option value="">Tất cả trường</option></select></div>
+        <div class="form-group"><label for="majorFilter">Chuyên ngành</label><select id="majorFilter"><option value="">Tất cả chuyên ngành</option></select></div>
+        <button type="reset" class="btn-secondary">Đặt lại</button>
+      </form>
+      <p id="searchMessage" class="dashboard-message" role="status" aria-live="polite"></p>
+    </section>
+    <section class="card">
+      <div class="section-heading"><div><h2>Danh sách kết quả</h2><p id="resultCount" aria-live="polite">Đang tải hồ sơ…</p></div><button id="exportBtn" type="button" class="btn-secondary" disabled>Xuất CSV</button></div>
+      <div class="table-container"><table class="user-table"><thead><tr><th>Mã sinh viên</th><th>Họ và tên</th><th>Email</th><th>Số điện thoại</th><th>Trường đào tạo</th><th>Chuyên ngành</th><th>Đơn vị thực tập</th><th>Trạng thái</th><th>Hành động</th></tr></thead><tbody id="searchTableBody"><tr><td colspan="9" class="empty-state">Đang tải…</td></tr></tbody></table></div>
+    </section>
+  </main><footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+</div>
+<script src="../js/api.js"></script><script src="../js/intern-profile.js"></script><script src="../js/hr-search-filter-service.js"></script><script src="../js/hr-search-filter.js"></script>
+<dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle"><div class="card-header"><h2 id="profileDialogTitle">Hồ sơ thực tập sinh</h2><button type="button" id="closeProfileDialog" class="btn-secondary">Đóng</button></div><div id="profileDialogDetails"></div></dialog>
+</body>
+</html>
