@@ -7,8 +7,9 @@
 </head>
 <body>
 <div class="dashboard">
-  <header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Tìm kiếm & Lọc hồ sơ</h1></div></div><div class="dashboard-session"><span id="roleBadge" class="badge hr"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div></header>
-  <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="intern-manage.html">Quản lý thực tập sinh</a><a href="hr-search-filter.html" aria-current="page">Tìm kiếm & Lọc</a><a href="profile.html">Hồ sơ cá nhân</a></nav>
+  <header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Tìm kiếm & Lọc hồ sơ</h1></div></div><div class="dashboard-session"><span id="roleBadge" class="badge hr"></span><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div></header>
+  <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
   <main class="dashboard-main">
     <section class="card">
       <div class="section-heading"><div><span class="section-label">TRA CỨU HỒ SƠ</span><h2>Tìm kiếm thực tập sinh</h2><p>Tìm theo họ tên, email, số điện thoại, trường hoặc chuyên ngành.</p></div><a id="addInternLink" href="intern-manage.html" class="btn-primary" hidden>+ Thêm hồ sơ</a></div>
@@ -27,7 +28,7 @@
     </section>
   </main><footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
 </div>
-<script src="../js/api.js"></script><script src="../js/intern-profile.js"></script><script src="../js/hr-search-filter-service.js"></script><script src="../js/hr-search-filter.js"></script>
+<script src="../js/api.js"></script><script src="../js/navigation.js"></script><script src="../js/intern-profile.js"></script><script src="../js/hr-search-filter-service.js"></script><script src="../js/hr-search-filter.js"></script>
 <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle"><div class="card-header"><h2 id="profileDialogTitle">Hồ sơ thực tập sinh</h2><button type="button" id="closeProfileDialog" class="btn-secondary">Đóng</button></div><div id="profileDialogDetails"></div></dialog>
 </body>
 </html>

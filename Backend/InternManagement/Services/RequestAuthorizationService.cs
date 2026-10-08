@@ -6,7 +6,8 @@ public enum AuthorizationStatus
 {
     Authorized,
     Unauthenticated,
-    Forbidden
+    Forbidden,
+    PasswordChangeRequired
 }
 
 public sealed record AuthorizationDecision(AuthorizationStatus Status, AuthenticatedUser? User);
@@ -32,6 +33,13 @@ public sealed class RequestAuthorizationService
         if (requiredPermission is not null && !permissions.HasPermission(user!.Role, requiredPermission))
             return new AuthorizationDecision(AuthorizationStatus.Forbidden, user);
 
+        if (user!.MustChangePassword && RequestRequiresPasswordChange(request))
+            return new AuthorizationDecision(AuthorizationStatus.PasswordChangeRequired, user);
+
         return new AuthorizationDecision(AuthorizationStatus.Authorized, user);
     }
+
+    private static bool RequestRequiresPasswordChange(HttpRequest request) =>
+        !string.Equals(request.Path.Value, "/api/auth/me", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(request.Path.Value, "/api/account/change-password", StringComparison.OrdinalIgnoreCase);
 }

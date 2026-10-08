@@ -73,6 +73,7 @@ async function handleResponse(response, context = {}) {
   }
 
   if (!response.ok) {
+    if (data?.code === "PASSWORD_CHANGE_REQUIRED") Session.redirectToPasswordChange();
     const validation = data?.errors ? Object.values(data.errors).flat().join(" ") : "";
     const message = data?.message || validation || (response.status < 500 ? data?.detail : "") || defaultApiMessage(response.status);
     throw reportApiError(new ApiError(message, response.status, { ...context, code: data?.code }));
@@ -82,6 +83,10 @@ async function handleResponse(response, context = {}) {
 }
 
 const Session = {
+  redirectToPasswordChange() {
+    if (!location.pathname.endsWith("/change-password.html"))
+      location.replace(location.pathname.includes("/pages/") ? "change-password.html" : "pages/change-password.html");
+  },
   clear() { ["token", "role", "user"].forEach((key) => localStorage.removeItem(key)); },
   logout() { Session.clear(); location.href = "../index.html"; },
   hasPermission(session, permission) { return session.permissions?.includes(permission) === true; },
@@ -102,6 +107,16 @@ function saveDownload(blob, fileName) {
 }
 
 const API = {
+  changePassword: (data) => requestApi("/account/change-password", { method: "PUT", headers: getAuthHeader(), body: JSON.stringify(data) }),
+  resendLoginEmail: (id) => requestApi(`/users/${encodeURIComponent(id)}/resend-login-email`, { method: "POST", headers: getAuthHeader() }),
+  getAssignments: () => requestApi("/intern-assignments", { headers: getAuthHeader() }),
+  getAssignmentInterns: () => requestApi("/intern-assignments/interns", { headers: getAuthHeader() }),
+  getAssignmentMentors: () => requestApi("/intern-assignments/mentors", { headers: getAuthHeader() }),
+  getAssignmentPrograms: () => requestApi("/intern-assignments/programs", { headers: getAuthHeader() }),
+  assignMentor: (internId, assignment) => requestApi(`/intern-assignments/${encodeURIComponent(internId)}`, {
+    method: "PUT", headers: getAuthHeader(), body: JSON.stringify(assignment),
+  }),
+  getMySchedule: () => requestApi("/interns/me/schedule", { headers: getAuthHeader() }),
   login: (credentials) => requestApi("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -129,6 +144,9 @@ const API = {
   }),
   getInterns: () => requestApi("/interns", { headers: getAuthHeader() }),
   getMyInternProfile: () => requestApi("/interns/me", { headers: getAuthHeader() }),
+  updateMyInternProfile: (profile) => requestApi("/interns/me", {
+    method: "PUT", headers: getAuthHeader(), body: JSON.stringify(profile),
+  }),
   createIntern: (intern) => requestApi("/interns", {
     method: "POST", headers: getAuthHeader(), body: JSON.stringify(intern)
   }),
@@ -136,7 +154,15 @@ const API = {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(intern)
   }),
 
-  getCurrentUser: () => requestApi("/auth/me", { headers: getAuthHeader() }),
+  getCurrentUser: async () => {
+    const session = await requestApi("/auth/me", { headers: getAuthHeader() });
+    if (session.user?.mustChangePassword && !location.pathname.endsWith("/change-password.html")) {
+      Session.redirectToPasswordChange();
+      throw new ApiError("Vui lòng đổi mật khẩu tạm trước khi sử dụng hệ thống.", 403, { code: "PASSWORD_CHANGE_REQUIRED" });
+    }
+    window.AppNavigation?.render(session);
+    return session;
+  },
   getRolePermissions: () => requestApi("/auth/roles/permissions", { headers: getAuthHeader() }),
   getUsers: () => requestApi("/users", { headers: getAuthHeader() }),
   createUser: (userData) => requestApi("/users", {

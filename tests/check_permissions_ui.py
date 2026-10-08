@@ -9,15 +9,15 @@ profile={'id':42,'internId':42,'kind':'cv','fileName':'cv.pdf','size':100,'uploa
 cases=[
     ('reviews-hr','document-reviews.html','HR','', '''
 assert(document.getElementById('reviewRows').textContent.includes('cv.pdf'),'HR queue displays submitted document');
-const button=[...document.querySelectorAll('#reviewRows button')].find(button=>button.textContent.includes('/'));
-button.click();assert(document.getElementById('reviewDialog').open,'review action opens dialog');
+const button=[...document.querySelectorAll('#reviewRows button')].at(-1);
+button.click();await tick();await tick();assert(document.getElementById('reviewDialog').open,'review action opens dialog');
 const reject=document.querySelector('[name=decision][value=rejected]');
 document.getElementById('reviewForm').dispatchEvent(new SubmitEvent('submit',{cancelable:true,bubbles:true,submitter:reject}));
 assert(!calls.some(call=>call.options.method==='PUT'),'empty rejection reason never reaches API');
 document.getElementById('reviewComment').value='Please update';
 document.getElementById('reviewForm').dispatchEvent(new SubmitEvent('submit',{cancelable:true,bubbles:true,submitter:reject}));await tick();await tick();
 const request=calls.find(call=>call.options.method==='PUT');const payload=JSON.parse(request.options.body);
-assert(request.url.endsWith('/document-reviews/42/cv')&&payload.status==='rejected'&&payload.comment==='Please update'&&payload.version==='AAAAAAAAAAE=','review sends decision and version');
+assert(request.url.endsWith('/document-reviews/42/cv/reject')&&payload.comment==='Please update'&&payload.version==='AAAAAAAAAAE=','review sends decision and version');
 assert(!document.getElementById('reviewDialog').open,'successful review closes dialog');
 '''),
     ('search-hr','hr-search-filter.html','HR','', '''
@@ -86,6 +86,7 @@ with TemporaryDirectory(prefix='intern-permissions-ui-') as temporary:
         setup='''<script>localStorage.clear();localStorage.setItem('token','isolated-ui-test');const calls=[];let fixture='''+json.dumps(profile)+''';
 window.fetch=async(url,options={})=>{calls.push({url,options});let data;
 if(url.endsWith('/auth/me'))data='''+json.dumps({'user':{'id':1,'role':role,'fullName':'UI permission check'},'permissions':permissions})+''';
+else if(url.endsWith('/interns/42')&&options.method!=='PUT')data=fixture;
 else if(options.method==='PUT'){fixture={...fixture,...JSON.parse(options.body)};data=fixture;}
 else data=[fixture];return{ok:true,status:200,json:async()=>data}};</script>'''
         contents=(root/'pages'/page).read_text(encoding='utf-8').replace('<head>','<head><base href="'+(root/'pages').as_uri()+'/">'+setup)

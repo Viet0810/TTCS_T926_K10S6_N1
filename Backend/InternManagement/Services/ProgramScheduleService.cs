@@ -31,6 +31,7 @@ public class ProgramScheduleService
                 StartDate,
                 EndDate,
                 UpdatedAt
+                ,Name,Department
             FROM InternshipPrograms
             ORDER BY Id DESC
             """;
@@ -59,6 +60,8 @@ public class ProgramScheduleService
                     Id = reader.GetInt32(
                         reader.GetOrdinal("Id")
                     ),
+                    Name = reader.IsDBNull(reader.GetOrdinal("Name")) ? null : reader.GetString(reader.GetOrdinal("Name")),
+                    Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
 
                     StartDate = startDate,
 
@@ -118,6 +121,7 @@ public class ProgramScheduleService
                 EndDate,
                 CreatedAt,
                 UpdatedAt
+                ,Name,Department
             )
             OUTPUT INSERTED.Id
             VALUES
@@ -126,11 +130,15 @@ public class ProgramScheduleService
                 @EndDate,
                 GETUTCDATE(),
                 GETUTCDATE()
+                ,@Name,@Department
             )
             """;
 
         await using var command =
             new SqlCommand(sql, connection);
+
+        command.Parameters.Add("@Name", System.Data.SqlDbType.NVarChar,200).Value = (object?)request.Name?.Trim() ?? DBNull.Value;
+        command.Parameters.Add("@Department", System.Data.SqlDbType.NVarChar,200).Value = (object?)request.Department?.Trim() ?? DBNull.Value;
 
         command.Parameters.AddWithValue(
             "@StartDate",
@@ -150,6 +158,8 @@ public class ProgramScheduleService
         return new ProgramScheduleResponse
         {
             Id = id,
+            Name = request.Name?.Trim(),
+            Department = request.Department?.Trim(),
             StartDate = request.StartDate.Date,
             EndDate = request.EndDate.Date,
 
@@ -200,7 +210,7 @@ public class ProgramScheduleService
         DateTime endDate
     )
     {
-        var today = DateTime.Today;
+        var today = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).Date;
 
         if (today < startDate.Date)
         {

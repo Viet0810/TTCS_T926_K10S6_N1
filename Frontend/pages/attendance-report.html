@@ -12,17 +12,19 @@
 <div class="dashboard">
   <header class="dashboard-header">
     <div class="dashboard-brand">
-      <div class="dashboard-logo">IM</div>
+      <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
       <div class="dashboard-title">
-        <span>INTERN MANAGEMENT SYSTEM</span>
+        <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
         <h1>Báo cáo chuyên cần &amp; Nghỉ phép</h1>
       </div>
     </div>
     <div class="dashboard-session">
       <span id="roleBadge" class="badge hr">HR</span>
-      <button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button>
+      <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button>
     </div>
   </header>
+  <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
 
 
   <main class="dashboard-main">
@@ -106,7 +108,7 @@
 
           <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
             <label for="keywordInput" class="filter-presets-label" style="margin: 0;">Tìm nhanh:</label>
-            <input type="search" id="keywordInput" placeholder="Tên, MSSV, bộ phận…" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; width: 170px;">
+            <input type="search" id="keywordInput" placeholder="Tên, MSSV, bộ phận…" class="quick-search-input">
           </div>
         </div>
       </form>
@@ -213,7 +215,7 @@
   </div>
 </dialog>
 
-<script src="../js/api.js"></script>
+<script src="../js/api.js"></script><script src="../js/navigation.js"></script>
 <script src="../js/attendance-report-service.js"></script>
 <script src="../js/attendance-report.js"></script>
 </body>

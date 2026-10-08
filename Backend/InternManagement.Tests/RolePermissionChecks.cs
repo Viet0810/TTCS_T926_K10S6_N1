@@ -45,6 +45,21 @@ internal static class RolePermissionChecks
             check(session.StatusCode==HttpStatusCode.OK,$"{role} session is accepted by backend");
             using var sessionData=JsonDocument.Parse(await session.Content.ReadAsStringAsync());
             var permissions=sessionData.RootElement.GetProperty("permissions").EnumerateArray().Select(item=>item.GetString()).ToArray();
+            check(permissions.Contains(PermissionNames.ManagePrograms)==(role=="HR")
+                && permissions.Contains(PermissionNames.ViewAttendanceReport)==(role=="HR")
+                && permissions.Contains(PermissionNames.ApproveDocuments)==(role=="HR")
+                && permissions.Contains(PermissionNames.ViewDocuments)==(role=="INTERN"),
+                $"{role} Sprint 2 permissions match implemented role scopes");
+            using var programs = await http.GetAsync("/api/program-schedule");
+            using var attendance = await http.GetAsync("/api/attendance/report");
+            using var reviews = await http.GetAsync("/api/document-reviews");
+            check(programs.StatusCode==(role=="HR"?HttpStatusCode.OK:HttpStatusCode.Forbidden)
+                && attendance.StatusCode==(role=="HR"?HttpStatusCode.OK:HttpStatusCode.Forbidden)
+                && reviews.StatusCode==(role=="HR"?HttpStatusCode.OK:HttpStatusCode.Forbidden),
+                $"{role} cannot bypass HR-only Sprint 2 APIs");
+            using var documents = await http.GetAsync("/api/interns/me/documents");
+            check(role=="INTERN" ? documents.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound
+                : documents.StatusCode==HttpStatusCode.Forbidden, $"{role} own-document API authorization is enforced");
             var searchAllowed=role is "ADMIN" or "HR" or "MENTOR";
             var editAllowed=role is "ADMIN" or "HR";
             check(permissions.Contains(PermissionNames.SearchInterns)==searchAllowed

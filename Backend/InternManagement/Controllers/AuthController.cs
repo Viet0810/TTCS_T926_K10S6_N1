@@ -58,7 +58,7 @@ public sealed class AuthController : ControllerBase
         if (user is null)
             return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
 
-        var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role);
+        var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role, user.MustChangePassword);
         return Ok(new LoginResponse(tokens.Issue(user), responseUser));
     }
 

@@ -19,7 +19,7 @@ if(offline)throw new TypeError('Failed to fetch');
 if(hold)await new Promise(resolve=>releaseUpload=resolve);
 if(!(options.body instanceof FormData)||options.headers['Content-Type'])throw Error('Invalid multipart upload');
 const kind=url.split('/').pop(),file=options.body.get('file');
-stored=stored.filter(item=>item.kind!==kind);stored.push({kind,fileName:file.name,size:file.size,uploadedAt:'2026-01-01T00:00:00'});data={message:'saved'};
+stored=stored.filter(item=>item.kind!==kind);stored.push({kind,fileName:file.name,size:file.size,uploadedAt:'2026-01-01T00:00:00',status:'pending'});data={message:'saved'};
 }else if(url.endsWith('/documents'))data=stored;
 else return{ok:true,blob:async()=>new Blob(['%PDF-1.4'],{type:'application/pdf'})};
 return{ok:true,status:200,json:async()=>data};
@@ -33,6 +33,12 @@ const select=(kind,name,contents,type='')=>{const transfer=new DataTransfer();tr
 const submit=kind=>document.getElementById(kind+'Form').dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}));
 await tick();await tick();await tick();
 assert(!document.getElementById('uploadArea').hidden,'intern upload area');
+assert(!document.getElementById('internDetails'),'upload page contains no internship profile');
+assert(document.querySelector('label.file-picker[for=cvFile]')&&document.getElementById('cvFile').getBoundingClientRect().width===1,'custom picker uses real accessible file input');
+const dropTransfer=new DataTransfer();dropTransfer.items.add(new File(['%PDF-1.4'],'dropped.pdf',{type:'application/pdf'}));
+document.querySelector('.file-picker').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dropTransfer}));
+assert(document.getElementById('cvFile').files[0].name==='dropped.pdf'&&document.getElementById('cvSelected').textContent.includes('dropped.pdf'),'drag and drop selects file');
+document.getElementById('cvFile').value='';
 submit('cv');await tick();assert(uploads===0&&document.getElementById('cvMessage').textContent.includes('chọn tài liệu'),'missing file feedback');
 select('cv','empty.pdf','');submit('cv');await tick();assert(uploads===0&&document.getElementById('cvMessage').textContent.includes('rỗng'),'empty file blocked');
 select('cv','large.pdf',new Uint8Array(5*1024*1024+1));submit('cv');await tick();assert(uploads===0&&document.getElementById('cvMessage').textContent.includes('5 MB'),'oversized file blocked');
@@ -43,6 +49,7 @@ assert(document.getElementById('cvSelected').textContent.includes('cv.pdf'),'sel
 hold=true;submit('cv');submit('cv');assert(uploads===1&&document.getElementById('cvFile').disabled&&document.querySelector('#cvForm button[type=submit]').disabled,'pending upload blocks repeat requests');
 hold=false;releaseUpload();await tick();await tick();
 assert(uploads===1&&document.getElementById('cvInfo').textContent.includes('cv.pdf'),'saved CV metadata');
+assert(document.querySelector('#cvInfo .status-badge.pending')&&document.querySelector('#cvInfo .document-filename').title==='cv.pdf','real status badge and filename tooltip');
 assert(!document.getElementById('cvDownload').disabled,'download enabled');
 document.getElementById('cvDownload').click();await tick();assert(downloaded,'download uses saved filename');
 select('application','application.pdf','%PDF-1.4');submit('application');await tick();await tick();
@@ -63,7 +70,8 @@ with TemporaryDirectory(prefix='intern-document-ui-') as temporary:
     html=(root/'pages/intern-upload-cv.html').read_text(encoding='utf-8')
     html=html.replace('<head>','<head><base href="'+(root/'pages').as_uri()+'/">'+setup).replace('</body>',checks+'</body>')
     target=temporary/'upload.html';target.write_text(html,encoding='utf-8')
-    result=subprocess.run([str(chrome),'--headless','--disable-gpu','--no-sandbox','--window-size=540,900','--user-data-dir='+str(temporary/'profile'),'--virtual-time-budget=3000','--dump-dom',target.as_uri()],capture_output=True,timeout=30)
-    match=re.search(r'<pre id="result">(.*?)</pre>',result.stdout.decode('utf-8',errors='replace'),re.S)
-    assert match and match.group(1).startswith('PASS:'), 'Browser failed' if not match else match.group(1)
-    print(match.group(1))
+    for width in (320,390,768,1440):
+        result=subprocess.run([str(chrome),'--headless','--disable-gpu','--no-sandbox',f'--window-size={width},900','--user-data-dir='+str(temporary/f'profile-{width}'),'--virtual-time-budget=3000','--dump-dom',target.as_uri()],capture_output=True,timeout=30)
+        match=re.search(r'<pre id="result">(.*?)</pre>',result.stdout.decode('utf-8',errors='replace'),re.S)
+        assert match and match.group(1).startswith('PASS:'), 'Browser failed' if not match else match.group(1)
+        print(width,match.group(1))

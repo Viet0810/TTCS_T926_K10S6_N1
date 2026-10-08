@@ -77,12 +77,32 @@ function renderReviews() {
   if (!visible.length) { const cell = rows.insertRow().insertCell(); cell.colSpan = 6; cell.textContent = "Chưa có tài liệu phù hợp."; return; }
   for (const item of visible) {
     const row = rows.insertRow();
-    for (const value of [`${item.fullName}\n${item.email}\n${item.phone || ""}`, `${item.school || ""}\n${item.major || ""}`, `${item.kind === "cv" ? "CV" : "Đơn xin thực tập"}\n${item.fileName}\nĐăng ký: ${utcDisplay(item.createdAt)}\nNộp: ${utcDisplay(item.uploadedAt)}`, reviewStatuses[item.status], `${item.comment || ""}\n${item.reviewer || ""}\n${utcDisplay(item.reviewedAt)}`]) { const cell = row.insertCell(); cell.textContent = value; cell.style.whiteSpace = "pre-wrap"; }
+    const addLine = (cell, text, className) => {
+      if (!text) return;
+      const line = document.createElement("span"); line.className = className; line.textContent = text; cell.append(line);
+    };
+    const candidate = row.insertCell();
+    addLine(candidate, item.fullName, "review-name");
+    addLine(candidate, item.email, "review-contact");
+    addLine(candidate, item.phone, "review-contact");
+    const education = row.insertCell();
+    addLine(education, item.school, "review-primary");
+    addLine(education, item.major, "review-meta");
+    const documentCell = row.insertCell();
+    addLine(documentCell, item.kind === "cv" ? "CV" : "Đơn xin thực tập", "review-primary");
+    addLine(documentCell, item.fileName, "review-filename");
+    addLine(documentCell, `Đăng ký: ${utcDisplay(item.createdAt)}`, "review-meta");
+    addLine(documentCell, `Nộp: ${utcDisplay(item.uploadedAt)}`, "review-meta");
+    row.insertCell();
+    const result = row.insertCell();
+    addLine(result, item.comment, "review-comment");
+    addLine(result, item.reviewer, "review-meta");
+    addLine(result, utcDisplay(item.reviewedAt), "review-meta");
     const badge = document.createElement("span"); badge.className = `review-status ${item.status}`; badge.textContent = reviewStatuses[item.status]; row.cells[3].replaceChildren(badge);
-    const actions = row.insertCell();
+    const actions = row.insertCell(); actions.className = "review-actions-cell";
     const download = document.createElement("button"); download.type = "button"; download.className = "btn-secondary btn-compact"; download.textContent = "Tải để xem";
     download.onclick = () => downloadReview(item, download);
-    const review = document.createElement("button"); review.type = "button"; review.className = "btn-secondary btn-compact"; review.textContent = "Xem chi tiết";
+    const review = document.createElement("button"); review.type = "button"; review.className = "btn-secondary btn-compact review-detail-button"; review.textContent = "Xem chi tiết";
     review.onclick = () => openReview(item);
     actions.append(download, review);
   }
@@ -115,25 +135,26 @@ document.getElementById("reviewForm").addEventListener("submit", async (event) =
   setReviewBusy(true);
   try {
     if (!["approved", "rejected"].includes(status)) { message.textContent = "Kết quả duyệt không hợp lệ."; return; }
-    await requestApi(`/document-reviews/${encodeURIComponent(selectedDocument.internId)}/${encodeURIComponent(selectedDocument.kind)}/${status === "approved" ? "approve" : "reject"}`, {
+    const result = await requestApi(`/document-reviews/${encodeURIComponent(selectedDocument.internId)}/${encodeURIComponent(selectedDocument.kind)}/${status === "approved" ? "approve" : "reject"}`, {
       method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ comment, version: selectedDocument.version }),
     });
     selectedDocument.status = status; selectedDocument.comment = comment; selectedDocument.version = null;
     renderReviews();
-    reviewDialog.close(); reviewMessage.textContent = "Đã lưu kết quả duyệt.";
+    reviewDialog.close(); reviewMessage.textContent = result.message || "Đã lưu kết quả duyệt.";
     try { await loadReviews(); }
     catch (error) { reviewMessage.textContent = `Đã lưu kết quả duyệt, nhưng chưa tải lại được danh sách: ${reviewErrorMessage(error)}`; }
   } catch (error) { message.textContent = reviewErrorMessage(error); reviewMessage.textContent = message.textContent; }
   finally { setReviewBusy(false); }
 });
-document.getElementById("logoutBtn").onclick = Session.logout;
 async function initializeReviews() {
+  reviewMessage.textContent = "Đang tải tài liệu…";
   if (!localStorage.getItem("token")) { location.href = "../index.html"; return; }
   try {
     const session = await API.getCurrentUser();
     allowed = session.user?.role === "HR" && Session.hasPermission(session, "APPROVE_DOCUMENTS");
     if (!allowed) { reviewMessage.textContent = "Bạn không có quyền duyệt tài liệu."; return; }
     await loadReviews();
+    reviewMessage.textContent = "";
   } catch (error) { reviewMessage.textContent = reviewErrorMessage(error); }
 }
 initializeReviews();

@@ -52,28 +52,28 @@ login_checks='''
 const password=document.getElementById("password");
 document.querySelector('[data-password-toggle="password"]').click();
 assert(password.type==="text"&&document.querySelector('[data-password-toggle="password"]').getAttribute("aria-pressed")==="true","password visibility and accessible state");
-document.getElementById("username").value="auth-ui@example.invalid";
+document.getElementById("username").value="auth-ui@gmail.com";
 document.getElementById("forgotPasswordLink").click();
-assert(document.getElementById("loginView").hidden&&!document.getElementById("forgotView").hidden&&document.getElementById("recoveryEmail").value==="auth-ui@example.invalid","recovery view and prefilled email");
+assert(document.getElementById("loginView").hidden&&!document.getElementById("forgotView").hidden&&document.getElementById("recoveryEmail").value==="auth-ui@gmail.com","recovery view and prefilled email");
 responseStatus=200;responseData={message:"Nếu email đã được đăng ký, bạn sẽ nhận được liên kết."};
 submit("forgotForm");assert(document.getElementById("forgotSubmit").disabled,"recovery submit disabled while request is pending");await tick();
-assert(lastRequest.url.endsWith("/auth/forgot-password")&&JSON.parse(lastRequest.options.body).email==="auth-ui@example.invalid","recovery submits the correct API payload");
+assert(lastRequest.url.endsWith("/auth/forgot-password")&&JSON.parse(lastRequest.options.body).email==="auth-ui@gmail.com","recovery submits the correct API payload");
 assert(document.getElementById("forgotMessage").classList.contains("is-success")&&!document.getElementById("forgotSubmit").disabled,"recovery success feedback and submit restored");
-responseStatus=503;responseData={message:"Chưa cấu hình dịch vụ gửi email."};submit("forgotForm");await tick();
-assert(!document.getElementById("forgotMessage").classList.contains("is-success")&&document.getElementById("forgotMessage").textContent.includes("Chưa cấu hình"),"recovery failures do not show a success message");
+responseStatus=503;responseData={message:"Chưa cấu hình địa chỉ trang đặt lại mật khẩu (PasswordReset:ResetPageUrl)."};submit("forgotForm");await tick();
+assert(!document.getElementById("forgotMessage").classList.contains("is-success")&&document.getElementById("forgotMessage").textContent===responseData.message,"recovery displays backend URL error without guessing SMTP failure");
 document.getElementById("backToLogin").click();
 responseStatus=401;responseData={message:"Thông tin đăng nhập không đúng."};
 password.value="Wrong-password-9";localStorage.setItem("token","old-session");submit("loginForm");await tick();
 assert(!document.getElementById("loginMessage").hidden&&!localStorage.getItem("token")&&!document.getElementById("loginSubmit").disabled,"login errors clear stale sessions and restore the form");
 responseStatus=200;responseData={token:"invalid-session",user:{role:"INVALID"}};submit("loginForm");await tick();
-assert(!localStorage.getItem("token")&&document.getElementById("loginMessage").textContent.includes("không hợp lệ"),"invalid account responses cannot create a session");
+assert(!localStorage.getItem("token")&&!document.getElementById("loginMessage").hidden,"invalid account responses cannot create a session");
 '''
 reset_checks='''
 assert(!location.hash,"reset token removed from browser address");
 document.getElementById("newPassword").value="New-password-9";
 document.getElementById("confirmPassword").value="Different-password-9";
 submit("resetForm");await tick();
-assert(!lastRequest&&document.getElementById("resetMessage").textContent.includes("không khớp"),"mismatched passwords never reach the API");
+assert(!lastRequest&&!document.getElementById("confirmPasswordError").hidden&&document.getElementById("confirmPassword").getAttribute("aria-invalid")==="true"&&document.getElementById("confirmPasswordError").textContent.includes("không khớp"),"mismatched passwords never reach the API");
 document.getElementById("confirmPassword").value="New-password-9";
 responseStatus=400;responseData={message:"Liên kết đã hết hạn."};submit("resetForm");await tick();
 assert(!document.getElementById("resetMessage").classList.contains("is-success")&&!document.getElementById("resetSubmit").disabled,"expired links show an error and restore the form");

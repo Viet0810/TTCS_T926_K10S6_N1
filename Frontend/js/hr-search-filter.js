@@ -17,7 +17,12 @@ function renderResults() {
   }
   for (const intern of results) {
     const row = tableBody.insertRow();
-    for (const key of ["studentCode", "fullName", "email", "phone", "school", "major", "organization", "status"]) row.insertCell().textContent = intern[key] || "—";
+    for (const key of ["studentCode", "fullName", "email", "phone", "school", "major", "organization", "status"]) {
+      const cell = row.insertCell();
+      if (key === "status") cell.append(InternProfile.statusBadge(intern[key]));
+      else cell.textContent = intern[key] || "—";
+      if (key === "email") cell.className = "table-email";
+    }
     const action = row.insertCell();
     const view = document.createElement("button"); view.type = "button"; view.className = "btn-secondary search-edit-link"; view.textContent = "Xem hồ sơ"; view.addEventListener("click", () => InternProfile.show(intern, canEdit ? (profile) => { location.href = `intern-manage.html?edit=${encodeURIComponent(profile.id)}`; } : null)); action.appendChild(view);
     if (canEdit) {
@@ -61,7 +66,6 @@ searchInput.addEventListener("input", () => {
 document.getElementById("filterForm").addEventListener("submit", (event) => { event.preventDefault(); clearTimeout(debounce); search(); });
 document.getElementById("filterForm").addEventListener("reset", () => { clearTimeout(debounce); queueMicrotask(search); });
 exportBtn.addEventListener("click", () => InternService.exportCSV(results));
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 async function initializeSearch() {
   if (!localStorage.getItem("token")) { location.href = "../index.html"; return; }
   try {

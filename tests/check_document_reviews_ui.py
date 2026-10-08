@@ -32,6 +32,16 @@ const open=async(index=0)=>{document.querySelectorAll('#reviewRows tr')[index].q
 const submit=status=>{const button=document.querySelector('#reviewForm button[value="'+status+'"]');document.getElementById('reviewForm').dispatchEvent(new SubmitEvent('submit',{cancelable:true,submitter:button}))};
 await settle();assert(document.querySelectorAll('#reviewRows tr').length===2,'CV and application listed');
 assert(['Test intern','0912345678','Test school','Test major'].every(text=>document.getElementById('reviewRows').textContent.includes(text)),'candidate summary fields');
+const search=document.getElementById('reviewSearch'),filter=document.getElementById('reviewFilter'),refresh=document.getElementById('refreshBtn');
+assert([search,filter,refresh].every(control=>Math.round(control.getBoundingClientRect().height)===46),'toolbar controls have equal heights');
+assert(document.documentElement.scrollWidth<=innerWidth,'page has no horizontal overflow');
+assert(getComputedStyle(document.querySelector('.review-contact')).whiteSpace==='nowrap','email does not wrap awkwardly');
+if(innerWidth>1100)assert(Math.abs(search.getBoundingClientRect().top-filter.getBoundingClientRect().top)<2,'desktop toolbar is one row');
+if(innerWidth<600)assert(filter.getBoundingClientRect().top>search.getBoundingClientRect().bottom&&refresh.getBoundingClientRect().top>filter.getBoundingClientRect().bottom,'mobile toolbar stacks');
+search.value='no-match';search.dispatchEvent(new Event('input'));assert(document.getElementById('reviewRows').textContent.includes('Chưa có'),'search still filters immediately');
+search.value='test@example.invalid';search.dispatchEvent(new Event('input'));assert(document.querySelectorAll('#reviewRows tr').length===2,'email search');
+search.value='';search.dispatchEvent(new Event('input'));filter.value='approved';filter.dispatchEvent(new Event('change'));assert(document.getElementById('reviewRows').textContent.includes('Chưa có'),'status filter');
+filter.value='';filter.dispatchEvent(new Event('change'));
 document.querySelector('#reviewRows tr button').click();await settle();assert(downloaded,'PDF download');
 await open();assert(document.getElementById('reviewDetails').textContent.includes('Test school'),'full candidate details');
 submit('rejected');assert(puts===0&&document.getElementById('dialogMessage').textContent.includes('lý do'),'rejection reason required');
@@ -56,7 +66,7 @@ with TemporaryDirectory(prefix='intern-review-ui-') as temporary:
     html = html.replace('<head>', '<head><base href="'+(root/'pages').as_uri()+'/">'+setup).replace('</body>', checks+'</body>')
     target = temporary/'reviews.html'
     target.write_text(html, encoding='utf-8')
-    for width in (390, 768, 1440):
+    for width in (320, 390, 768, 1440):
         result = subprocess.run([str(chrome), '--headless', '--disable-gpu', '--no-sandbox', f'--window-size={width},900', '--user-data-dir='+str(temporary/f'profile-{width}'), '--virtual-time-budget=5000', '--dump-dom', target.as_uri()], capture_output=True, timeout=30)
         match = re.search(r'<pre id="result">(.*?)</pre>', result.stdout.decode('utf-8', errors='replace'), re.S)
         assert match and match.group(1).startswith('PASS:'), 'Browser failed' if not match else match.group(1)

@@ -1,4 +1,3 @@
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 const documentKinds = ["cv", "application"];
 let documents = [];
 let ready = false;
@@ -16,10 +15,21 @@ async function refreshDocuments() {
   documents = await API.getMyDocuments();
   for (const kind of documentKinds) {
     const item = documents.find((entry) => entry.kind === kind);
-    document.getElementById(`${kind}Info`).textContent = item
-      ? `${item.fileName} · ${sizeText(item.size)} · ${new Date(item.uploadedAt + (/[Z+]/.test(item.uploadedAt) ? "" : "Z")).toLocaleString("vi-VN")}`
-      : "Chưa nộp tài liệu";
-    if (item) document.getElementById(`${kind}Info`).textContent += ` · ${{pending:"Chờ duyệt",approved:"Đã duyệt",rejected:"Cần bổ sung"}[item.status] || "Chờ duyệt"}${item.comment ? ` · ${item.comment}` : ""}`;
+    const info = document.getElementById(`${kind}Info`); info.replaceChildren();
+    if (!item) info.textContent = "Chưa nộp tài liệu";
+    else {
+      const name = document.createElement("strong"); name.className = "document-filename";
+      name.textContent = name.title = item.fileName; info.append(name);
+      for (const text of [`Dung lượng: ${sizeText(item.size)}`, `Ngày nộp: ${new Date(item.uploadedAt + (/[Z+]/.test(item.uploadedAt) ? "" : "Z")).toLocaleString("vi-VN")}`]) {
+        const line = document.createElement("span"); line.className = "document-meta"; line.textContent = text; info.append(line);
+      }
+      const line = document.createElement("span"); line.className = "document-meta"; line.append("Trạng thái: ");
+      const badge = document.createElement("span");
+      const statuses = {pending:"Chờ duyệt",approved:"Đã duyệt",rejected:"Cần bổ sung"};
+      badge.className = `status-badge ${statuses[item.status] ? item.status : ""}`;
+      badge.textContent = statuses[item.status] || "Chưa xác định"; line.append(badge); info.append(line);
+      if (item.comment) { const comment = document.createElement("span"); comment.className = "document-meta"; comment.textContent = `Nhận xét: ${item.comment}`; info.append(comment); }
+    }
     document.getElementById(`${kind}Download`).disabled = !item;
   }
 }
@@ -30,8 +40,19 @@ function bindDocumentForm(kind) {
   form.noValidate = true;
   input.addEventListener("change", () => {
     const file = input.files[0];
-    document.getElementById(`${kind}Selected`).textContent = file ? `${file.name} · ${sizeText(file.size)}` : "";
+    const selected = document.getElementById(`${kind}Selected`);
+    selected.textContent = file ? `${file.name} · ${sizeText(file.size)}` : "";
+    selected.title = file?.name || "";
     message.textContent = file ? documentValidation(file) : "";
+  });
+  const picker = input.closest(".file-picker");
+  picker.addEventListener("dragover", event => { event.preventDefault(); if (!input.disabled) picker.classList.add("is-dragging"); });
+  picker.addEventListener("dragleave", () => picker.classList.remove("is-dragging"));
+  picker.addEventListener("drop", event => {
+    event.preventDefault(); picker.classList.remove("is-dragging");
+    if (input.disabled || !event.dataTransfer?.files.length) return;
+    if (event.dataTransfer.files.length !== 1) { message.textContent = "Vui lòng chọn một tệp PDF cho mỗi tài liệu."; return; }
+    input.files = event.dataTransfer.files; input.dispatchEvent(new Event("change"));
   });
   form.addEventListener("submit", async (event) => {
     event.preventDefault(); if (!ready || busy) return;
@@ -71,17 +92,15 @@ async function loadProfile() {
   try {
     const session = await API.getCurrentUser();
     if (!Session.hasPermission(session, "UPLOAD_DOCUMENTS")) {
-      document.getElementById("internName").textContent = "Tài liệu thực tập";
       status.textContent = "Chức năng nộp tài liệu dành cho tài khoản thực tập sinh."; return;
     }
+    // Preserve the existing linked-profile check before enabling upload.
     const profile = await API.getMyInternProfile();
-    document.getElementById("internName").textContent = profile.fullName;
-    document.getElementById("internEmail").textContent = profile.email;
-    InternProfile.details(document.getElementById("internDetails"), profile);
+    if (!profile) { status.textContent = "Chưa có hồ sơ thực tập để nộp tài liệu."; return; }
     await refreshDocuments(); ready = true;
     document.getElementById("uploadArea").hidden = false; status.textContent = "";
   } catch (error) {
-    document.getElementById("internName").textContent = "Hồ sơ thực tập"; status.textContent = error.message;
+    status.textContent = error.message;
     retry.hidden = false;
   }
   finally { retry.disabled = false; }

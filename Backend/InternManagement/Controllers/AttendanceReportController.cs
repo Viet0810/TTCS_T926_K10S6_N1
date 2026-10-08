@@ -36,9 +36,10 @@ public sealed class AttendanceReportController : ControllerBase
         [FromQuery] AttendanceReportRequest? filter,
         CancellationToken cancellationToken)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
+        var decision = authorization.Evaluate(Request, PermissionNames.ViewAttendanceReport);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "HR") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
 
         var report = await reportService.GetReportAsync(filter, cancellationToken);
         return Ok(report);
@@ -59,12 +60,17 @@ public sealed class AttendanceReportController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.ManageInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "HR") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
 
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var id = await reportService.RecordAttendanceAsync(request, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, new { id, message = "Ghi nhận ca làm việc thành công." });
+        try
+        {
+            var id = await reportService.RecordAttendanceAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new { id, message = "Ghi nhận ca làm việc thành công." });
+        }
+        catch (ArgumentException error) { return BadRequest(new { message = error.Message }); }
     }
 
     /// <summary>
@@ -79,6 +85,7 @@ public sealed class AttendanceReportController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.ManageInterns);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "HR") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
 
         var inserted = await reportService.SeedSampleDataAsync(cancellationToken);
         return Ok(new { inserted, message = $"Đã nạp {inserted} bản ghi mẫu điểm danh." });

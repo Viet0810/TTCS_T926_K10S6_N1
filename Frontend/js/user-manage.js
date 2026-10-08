@@ -7,6 +7,28 @@ let creatingUser = false;
 let canCreateUser = false;
 let canDeleteUser = false;
 
+function accountMessage(text) {
+  let box = document.getElementById("accountMessage");
+  if (!box) {
+    box = document.createElement("p"); box.id = "accountMessage"; box.className = "inline-notice";
+    box.setAttribute("role", "status"); box.setAttribute("aria-live", "polite");
+    const content = document.querySelector(".dashboard-main .card"); content.append(box);
+  }
+  box.textContent = text;
+}
+
+function updateAccountPasswordFields() {
+  if (!createForm) return;
+  const automatic = document.getElementById("role").value !== "INTERN";
+  for (const id of ["password", "confirmPassword"]) {
+    const input = document.getElementById(id);
+    input.closest(".form-group").hidden = automatic; input.required = !automatic;
+    if (automatic) { input.value = ""; Validation.clearFieldError(input); }
+  }
+  document.getElementById("temporaryPasswordNotice").hidden = !automatic;
+}
+if (createForm) { document.getElementById("role").addEventListener("change", updateAccountPasswordFields); updateAccountPasswordFields(); }
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -41,11 +63,16 @@ function renderUsers() {
           <td>${escapeHtml(user.email)}</td>
           <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
           <td>
+            ${canCreateUser && ["HR", "MENTOR"].includes(user.role) ? `<button type="button" class="btn-secondary" data-resend-id="${user.id}">Gửi lại email đăng nhập</button>` : ""}
             ${!canDeleteUser || user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
           </td>
         </tr>`,
     )
     .join("");
+  if (!visibleUsers.length) {
+    const cell = tableBody.insertRow().insertCell(); cell.colSpan = 4; cell.className = "empty-state";
+    cell.textContent = keyword ? "Không tìm thấy tài khoản phù hợp." : "Chưa có tài khoản.";
+  }
 }
 
 async function initializePage() {
@@ -69,26 +96,38 @@ async function initializePage() {
     if (createLink) createLink.hidden = !canCreateUser;
     if (tableBody) await loadUsers();
   } catch (error) {
-    if (!Session.redirectIfExpired(error)) alert(error.message);
+    if (tableBody && !users.length) {
+      tableBody.replaceChildren(); const cell = tableBody.insertRow().insertCell();
+      cell.colSpan = 4; cell.className = "empty-state"; cell.textContent = "Chưa thể tải danh sách tài khoản.";
+    }
+    if (!Session.redirectIfExpired(error)) accountMessage(error.message);
   }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 
 searchInput?.addEventListener("input", renderUsers);
 
 tableBody?.addEventListener("click", async (event) => {
+  const resend = event.target.closest("[data-resend-id]");
+  if (resend) {
+    if (!canCreateUser || resend.disabled || !confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?")) return;
+    resend.disabled = true;
+    try { const result = await API.resendLoginEmail(resend.dataset.resendId); accountMessage(result.message); }
+    catch (error) { accountMessage(error.message); Session.redirectIfExpired(error); }
+    finally { resend.disabled = false; }
+    return;
+  }
   const button = event.target.closest("[data-user-id]");
   if (!button || button.disabled || !canDeleteUser || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
 
   button.disabled = true;
   try {
     await API.deleteUser(button.dataset.userId);
-    alert("Đã xóa tài khoản.");
+    accountMessage("Đã xóa tài khoản.");
     try { await loadUsers(); }
-    catch (error) { alert(`Đã xóa tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+    catch (error) { accountMessage(`Đã xóa tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
   } catch (error) {
-    alert(error.message);
+    accountMessage(error.message);
   }
   finally { button.disabled = false; }
 });
@@ -108,35 +147,51 @@ createForm?.addEventListener("submit", async function (event) {
 
     const role = document.getElementById("role").value;
 
-    if (password !== confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp.");
+    for (const id of ["password", "confirmPassword"]) Validation.clearFieldError(document.getElementById(id));
+    const passwordError = role === "INTERN" ? Validation.validatePassword(password) : "";
+    if (passwordError) { Validation.showFieldError(document.getElementById("password"), passwordError); document.getElementById("password").focus(); return; }
+
+    if (role === "INTERN" && password !== confirmPassword) {
+      Validation.showFieldError(document.getElementById("confirmPassword"), "Mật khẩu xác nhận không khớp.");
       document.getElementById("confirmPassword").focus();
       return;
     }
 
     creatingUser = true;
+    const submitButton = this.querySelector('[type="submit"]');
+    const submitContent = submitButton.innerHTML;
+    submitButton.textContent = "Đang tạo tài khoản…";
+    this.setAttribute("aria-busy", "true");
     [...this.elements].forEach((control) => control.disabled = true);
     try {
       const result = await API.createUser({
         fullName,
         email,
-        password,
+        ...(role === "INTERN" ? { password } : {}),
         role,
       });
 
-      alert(result.message);
+      accountMessage(result.message);
 
       this.reset();
+      updateAccountPasswordFields();
 
       if (tableBody) {
         try { await loadUsers(); }
-        catch (error) { alert(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+        catch (error) { accountMessage(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
       }
     } catch (error) {
-      alert(error.message);
+      accountMessage(error.message);
     }
     finally {
       creatingUser = false;
+      this.setAttribute("aria-busy", "false");
+      submitButton.innerHTML = submitContent;
       [...this.elements].forEach((control) => control.disabled = false);
     }
   });
+
+if (createForm) for (const id of ["password", "confirmPassword"]) {
+  const input = document.getElementById(id);
+  input.addEventListener("input", () => Validation.clearFieldError(input));
+}

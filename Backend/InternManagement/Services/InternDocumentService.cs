@@ -72,7 +72,7 @@ public sealed class InternDocumentService(IConfiguration configuration)
         return null;
     }
 
-    private static string? ValidateUpload(string kind, IFormFile? file)
+    internal static string? ValidateUpload(string kind, IFormFile? file)
     {
         if (!ValidKind(kind)) return "Loại tài liệu không hợp lệ.";
         if (file is null) return "Vui lòng chọn tài liệu cần tải lên.";

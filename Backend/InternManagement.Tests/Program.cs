@@ -13,6 +13,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // All SQL writes are confined to a uniquely named temporary database.
+if (args.Contains("--validation-only"))
+{
+    await Sprint2ValidationChecks.RunAsync();
+    return;
+}
 var settingsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../InternManagement/appsettings.json"));
 var settings = new ConfigurationBuilder().AddJsonFile(settingsPath)
     .AddJsonFile(Path.Combine(Path.GetDirectoryName(settingsPath)!, "appsettings.Development.json"), optional:true)
@@ -76,12 +81,36 @@ try
     var session = tokens.Issue(originalUser);
     Check(tokens.TryValidate(session, out _), "a session validates against its database account");
 
+    var resetPageUrl = configuration["PasswordReset:ResetPageUrl"];
+    foreach (var invalidUrl in new[] { "", "not-a-url", "http://example.invalid/reset-password.html" })
+    {
+        configuration["PasswordReset:ResetPageUrl"] = invalidUrl;
+        var resetUrlRejected = false;
+        try { await recovery.RequestAsync(originalUser.Email, CancellationToken.None); }
+        catch (PasswordRecoveryUnavailableException error)
+        {
+            resetUrlRejected = error.Message.Contains("PasswordReset:ResetPageUrl") && !error.Message.Contains("SMTP");
+        }
+        Check(resetUrlRejected, "missing/invalid reset URL is distinguished from configured SMTP");
+    }
+    configuration["PasswordReset:ResetPageUrl"] = resetPageUrl;
+    configuration["Smtp:Host"] = "";
+    var smtpConfigurationRejected = false;
+    try { await recovery.RequestAsync(originalUser.Email, CancellationToken.None); }
+    catch (PasswordRecoveryUnavailableException error) { smtpConfigurationRejected = error.Message.Contains("SMTP"); }
+    Check(smtpConfigurationRejected, "missing SMTP is distinguished from valid reset URL");
+    configuration["Smtp:Host"] = "127.0.0.1";
+    Check((int)(await Sql("SELECT COUNT(*) FROM dbo.PasswordResetTokens"))! == 0, "configuration failures create no reset tokens");
+
     await recovery.RequestAsync("missing@example.invalid", CancellationToken.None);
     Check((int)(await Sql("SELECT COUNT(*) FROM dbo.PasswordResetTokens"))! == 0, "unknown email creates no reset token");
     await recovery.RequestAsync(originalUser.Email, CancellationToken.None);
     var mail = await mailTask.WaitAsync(TimeSpan.FromSeconds(10));
     var match = Regex.Match(mail, "#token=([A-F0-9]{64})");
     Check(match.Success, "SMTP receives a real email with a reset link");
+    Check(mail.Contains("RCPT TO:<auth-test@example.invalid>", StringComparison.OrdinalIgnoreCase)
+        && mail.Contains("MAIL FROM:<no-reply@example.invalid>", StringComparison.OrdinalIgnoreCase), "forgot password uses account recipient and shared system sender");
+    Check(mail.Contains(resetPageUrl + "#token="), "reset link uses configured frontend page and token fragment");
     var secret = match.Groups[1].Value;
     var hash = SHA256.HashData(Convert.FromHexString(secret));
     var storedHash = (byte[])(await Sql("SELECT TokenHash FROM dbo.PasswordResetTokens WHERE UserId=@id", ("@id",userId)))!;
@@ -115,6 +144,8 @@ try
     Check(updated?.FullName == "Updated name" && (await interns.GetByIdAsync(created.Id,CancellationToken.None))?.Major == "Updated major", "intern edits persist to SQL Server");
     Check(await interns.UpdateAsync(int.MaxValue,new CreateInternRequest {FullName="Missing",Email="missing@example.invalid",Phone="0900000000",School="School",Major="Major"},CancellationToken.None) is null, "updating a nonexistent profile returns no success");
 
+    await AccountEmailChecks.RunAsync(configuration, Check, CaptureMail);
+    await ReviewEmailChecks.RunAsync(configuration, Check, CaptureMail);
     configuration["Smtp:Host"] = "";
     var missingSmtpRejected = false;
     try { await recovery.RequestAsync(originalUser.Email,CancellationToken.None); }
@@ -140,6 +171,7 @@ static async Task<string> CaptureMail(TcpListener listener)
     using var writer = new StreamWriter(stream, Encoding.ASCII,leaveOpen:true) { NewLine="\r\n", AutoFlush=true };
     await writer.WriteLineAsync("220 localhost integration SMTP");
     var content = new StringBuilder();
+    var envelope = new StringBuilder();
     while (await reader.ReadLineAsync() is { } line)
     {
         if (line.StartsWith("DATA",StringComparison.OrdinalIgnoreCase))
@@ -147,6 +179,11 @@ static async Task<string> CaptureMail(TcpListener listener)
             await writer.WriteLineAsync("354 Send message");
             while (await reader.ReadLineAsync() is { } part && part != ".") content.Append(part).Append("\r\n");
             await writer.WriteLineAsync("250 Accepted");
+        }
+        else if (line.StartsWith("MAIL FROM:",StringComparison.OrdinalIgnoreCase) || line.StartsWith("RCPT TO:",StringComparison.OrdinalIgnoreCase))
+        {
+            envelope.AppendLine(line);
+            await writer.WriteLineAsync("250 localhost");
         }
         else if (line.StartsWith("QUIT",StringComparison.OrdinalIgnoreCase)) { await writer.WriteLineAsync("221 Closing"); break; }
         else await writer.WriteLineAsync("250 localhost");
@@ -156,8 +193,8 @@ static async Task<string> CaptureMail(TcpListener listener)
     var headers = raw[..split];
     var body = raw[(split+4)..];
     if (headers.Contains("Content-Transfer-Encoding: base64",StringComparison.OrdinalIgnoreCase))
-        return Encoding.UTF8.GetString(Convert.FromBase64String(body));
+        body = Encoding.UTF8.GetString(Convert.FromBase64String(body));
     if (headers.Contains("Content-Transfer-Encoding: quoted-printable",StringComparison.OrdinalIgnoreCase))
         body = Regex.Replace(body.Replace("=\r\n",""), "=([0-9A-F]{2})", m => ((char)Convert.ToByte(m.Groups[1].Value,16)).ToString());
-    return body;
+    return envelope + "\r\n" + headers + "\r\n\r\n" + body;
 }

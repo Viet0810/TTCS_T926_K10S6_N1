@@ -76,7 +76,12 @@ function renderInterns() {
   }
   for (const intern of visible) {
     const row = tableBody.insertRow();
-    for (const field of tableFields) row.insertCell().textContent = intern[field] || "—";
+    for (const field of tableFields) {
+      const cell = row.insertCell();
+      if (field === "status") cell.append(InternProfile.statusBadge(intern[field]));
+      else cell.textContent = intern[field] || "—";
+      if (field === "email") cell.className = "table-email";
+    }
     const cell = row.insertCell();
     const view = document.createElement("button"); view.type = "button"; view.className = "btn-secondary btn-compact"; view.textContent = "Xem hồ sơ"; view.addEventListener("click", () => InternProfile.show(intern, canEdit ? openForm : null)); cell.appendChild(view);
     if (canEdit) {
@@ -95,7 +100,6 @@ async function loadInterns() {
 openFormBtn.addEventListener("click", () => openForm());
 document.getElementById("closeFormBtn").addEventListener("click", closeForm);
 document.getElementById("cancelBtn").addEventListener("click", closeForm);
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 searchInput.addEventListener("input", renderInterns);
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -46,7 +46,7 @@ loginForm.addEventListener("submit", async (event) => {
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", role);
     localStorage.setItem("user", JSON.stringify(data.user));
-    location.href = "pages/dashboard.html";
+    location.href = data.user.mustChangePassword ? "pages/change-password.html" : "pages/dashboard.html";
   } catch (error) {
     AuthUI.clearSession();
     const code = error.code || error.message;

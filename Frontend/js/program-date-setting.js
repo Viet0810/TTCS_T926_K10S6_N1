@@ -1,74 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const API_URL =
-    "http://localhost:5024/api/program-schedule";
+  const API_PATH = "/program-schedule";
 
   // =====================================================
   // MENU QUẢN LÝ CHƯƠNG TRÌNH CHO HR
-  // =====================================================
-
-  const roleMenu =
-    document.getElementById("roleMenu");
-
-  const roleBadge =
-    document.getElementById("roleBadge");
-
-  function addProgramSettingMenu() {
-    if (!roleMenu || !roleBadge) {
-      return;
-    }
-
-    const role =
-      roleBadge.textContent
-        .trim()
-        .toUpperCase();
-
-    if (role !== "HR") {
-      return;
-    }
-
-    if (
-      document.getElementById(
-        "programSettingMenuLink"
-      )
-    ) {
-      return;
-    }
-
-    const link =
-      document.createElement("a");
-
-    link.id =
-      "programSettingMenuLink";
-
-    link.href =
-      "program-setting.html";
-
-    link.textContent =
-      "Quản lý chương trình";
-
-    roleMenu.appendChild(link);
-  }
-
-  addProgramSettingMenu();
-
-  if (roleBadge) {
-    const observer =
-      new MutationObserver(function () {
-        addProgramSettingMenu();
-      });
-
-    observer.observe(
-      roleBadge,
-      {
-        childList: true,
-        subtree: true,
-        characterData: true
-      }
-    );
-  }
-
-  // =====================================================
-  // FORM
   // =====================================================
 
   const form =
@@ -444,6 +378,8 @@ document.addEventListener("DOMContentLoaded", function () {
             </button>
           </td>
         `;
+        row.insertCell(1).textContent = program.name || `Chương trình #${program.id}`;
+        row.insertCell(2).textContent = program.department || "Chưa bổ sung";
 
         historyBody.appendChild(
           row
@@ -457,34 +393,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // =====================================================
 
   async function loadPrograms() {
+    emptyHistory.textContent = "Đang tải chương trình…";
+    emptyHistory.style.display = "block";
     try {
-      const response =
-        await fetch(
-          API_URL,
-          {
-            method: "GET",
-            headers: {
-              "Accept":
-                "application/json"
-            }
-          }
-        );
-
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.message ||
-          "Không thể tải danh sách chương trình."
-        );
-      }
+      const result = await requestApi(API_PATH, { headers: getAuthHeader() });
 
       renderPrograms(
         result.data
       );
+      emptyHistory.textContent = "Chưa có thời gian chương trình nào được thiết lập.";
 
     } catch (error) {
+      if (Session.redirectIfExpired(error)) return;
       console.error(
         "GET program schedules:",
         error
@@ -497,6 +417,7 @@ document.addEventListener("DOMContentLoaded", function () {
       );
 
       renderPrograms([]);
+      emptyHistory.textContent = "Chưa thể tải danh sách chương trình.";
     }
   }
 
@@ -553,7 +474,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function (event) {
       event.preventDefault();
 
-      if (!validateDates()) {
+      if (saveButton.disabled || !validateDates()) {
         return;
       }
 
@@ -565,6 +486,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       try {
         const requestData = {
+          name: document.getElementById("programName").value.trim() || null,
+          department: document.getElementById("programDepartment").value.trim() || null,
           startDate:
             startDateInput.value,
 
@@ -572,36 +495,9 @@ document.addEventListener("DOMContentLoaded", function () {
             endDateInput.value
         };
 
-        const response =
-          await fetch(
-            API_URL,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                "Accept":
-                  "application/json"
-              },
-
-              body:
-                JSON.stringify(
-                  requestData
-                )
-            }
-          );
-
-        const result =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            result.message ||
-            "Không thể lưu thời gian chương trình."
-          );
-        }
+        const result = await requestApi(API_PATH, {
+          method: "POST", headers: getAuthHeader(), body: JSON.stringify(requestData)
+        });
 
         showMessage(
           result.message ||
@@ -627,6 +523,7 @@ document.addEventListener("DOMContentLoaded", function () {
         await loadPrograms();
 
       } catch (error) {
+      if (Session.redirectIfExpired(error)) return;
         console.error(
           "POST program schedule:",
           error
@@ -687,34 +584,9 @@ document.addEventListener("DOMContentLoaded", function () {
         "Đang xóa...";
 
       try {
-        const response =
-          await fetch(
-            `${API_URL}/${id}`,
-            {
-              method: "DELETE",
-
-              headers: {
-                "Accept":
-                  "application/json"
-              }
-            }
-          );
-
-        let result = {};
-
-        try {
-          result =
-            await response.json();
-        } catch {
-          result = {};
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            result.message ||
-            "Không thể xóa chương trình."
-          );
-        }
+        const result = await requestApi(`${API_PATH}/${encodeURIComponent(id)}`, {
+          method: "DELETE", headers: getAuthHeader()
+        }) || {};
 
         showMessage(
           result.message ||
@@ -725,6 +597,7 @@ document.addEventListener("DOMContentLoaded", function () {
         await loadPrograms();
 
       } catch (error) {
+      if (Session.redirectIfExpired(error)) return;
         console.error(
           "DELETE program schedule:",
           error
@@ -752,6 +625,8 @@ document.addEventListener("DOMContentLoaded", function () {
   cancelButton.addEventListener(
     "click",
     function () {
+      document.getElementById("programName").value = "";
+      document.getElementById("programDepartment").value = "";
       startDateInput.value =
         "";
 

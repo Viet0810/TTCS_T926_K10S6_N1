@@ -12,11 +12,16 @@ public sealed class UsersController : ControllerBase
 {
     private readonly AccountService accounts;
     private readonly RequestAuthorizationService authorization;
+    private readonly PasswordResetService passwordReset;
+    private readonly ILogger<UsersController> logger;
 
-    public UsersController(AccountService accounts, RequestAuthorizationService authorization)
+    public UsersController(AccountService accounts, RequestAuthorizationService authorization,
+        PasswordResetService passwordReset, ILogger<UsersController> logger)
     {
         this.accounts = accounts;
         this.authorization = authorization;
+        this.passwordReset = passwordReset;
+        this.logger = logger;
     }
 
     [HttpGet]
@@ -53,6 +58,7 @@ public sealed class UsersController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "ADMIN") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
 
         var role = request.Role.Trim().ToUpperInvariant();
         if (role is not ("HR" or "MENTOR" or "INTERN"))
@@ -60,9 +66,26 @@ public sealed class UsersController : ControllerBase
 
         try
         {
+            if (role is "HR" or "MENTOR") request = request with { Password = TemporaryPasswordGenerator.Generate() };
             var user = await accounts.CreateAsync(request, role, cancellationToken);
+            logger.LogInformation("Account created. User {UserId}, recipient {Recipient}, role {Role}.", user.Id, user.Email, user.Role);
+            bool? emailSent = null;
+            var message = "Tạo tài khoản thành công.";
+            if (role is "HR" or "MENTOR")
+            {
+                emailSent = false;
+                try { emailSent = await passwordReset.SendAccountCreatedAsync(user, request.Password!, cancellationToken); }
+                catch (Exception error)
+                {
+                    logger.LogWarning("Account setup email failed for user {UserId}, recipient {Recipient}, type {FailureType}, reason {Reason}.",
+                        user.Id, user.Email, error.GetType().Name, error is PasswordRecoveryUnavailableException ? error.Message : "Delivery unavailable");
+                }
+                message = emailSent == true
+                    ? "Tạo tài khoản thành công. Email hướng dẫn đã được gửi đến người dùng."
+                    : "Tài khoản đã được tạo nhưng chưa gửi được email hướng dẫn.";
+            }
             return CreatedAtAction(nameof(GetUserById), new { id = user.Id },
-                new { success = true, message = "Tạo tài khoản thành công.", data = user });
+                new { success = true, message, data = user, accountCreated = true, emailSent });
         }
         catch (SqlException error) when (error.Number is 2601 or 2627)
         {
@@ -83,6 +106,27 @@ public sealed class UsersController : ControllerBase
         return !deleted
             ? NotFound(new ApiErrorResponse(false, "Không tìm thấy tài khoản cần xóa.", null))
             : NoContent();
+    }
+
+    [HttpPost("{id:int}/resend-login-email")]
+    public async Task<IActionResult> ResendLoginEmail(int id, CancellationToken cancellationToken)
+    {
+        var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
+        if (decision.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "ADMIN") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        var user = await accounts.GetByIdAsync(id, cancellationToken);
+        if (user is null) return NotFound(new { message = "Không tìm thấy tài khoản." });
+        if (user.Role is not ("HR" or "MENTOR")) return BadRequest(new { message = "Chỉ gửi lại email đăng nhập cho HR/Mentor." });
+        var password = TemporaryPasswordGenerator.Generate();
+        if (!await accounts.SetTemporaryPasswordAsync(id, password, cancellationToken))
+            return NotFound(new { message = "Tài khoản không còn khả dụng." });
+        var emailSent = false;
+        try { emailSent = await passwordReset.SendAccountCreatedAsync(user, password, cancellationToken); }
+        catch (Exception error) { logger.LogWarning("Account email resend failed for user {UserId}, recipient {Recipient}, type {FailureType}, reason {Reason}.",
+            id, user.Email, error.GetType().Name, error is PasswordRecoveryUnavailableException ? error.Message : "Delivery unavailable"); }
+        return Ok(new { emailSent, mustChangePassword = true, message = emailSent
+            ? "Đã gửi email với mật khẩu tạm mới."
+            : "Đã thay mật khẩu tạm nhưng chưa gửi được email. Vui lòng kiểm tra SMTP rồi gửi lại." });
     }
 
 }

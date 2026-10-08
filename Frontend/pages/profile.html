@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hồ sơ cá nhân | Hệ thống quản lý thực tập sinh</title>
     <link rel="stylesheet" href="../css/base.css" />
-    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/style.css" /><link rel="stylesheet" href="../css/auth.css" />
   </head>
   <body>
     <div class="dashboard">
@@ -18,13 +18,14 @@
           </div>
         </div>
         <div class="dashboard-session">
-          <a class="btn-primary" href="dashboard.html">Bảng điều khiển</a>
-          <button type="button" id="logoutBtn" class="btn-danger">
+
+          <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">
             Đăng xuất
           </button>
         </div>
       </header>
-      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html" aria-current="page">Hồ sơ cá nhân</a></nav>
+      <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
       <main class="dashboard-main">
         <section class="card">
           <div class="section-heading">
@@ -49,12 +50,26 @@
               <dd id="profileRoleName"></dd>
             </div>
           </dl>
+          <section id="ownProfile" hidden>
+            <h3>Thông tin cá nhân</h3>
+            <dl id="ownProfileDetails" class="profile-details"></dl>
+            <button id="editProfileBtn" type="button" class="btn-primary">Chỉnh sửa thông tin</button>
+            <form id="ownProfileForm" class="form-grid" novalidate hidden>
+              <div class="auth-field"><label for="ownFullName">Họ và tên</label><input id="ownFullName" maxlength="200" required aria-describedby="ownFullNameError" placeholder="Nhập họ và tên"><small id="ownFullNameError" class="auth-field-error" role="alert" hidden></small></div>
+              <div class="auth-field"><label for="ownPhone">Số điện thoại</label><input id="ownPhone" type="tel" maxlength="10" required aria-describedby="ownPhoneError" placeholder="Nhập số điện thoại"><small id="ownPhoneError" class="auth-field-error" role="alert" hidden></small></div>
+              <div class="auth-field"><label for="ownSchool">Trường</label><input id="ownSchool" maxlength="200" required aria-describedby="ownSchoolError" placeholder="Nhập tên trường"><small id="ownSchoolError" class="auth-field-error" role="alert" hidden></small></div>
+              <div class="auth-field"><label for="ownMajor">Chuyên ngành</label><input id="ownMajor" maxlength="200" required aria-describedby="ownMajorError" placeholder="Nhập chuyên ngành"><small id="ownMajorError" class="auth-field-error" role="alert" hidden></small></div>
+              <div class="auth-field"><label for="ownAddress">Địa chỉ</label><input id="ownAddress" maxlength="500" aria-describedby="ownAddressError" placeholder="Nhập địa chỉ"><small id="ownAddressError" class="auth-field-error" role="alert" hidden></small></div>
+              <div class="form-actions"><button id="saveProfileBtn" type="submit" class="btn-primary">Lưu thay đổi</button><button id="cancelProfileBtn" type="button" class="btn-secondary">Hủy</button></div>
+            </form>
+          </section>
           <p id="profileMessage" class="dashboard-message" role="status"></p>
         </section>
       </main>
       <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
     </div>
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js"></script><script src="../js/navigation.js"></script>
+    <script src="../js/validation.js"></script>
     <script src="../js/profile.js"></script>
   </body>
 </html>

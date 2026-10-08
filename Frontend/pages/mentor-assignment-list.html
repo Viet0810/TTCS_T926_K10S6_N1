@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh sách phân công | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css" /><link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312" /></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Danh sách phân công</h1></div></div>
+      <div class="dashboard-session"><span id="roleBadge" class="badge"></span><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a><button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main">
+      <section id="assignmentList" class="card">
+        <div class="section-heading"><div><span class="section-label">DANH SÁCH</span><h2>Danh sách phân công</h2><p>Các thực tập sinh đã được phân công Mentor.</p></div><a href="mentor-assignment.html" class="btn-primary">Phân công Mentor</a></div>
+        <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải dữ liệu...</p>
+        <div class="table-container"><table class="user-table"><thead><tr><th>Họ tên Intern</th><th>Email</th><th>Mentor</th><th>Chương trình thực tập</th><th>Trạng thái</th><th>Hành động</th></tr></thead><tbody id="assignmentRows"></tbody></table></div>
+      </section>
+    </main>
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+  <script src="../js/api.js"></script><script src="../js/navigation.js"></script><script src="../js/mentor-assignment.js"></script>
+</body>
+</html>

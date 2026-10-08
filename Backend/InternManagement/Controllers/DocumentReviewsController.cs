@@ -6,7 +6,8 @@ namespace InternManagement.Controllers;
 
 [ApiController]
 [Route("api/document-reviews")]
-public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization) : ControllerBase
+public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization,
+    IInternService interns, PasswordResetService email, ILogger<DocumentReviewsController> logger) : ControllerBase
 {
     private AuthorizationDecision Access()
     {
@@ -52,9 +53,27 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
             return BadRequest(new { message = "Phiên bản tài liệu không hợp lệ." });
 
         var result = await documents.ReviewAsync(id, kind, decision.User!.Id, request, version, cancellationToken);
+        if (result == DocumentReviewResult.Updated)
+        {
+            var emailSent = false;
+            try
+            {
+                var owner = await interns.GetByIdAsync(id, cancellationToken);
+                if (owner is not null)
+                {
+                    await email.SendReviewResultAsync(owner.Email, owner.FullName, kind, request.Status, request.Comment, cancellationToken);
+                    emailSent = true;
+                }
+            }
+            catch (Exception error)
+            {
+                logger.LogWarning("Review result email failed for intern {InternId}, type {FailureType}.", id, error.GetType().Name);
+            }
+            return Ok(new { emailSent, message = emailSent ? "Đã lưu kết quả duyệt và gửi email thông báo."
+                : "Đã lưu kết quả duyệt nhưng chưa gửi được email thông báo." });
+        }
         return result switch
         {
-            DocumentReviewResult.Updated => Ok(new { message = "Đã lưu kết quả duyệt." }),
             DocumentReviewResult.NotFound => NotFound(new { message = "Không tìm thấy tài liệu. Vui lòng tải lại danh sách." }),
             DocumentReviewResult.AlreadyReviewed => Conflict(new { message = "Tài liệu đã được xử lý, không thể xét duyệt lại." }),
             _ => Conflict(new { message = "Tài liệu đã thay đổi. Vui lòng tải lại trước khi duyệt." })

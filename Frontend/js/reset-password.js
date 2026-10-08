@@ -10,9 +10,12 @@ if (!/^[a-f0-9]{64}$/i.test(resetToken)) {
 resetForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!resetToken || resetForm.getAttribute("aria-busy") === "true") return;
+  for (const id of ["newPassword", "confirmPassword"]) Validation.clearFieldError(document.getElementById(id));
   const password = document.getElementById("newPassword").value;
+  const passwordError = Validation.validatePassword(password);
+  if (passwordError) { Validation.showFieldError(document.getElementById("newPassword"), passwordError); document.getElementById("newPassword").focus(); return; }
   if (password !== document.getElementById("confirmPassword").value) {
-    AuthUI.message("resetMessage", "Mật khẩu xác nhận không khớp.");
+    Validation.showFieldError(document.getElementById("confirmPassword"), "Mật khẩu xác nhận không khớp.");
     document.getElementById("confirmPassword").focus();
     return;
   }
@@ -32,3 +35,8 @@ resetForm.addEventListener("submit", async (event) => {
     if (!resetToken) for (const control of resetForm.elements) control.disabled = true;
   }
 });
+
+for (const id of ["newPassword", "confirmPassword"]) {
+  const input = document.getElementById(id);
+  input.addEventListener("input", () => Validation.clearFieldError(input));
+}

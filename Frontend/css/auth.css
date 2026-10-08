@@ -24,20 +24,17 @@
 .auth-form { display: flex; flex-direction: column; gap: 20px; }
 .auth-field { display: flex; flex-direction: column; gap: 9px; }
 .auth-field label { color: #2d405f; font-size: 13px; font-weight: 600; }
-.auth-field input { width: 100%; min-width: 0; height: 50px; padding: 0 14px; border: 1px solid #d7e0ed; border-radius: 10px; color: var(--ink); background: #fcfdff; transition: border-color .18s, box-shadow .18s; }
-.auth-field input::placeholder { color: #7c8ba2; font-size: 13px; }
+.auth-field input, .dashboard-main .auth-field input { box-sizing: border-box; width: 100%; min-width: 0; height: 54px; padding: 0 16px; border: 1px solid #d7e0ed; border-radius: 10px; color: var(--ink); background: white; transition: border-color .18s, box-shadow .18s; }
+.auth-field input::placeholder { color: #8995a7; font-size: 13px; }
 .auth-field input:hover { border-color: #adbfdc; }
-.auth-field input:focus { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px #3568e81a; background: white; }
+.auth-field input:focus, .dashboard-main .auth-field input:focus { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px #3568e812; background: white; }
 .password-field { position: relative; }
-.password-field input { padding-right: 52px; }
-.password-toggle { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 7px; color: #7c8ba2; background: transparent; }
-.password-toggle:hover, .password-toggle.is-visible { color: var(--primary); background: #edf3ff; }
+.auth-field .password-field input, .dashboard-main .auth-field .password-field input { padding-right: 56px; }
+.password-toggle { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 7px; color: #7c8ba2; background: transparent; }
+.password-toggle:hover:not(:disabled) { color: var(--primary); background: #f4f7fc; }
+.password-toggle.is-visible { color: var(--primary); }
 .password-toggle svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.7; }
-.login-password-field input { padding-left: 45px; padding-right: 58px; }
-.login-password-icon { position: absolute; top: 15px; left: 15px; width: 20px; height: 20px; color: #8193ae; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-.login-password-field:focus-within .login-password-icon { color: var(--primary); }
-.login-password-field .password-toggle { color: #647896; background: #f0f4fa; }
-.login-password-field .password-toggle:hover, .login-password-field .password-toggle.is-visible { color: var(--primary); background: #e5edff; }
+#loginMessage.auth-message { padding: 0; border: 0; background: transparent; font-size: 12px; line-height: 1.6; }
 .password-eye-slash { display: none; stroke-linecap: round; }
 .password-toggle.is-visible .password-eye-slash { display: block; }
 .auth-form-options { display: flex; justify-content: flex-end; margin-top: -7px; }
@@ -62,10 +59,6 @@
 .recovery-icon > span { position: absolute; right: -7px; bottom: -5px; display: grid; place-items: center; width: 27px; height: 27px; border: 3px solid white; border-radius: 50%; color: white; background: var(--primary); font-size: 20px; }
 #forgotView .auth-description { margin-bottom: 25px; }
 .recovery-email-field { position: relative; }
-.recovery-email-field > svg { position: absolute; left: 15px; top: 15px; width: 20px; height: 20px; color: #8193ae; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-.recovery-email-field input { padding-left: 45px; }
-.recovery-email-field:focus-within > svg { color: var(--primary); }
-.recovery-field-hint { color: var(--muted); font-size: 12px; line-height: 1.6; }
 .recovery-note { display: flex; align-items: flex-start; gap: 12px; margin-top: 26px; padding: 16px; border: 1px solid #e3eaf6; border-radius: 12px; background: #f6f8fc; }
 .recovery-note > svg { flex: 0 0 19px; width: 19px; height: 19px; margin-top: 1px; stroke: #6783b4; stroke-width: 1.7; stroke-linecap: round; }
 .recovery-note strong { color: #344c71; font-size: 12px; font-weight: 600; }
@@ -85,10 +78,15 @@
 @media (max-width: 380px) { .auth-page { padding: 12px; } .auth-form-panel { padding: 22px 18px; } }
 
 .auth-field.has-error label { color: #a6364b; }
-.auth-field input[aria-invalid="true"] { border-color: var(--danger); background: #fffafb; }
-.auth-field input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px #d957681a; }
+.auth-field input[aria-invalid="true"], .dashboard-main .auth-field input[aria-invalid="true"], .dashboard-main .auth-field input.input-error { border-color: var(--danger); background: white; }
+.auth-field input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px #d9576812; }
 .auth-field-error { position: relative; padding-left: 18px; color: #a6364b; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .auth-field-error::before { content: "⚠"; position: absolute; left: 0; top: 0; }
-.auth-field:has(.auth-field-error) { padding-bottom: 25px; }
-.auth-field.has-error:has(.auth-field-error) { padding-bottom: 0; }
 .auth-message.auth-notification:not(.is-success) { padding: 6px 0; border: 0; background: transparent; font-size: 12px; }
+
+.auth-field { min-width: 0; }
+.auth-field input { box-sizing: border-box; }
+.password-toggle { cursor: pointer; }
+.password-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.auth-field input[readonly], .auth-field input:disabled, .dashboard-main .auth-field input[readonly], .dashboard-main .auth-field input:disabled { background: #f2f5f9; color: #64748b; }
+#changePasswordForm { max-width: 480px; }

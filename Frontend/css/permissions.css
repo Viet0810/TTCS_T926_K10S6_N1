@@ -1,0 +1,17 @@
+.permission-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.permission-role-card { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.permission-role-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.permission-role-badge { margin: 0; padding: 7px 12px; border-radius: 8px; font-size: 14px; }
+.permission-role-badge.admin { color: #b52b40; background: #fff0f2; }
+.permission-role-badge.hr { color: #7543b3; background: #f4edff; }
+.permission-role-badge.mentor { color: #245bc2; background: #edf3ff; }
+.permission-role-badge.intern { color: #18734e; background: #eaf8f0; }
+.permission-count { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.permission-group + .permission-group { margin-top: 20px; }
+.permission-group h4 { margin: 0 0 10px; color: var(--ink); font-size: 13px; }
+.permission-group ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.permission-group li { display: flex; align-items: flex-start; gap: 9px; color: var(--muted); line-height: 1.5; }
+.permission-group li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.permission-check { color: #18734e; flex: 0 0 auto; }
+@media (max-width: 1100px) { .permission-role-card { padding: 18px; } }
+@media (max-width: 700px) { .permission-card-grid { grid-template-columns: minmax(0, 1fr); } }

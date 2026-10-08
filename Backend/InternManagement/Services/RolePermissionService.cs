@@ -2,6 +2,10 @@ namespace InternManagement.Services;
 
 public static class PermissionNames
 {
+    public const string ManageContracts = "MANAGE_CONTRACTS";
+    public const string ViewOwnContract = "VIEW_OWN_CONTRACT";
+    public const string OwnAttendance = "OWN_ATTENDANCE";
+    public const string AssignMentor = "ASSIGN_MENTOR";
     public const string ManageUsers = "MANAGE_USERS";
     public const string CreateUser = "CREATE_USER";
     public const string DeleteUser = "DELETE_USER";
@@ -13,6 +17,8 @@ public static class PermissionNames
     public const string UploadDocuments = "UPLOAD_DOCUMENTS";
     public const string ViewDocuments = "VIEW_DOCUMENTS";
     public const string ApproveDocuments = "APPROVE_DOCUMENTS";
+    public const string ManagePrograms = "MANAGE_PROGRAMS";
+    public const string ViewAttendanceReport = "VIEW_ATTENDANCE_REPORT";
     public const string ManagePermissions = "MANAGE_PERMISSIONS";
 }
 
@@ -31,29 +37,31 @@ public sealed class RolePermissionService
                 PermissionNames.SearchInterns,
                 PermissionNames.EditInterns,
                 PermissionNames.ViewProfile,
-                PermissionNames.ViewDocuments,
-                PermissionNames.ApproveDocuments,
                 PermissionNames.ManagePermissions
             ],
             ["HR"] =
             [
+                PermissionNames.ManageContracts,
+                PermissionNames.AssignMentor,
                 PermissionNames.ViewInterns,
                 PermissionNames.ManageInterns,
                 PermissionNames.SearchInterns,
                 PermissionNames.EditInterns,
                 PermissionNames.ViewProfile,
-                PermissionNames.ViewDocuments,
-                PermissionNames.ApproveDocuments
+                PermissionNames.ApproveDocuments,
+                PermissionNames.ManagePrograms,
+                PermissionNames.ViewAttendanceReport
             ],
             ["MENTOR"] =
             [
                 PermissionNames.ViewInterns,
                 PermissionNames.SearchInterns,
-                PermissionNames.ViewProfile,
-                PermissionNames.ViewDocuments
+                PermissionNames.ViewProfile
             ],
             ["INTERN"] =
             [
+                PermissionNames.ViewOwnContract,
+                PermissionNames.OwnAttendance,
                 PermissionNames.UploadDocuments,
                 PermissionNames.ViewProfile,
                 PermissionNames.ViewDocuments

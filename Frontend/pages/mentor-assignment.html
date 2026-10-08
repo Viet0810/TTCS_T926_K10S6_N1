@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phân công Mentor | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand">
+        <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312" /></div>
+        <div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Phân công Mentor</h1></div>
+      </div>
+      <div class="dashboard-session"><span id="roleBadge" class="role-badge"></span><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main">
+      <section class="card">
+        <div class="section-heading"><div><span class="section-label">PHÂN CÔNG THỰC TẬP</span><h2>Phân công thực tập sinh</h2><p>Chọn Mentor hướng dẫn và chương trình thực tập cho từng hồ sơ.</p></div></div>
+        <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải dữ liệu...</p>
+        <form id="assignmentForm" class="create-user-form" hidden>
+          <div class="form-group"><label for="internId">Thực tập sinh</label><select id="internId" required><option value="">Chọn thực tập sinh</option></select></div>
+          <div class="form-group"><label for="mentorUserId">Mentor</label><select id="mentorUserId" required><option value="">Chọn Mentor</option></select></div>
+          <div class="form-group"><label for="internshipProgramId">Chương trình thực tập</label><select id="internshipProgramId"><option value="">Chưa xếp chương trình</option></select></div>
+          <div class="form-actions"><button id="assignBtn" type="submit" class="btn-primary">Phân công</button></div>
+        </form>
+      </section>
+      <a href="mentor-assignment-list.html" class="btn-secondary">Xem danh sách phân công</a>
+    </main>
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+  <script src="../js/api.js"></script><script src="../js/navigation.js"></script><script src="../js/mentor-assignment.js"></script>
+</body>
+</html>

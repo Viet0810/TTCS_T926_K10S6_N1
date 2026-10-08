@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý tài khoản | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css" /><link rel="stylesheet" href="../css/auth.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <!-- HEADER -->
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
+
+          <div class="dashboard-title">
+            <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+            <h1>Hệ thống quản lý tài khoản</h1>
+          </div>
+        </div>
+
+        <div class="dashboard-session"><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">
+          <span class="logout-icon">↪</span>
+          Đăng xuất
+        </button></div>
+      </header>
+      <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+
+      <!-- MAIN CONTENT -->
+      <main class="dashboard-main">
+        <!-- CREATE USER -->
+        <section class="card user-create-card">
+          <a class="btn-secondary user-back-link" href="user-manage.html">← Quay lại danh sách tài khoản</a>
+          <div class="section-heading">
+            <div>
+              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
+              <h2>Tạo tài khoản mới</h2>
+              <p>Thêm tài khoản và phân quyền sử dụng hệ thống.</p>
+            </div>
+            <div class="section-icon">＋</div>
+          </div>
+
+          <p id="temporaryPasswordNotice">Mật khẩu tạm sẽ được tạo tự động và gửi qua email cho HR/Mentor.</p>
+          <form id="createUserForm" class="create-user-form">
+            <div class="form-group auth-field">
+              <label for="fullName">Họ và tên</label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                placeholder="Nhập họ và tên"
+                autocomplete="name"
+                required
+              />
+            </div>
+
+            <div class="form-group auth-field">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                autocomplete="email"
+                required
+               placeholder="Nhập email" />
+            </div>
+
+            <div class="form-group auth-field">
+              <label for="password">Mật khẩu</label>
+              <div class="password-field"><input
+                type="password"
+                id="password"
+                aria-describedby="passwordError"
+                name="password"
+                minlength="8"
+                autocomplete="new-password"
+                required
+               placeholder="Nhập mật khẩu" /><button type="button" class="password-toggle" data-password-toggle="password" aria-controls="password" aria-label="Hiển thị mật khẩu" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="m4 4 16 16"/></svg></button></div><span id="passwordError" class="auth-field-error" aria-live="polite" hidden></span>
+            </div>
+
+            <div class="form-group auth-field">
+              <label for="confirmPassword">Xác nhận mật khẩu</label>
+              <div class="password-field"><input
+                type="password"
+                id="confirmPassword"
+                aria-describedby="confirmPasswordError"
+                name="confirmPassword"
+                placeholder="Nhập lại mật khẩu"
+                minlength="8"
+                autocomplete="new-password"
+                required
+              /><button type="button" class="password-toggle" data-password-toggle="confirmPassword" aria-controls="confirmPassword" aria-label="Hiển thị mật khẩu" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="password-eye-slash" d="m4 4 16 16"/></svg></button></div><span id="confirmPasswordError" class="auth-field-error" aria-live="polite" hidden></span>
+            </div>
+
+            <div class="form-group auth-field">
+              <label for="role">Vai trò</label>
+              <select id="role" name="role" required>
+                <option value="HR">HR</option>
+                <option value="MENTOR">Mentor</option>
+                <option value="INTERN">Thực tập sinh</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                <span>＋</span>
+                Tạo tài khoản
+              </button>
+            </div>
+          </form>
+        </section>
+
+      </main>
+
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+    </div>
+
+    <script src="../js/api.js"></script><script src="../js/navigation.js"></script>
+    <script src="../js/validation.js"></script><script src="../js/auth-ui.js"></script>
+    <script src="../js/user-manage.js"></script>
+  </body>
+</html>

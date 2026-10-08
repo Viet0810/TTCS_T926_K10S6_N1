@@ -34,6 +34,10 @@ builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 
 // THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
+builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
+builder.Services.AddScoped<InternManagement.Services.ContractService>();
+builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
@@ -89,6 +93,14 @@ builder.Services.AddScoped<
 >();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var smtpSettings = builder.Configuration.GetSection("Smtp");
+    app.Logger.LogInformation("SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
+        smtpSettings["Host"], !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["Password"]), !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"]));
+}
 
 var connectionString =
     builder.Configuration.GetConnectionString(

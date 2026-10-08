@@ -10,6 +10,18 @@ public sealed class DatabaseInitializer
         await connection.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
+            IF OBJECT_ID(N'dbo.InternshipPrograms', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.InternshipPrograms (
+                    Id INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_InternshipPrograms PRIMARY KEY,
+                    StartDate DATE NOT NULL,
+                    EndDate DATE NOT NULL,
+                    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                    UpdatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                    CONSTRAINT CK_InternshipPrograms_Dates CHECK (StartDate <= EndDate)
+                );
+            END;
+
             IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
             BEGIN
                 CREATE TABLE dbo.Users (
@@ -130,5 +142,8 @@ public sealed class DatabaseInitializer
             END;
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
+        await Infrastructure.InternAssignmentMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.AccountPasswordMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.Sprint2CompletionMigration.ApplyAsync(connection, cancellationToken);
     }
 }

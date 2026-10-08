@@ -5,42 +5,36 @@
 
 let currentRecords = [];
 let currentInterns = [];
+let reportRequest = 0;
+
+function showReportError(error) {
+  if (Session.redirectIfExpired(error)) return;
+  currentRecords = [];
+  renderTable([]);
+  for (const id of ["totalShiftsCount", "attendanceRate", "lateEarlyCount", "approvedLeaveCount", "approvedLeaveSub"])
+    document.getElementById(id).textContent = "—";
+  document.getElementById("exportBtn").disabled = true;
+  document.getElementById("reportCount").textContent = "Không thể tải báo cáo. Vui lòng thử lại.";
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await initSession();
+  try {
+  if (!await initSession()) return;
   await initInternOptions();
   initDefaultDates();
   setupEventListeners();
   await loadReport();
+  } catch (error) { showReportError(error); }
 });
 
 async function initSession() {
-  const roleBadge = document.getElementById("roleBadge");
-  const logoutBtn = document.getElementById("logoutBtn");
-
-  if (logoutBtn && typeof Session !== "undefined") {
-    logoutBtn.addEventListener("click", Session.logout);
+  if (!localStorage.getItem("token")) { location.href = "../index.html"; return false; }
+  const session = await API.getCurrentUser();
+  if (session.user?.role !== "HR" || !Session.hasPermission(session, "VIEW_ATTENDANCE_REPORT")) {
+    location.href = "dashboard.html"; return false;
   }
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    if (roleBadge) roleBadge.textContent = "HR";
-    return;
-  }
-
-  try {
-    if (typeof API !== "undefined" && typeof API.getCurrentUser === "function") {
-      const session = await API.getCurrentUser();
-      if (session?.user && roleBadge) {
-        roleBadge.textContent = session.user.role || "HR";
-      }
-    }
-  } catch (error) {
-    if (roleBadge) roleBadge.textContent = "HR";
-    if (typeof Session !== "undefined") {
-      Session.redirectIfExpired(error);
-    }
-  }
+  document.getElementById("roleBadge").textContent = session.user.role;
+  return true;
 }
 
 async function initInternOptions() {
@@ -187,6 +181,8 @@ function applyDatePreset(preset) {
 }
 
 async function loadReport() {
+  const request = ++reportRequest;
+  try {
   const internId = document.getElementById("internFilter")?.value || "";
   const keyword = document.getElementById("keywordInput")?.value || "";
   const startDate = document.getElementById("startDate")?.value || "";
@@ -201,9 +197,14 @@ async function loadReport() {
     status,
   });
 
+  if (request !== reportRequest) return;
+
   currentRecords = result.records;
   renderStats(result.stats);
   renderTable(currentRecords);
+  } catch (error) {
+    if (request === reportRequest) showReportError(error);
+  }
 }
 
 function renderStats(stats) {

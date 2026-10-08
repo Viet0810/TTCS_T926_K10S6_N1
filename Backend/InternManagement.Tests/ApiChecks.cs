@@ -44,6 +44,33 @@ internal static class ApiChecks
             await AccountChecks.RunAsync(http, connectionString, check);
             await DocumentChecks.RunAsync(http, connectionString, check);
             await AttendanceReportChecks.RunAsync(http, connectionString, check);
+            await InternAssignmentChecks.RunAsync(http, connectionString, check);
+            await ChangePasswordChecks.RunAsync(http, connectionString, check);
+            await Sprint2CompletionChecks.RunAsync(http, connectionString, check);
+            using var programCreate = await http.PostAsJsonAsync("/api/program-schedule", new { startDate="2026-10-01", endDate="2026-10-08" });
+            check(programCreate.StatusCode == HttpStatusCode.OK, "HR creates program using frontend dates");
+            using var programData = System.Text.Json.JsonDocument.Parse(await programCreate.Content.ReadAsStringAsync());
+            var programId = programData.RootElement.GetProperty("data").GetProperty("id").GetInt32();
+            check(programData.RootElement.GetProperty("data").GetProperty("durationDays").GetInt32()==8, "program API returns inclusive duration");
+            using var programs = await http.GetAsync("/api/program-schedule");
+            check(programs.StatusCode == HttpStatusCode.OK, "HR loads program list");
+            using var invalidProgram = await http.PostAsJsonAsync("/api/program-schedule", new { startDate="2026-10-08", endDate="2026-10-01" });
+            check(invalidProgram.StatusCode == HttpStatusCode.BadRequest, "program rejects reversed dates");
+            using var programDelete = await http.DeleteAsync($"/api/program-schedule/{programId}");
+            check(programDelete.StatusCode == HttpStatusCode.OK, "HR deletes program");
+            using var invalidReport = await http.GetAsync("/api/attendance/report?startDate=invalid");
+            check(invalidReport.StatusCode == HttpStatusCode.BadRequest, "report API rejects malformed date filter");
+            http.DefaultRequestHeaders.Authorization = null;
+            using var anonymousPrograms = await http.GetAsync("/api/program-schedule");
+            check(anonymousPrograms.StatusCode == HttpStatusCode.Unauthorized, "program API rejects missing session");
+            using var badRegistration = await http.PostAsJsonAsync("/api/auth/register", new { fullName="Test", email="test@yahoo.com", password="Abc@1234", phone="0912345678", school="Test", major="Test" });
+            check(badRegistration.StatusCode == HttpStatusCode.BadRequest, "registration API enforces email domains");
+            using var registration = await http.PostAsJsonAsync("/api/auth/register", new { fullName="Test", email="sprint2-api@ictu.edu.vn", password="Abc@1234", phone="0912345678", school="Test", major="Test", role="ADMIN" });
+            check(registration.StatusCode == HttpStatusCode.Created, "registration API accepts ICTU email");
+            using var registrationData = System.Text.Json.JsonDocument.Parse(await registration.Content.ReadAsStringAsync());
+            check(registrationData.RootElement.GetProperty("role").GetString()=="INTERN", "registration cannot select ADMIN role");
+            using var duplicateRegistration = await http.PostAsJsonAsync("/api/auth/register", new { fullName="Test", email="sprint2-api@ictu.edu.vn", password="Abc@1234", phone="0912345678", school="Test", major="Test" });
+            check(duplicateRegistration.StatusCode == HttpStatusCode.Conflict, "registration reports duplicate email");
             using var noSession = await http.GetAsync("/api/auth/me");
             check(noSession.StatusCode==HttpStatusCode.Unauthorized,"authenticated endpoints reject missing sessions");
             using var invalidEmail = await http.PostAsJsonAsync("/api/auth/forgot-password",new {email="not-an-email"});
@@ -74,6 +101,7 @@ internal static class ApiChecks
             check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
                 && diagnostics.Contains("trace") && diagnostics.Contains("UTC"), "backend failure logs identify endpoint, trace and time");
             check(!diagnostics.Contains("Permission-test-9") && !diagnostics.Contains("Account-test-9")
+                && !diagnostics.Contains("Temporary-test-9") && !diagnostics.Contains("Replacement-test-9")
                 && !diagnostics.Contains("PBKDF2-SHA256$") && !diagnostics.Contains("Bearer "),
                 "backend request logs omit passwords, hashes and authorization headers");
         }
