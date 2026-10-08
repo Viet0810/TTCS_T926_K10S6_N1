@@ -59,6 +59,41 @@ const API = {
     return handleResponse(response);
   },
 
+  getInterns: async () => {
+    const response = await fetch(`${BASE_URL}/interns`, { method: "GET", headers: getAuthHeader() });
+    return handleResponse(response);
+  },
+
+  getInternContract: async (internId) => {
+    const response = await fetch(`${BASE_URL}/interns/${internId}/contract`, { headers: getAuthHeader() });
+    if (response.status === 404) return null;
+    return handleResponse(response);
+  },
+
+  uploadInternContract: async (internId, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch(`${BASE_URL}/interns/${internId}/contract`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+      body: form,
+    });
+    return handleResponse(response);
+  },
+
+  getContractFile: async (contractId, inline = false) => {
+    const response = await fetch(`${BASE_URL}/contracts/${contractId}/download${inline ? "?inline=true" : ""}`, { headers: getAuthHeader() });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Lỗi HTTP ${response.status}`);
+    }
+    const disposition = response.headers.get("Content-Disposition");
+    const encodedName = disposition?.split("filename*=UTF-8''")[1]?.split(";")[0];
+    let fileName = "hop-dong.pdf";
+    if (encodedName) { try { fileName = decodeURIComponent(encodedName); } catch {} }
+    return { blob: await response.blob(), disposition, fileName };
+  },
+
   getUsers: async () => {
     const response = await fetch(`${BASE_URL}/users`, {
       method: "GET",

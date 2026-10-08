@@ -1,4 +1,21 @@
 const tableBody = document.getElementById("userTableBody");
+const userViewToggle = document.getElementById("userViewToggle");
+const usersCard = document.querySelector(".users-card");
+
+function setUsersView(view) {
+  const grid = view === "grid";
+  usersCard.classList.toggle("view-grid", grid);
+  userViewToggle.classList.toggle("is-grid", grid);
+  userViewToggle.setAttribute("aria-pressed", String(grid));
+  userViewToggle.setAttribute("aria-label", grid ? "Chuyển sang dạng bảng" : "Chuyển sang dạng ô");
+  userViewToggle.title = grid ? "Chuyển sang dạng bảng" : "Chuyển sang dạng ô";
+  try { localStorage.setItem("adminUsersView", grid ? "grid" : "table"); } catch {}
+}
+
+userViewToggle.addEventListener("click", () => {
+  setUsersView(usersCard.classList.contains("view-grid") ? "table" : "grid");
+});
+setUsersView(localStorage.getItem("adminUsersView") || "table");
 const role = localStorage.getItem("role");
 
 if (role !== "ADMIN") {

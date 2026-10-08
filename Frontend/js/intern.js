@@ -24,6 +24,11 @@ Sau này sẽ thay bằng API Backend.
 */
 
 let interns = [];
+let currentContractIntern = null;
+const contractModal = document.getElementById("contractModal");
+const contractFileInput = document.getElementById("contractFile");
+const contractMessage = document.getElementById("contractMessage");
+const currentContract = document.getElementById("currentContract");
 
 
 /*
@@ -367,7 +372,7 @@ function renderInterns(data) {
     tableBody.innerHTML = `
       <tr>
         <td
-          colspan="5"
+          colspan="6"
           class="empty-state"
         >
           Chưa có hồ sơ thực tập sinh.
@@ -408,6 +413,13 @@ const editBtn = row.querySelector(".btn-edit");
 editBtn.addEventListener("click", function () {
   openEditIntern(intern.id);
 });
+
+const contractBtn = document.createElement("button");
+contractBtn.type = "button";
+contractBtn.className = "btn-contract";
+contractBtn.textContent = "Hợp đồng";
+contractBtn.addEventListener("click", function () { openContractDialog(intern); });
+row.querySelector("td:last-child").appendChild(contractBtn);
 
 tableBody.appendChild(row);
 
@@ -525,7 +537,7 @@ KHỞI TẠO
 ==================================
 */
 
-renderInterns(interns);
+loadInterns();
 // ========================================
 // CHỈNH SỬA HỒ SƠ THỰC TẬP SINH
 // ========================================
@@ -608,3 +620,55 @@ if (editInternForm) {
         alert("Cập nhật hồ sơ thành công!");
     });
 }
+
+async function loadInterns() {
+  try {
+    var rows = await API.getInterns();
+    interns = rows.map(function (row) { return { id: row.id, fullName: row.name, email: row.email, phone: row.phone || "", school: row.school, major: row.major, mssv: row.mssv, role: row.role, status: row.status, mentor: row.mentor, progress: row.progress, gpa: row.gpa }; });
+    renderInterns(interns);
+  } catch (error) { renderInterns([]); showMessage("Không thể tải danh sách thực tập sinh: " + error.message, "error"); }
+}
+function formatFileSize(bytes) { if (bytes < 1024) return bytes + " B"; if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KiB"; return (bytes / 1048576).toFixed(2) + " MiB"; }
+function showContractMessage(message, type) { contractMessage.textContent = message; contractMessage.className = "message-box " + (type || "error"); }
+function openContractDialog(intern) {
+  currentContractIntern = intern;
+  document.getElementById("contractInternName").textContent = intern.fullName + " · MSSV " + (intern.mssv || "—");
+  contractFileInput.value = ""; document.getElementById("contractFileInfo").textContent = "Chưa chọn tệp.";
+  contractMessage.textContent = ""; contractMessage.className = "message-box";
+  currentContract.innerHTML = '<p class="contract-muted">Đang tải hợp đồng…</p>';
+  contractModal.classList.remove("hidden"); refreshContract();
+}
+async function refreshContract() {
+  if (!currentContractIntern) return;
+  try {
+    var contract = await API.getInternContract(currentContractIntern.id);
+    if (!contract) { currentContract.innerHTML = '<p class="contract-empty">Thực tập sinh chưa có hợp đồng.</p>'; return; }
+    currentContract.innerHTML = '<div class="contract-summary"><div><strong>' + escapeHtml(contract.fileName) + '</strong><p>' + formatFileSize(contract.fileSize) + ' · Tải lên ' + new Date(contract.uploadedAt).toLocaleString("vi-VN") + '</p></div><div class="contract-actions"><button type="button" class="btn-secondary" data-view-contract="' + contract.contractId + '">Xem</button><button type="button" class="btn-primary" data-download-contract="' + contract.contractId + '">Tải xuống</button></div></div>';
+  } catch (error) { currentContract.innerHTML = '<p class="contract-error">' + escapeHtml(error.message) + '</p>'; }
+}
+contractFileInput.addEventListener("change", function () { var file = contractFileInput.files && contractFileInput.files[0]; document.getElementById("contractFileInfo").textContent = file ? file.name + " · " + formatFileSize(file.size) : "Chưa chọn tệp."; });
+document.getElementById("uploadContractBtn").addEventListener("click", async function (event) {
+  var file = contractFileInput.files && contractFileInput.files[0];
+  if (!file) return showContractMessage("Vui lòng chọn tệp PDF trước khi tải lên.");
+  if (!file.name.toLowerCase().endsWith(".pdf") || (file.type && !["application/pdf", "application/octet-stream"].includes(file.type))) return showContractMessage("Chỉ chấp nhận tệp PDF.");
+  if (file.size === 0) return showContractMessage("Tệp đang trống.");
+  if (file.size > 10 * 1024 * 1024) return showContractMessage("Tệp vượt quá giới hạn 10 MiB.");
+  var button = event.currentTarget; button.disabled = true; button.textContent = "Đang tải lên…";
+  try { await API.uploadInternContract(currentContractIntern.id, file); showContractMessage("Tải hợp đồng lên thành công.", "success"); contractFileInput.value = ""; document.getElementById("contractFileInfo").textContent = "Chưa chọn tệp."; await refreshContract(); }
+  catch (error) { showContractMessage(error.message); }
+  finally { button.disabled = false; button.textContent = "Tải hợp đồng lên"; }
+});
+contractModal.querySelectorAll("[data-contract-close]").forEach(function (element) { element.addEventListener("click", function () { contractModal.classList.add("hidden"); }); });
+contractModal.addEventListener("click", async function (event) {
+  var viewButton = event.target.closest("[data-view-contract]"), downloadButton = event.target.closest("[data-download-contract]");
+  if (!viewButton && !downloadButton) return;
+  var view = Boolean(viewButton), id = view ? viewButton.dataset.viewContract : downloadButton.dataset.downloadContract;
+  var tab = view ? window.open("about:blank", "_blank") : null;
+  try {
+    var result = await API.getContractFile(id, view), url = URL.createObjectURL(result.blob);
+    if (view && tab) tab.location.href = url;
+    else { var link = document.createElement("a"); link.href = url; link.download = result.fileName || "hop-dong.pdf"; document.body.appendChild(link); link.click(); link.remove(); }
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    if (view && !tab) showContractMessage("Trình duyệt đã chặn tab xem; tệp đã được tải xuống.");
+  } catch (error) { if (tab) tab.close(); showContractMessage(error.message); }
+});

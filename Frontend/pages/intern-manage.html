@@ -24,7 +24,7 @@
         </div>
 
         <div class="header-actions">
-          <span id="currentUserRole" class="user-role" data-role-label>HR</span>
+          <a id="currentUserRole" class="user-role" data-role-label href="user-manage.html" aria-label="Quay lại trang quản trị viên">HR</a>
           <button id="logoutBtn" class="btn-logout">
             Đăng xuất
           </button>
@@ -247,6 +247,15 @@
     <!-- MODAL CHỈNH SỬA THỰC TẬP SINH -->
     <!-- ============================= -->
 
+    <section id="contractModal" class="contract-modal hidden" role="dialog" aria-modal="true" aria-labelledby="contractTitle">
+      <div class="contract-overlay" data-contract-close></div>
+      <div class="contract-dialog card">
+        <div class="card-header"><div><h3 id="contractTitle">Hợp đồng thực tập</h3><p id="contractInternName"></p></div><button type="button" class="btn-close" data-contract-close aria-label="Đóng">×</button></div>
+        <div class="contract-upload-row"><label for="contractFile">Chọn hợp đồng PDF (tối đa 10 MiB)</label><input id="contractFile" type="file" accept="application/pdf,.pdf" /><small id="contractFileInfo" class="contract-muted">Chưa chọn tệp.</small><button id="uploadContractBtn" type="button" class="btn-primary">Tải hợp đồng lên</button></div>
+        <div id="contractMessage" class="message-box" role="status" aria-live="polite"></div><section id="currentContract" class="current-contract" aria-live="polite"></section>
+      </div>
+    </section>
+
     <div id="editInternModal" class="edit-modal hidden">
 
       <!-- Lớp nền tối -->
@@ -417,6 +426,7 @@
 
     <!-- JavaScript -->
     <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/role-access.js"></script>
     <script src="../js/intern.js"></script>
 

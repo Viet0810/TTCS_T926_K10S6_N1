@@ -3,156 +3,119 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản lý tài khoản | Intern Management System</title>
+    <meta name="theme-color" content="#f5f8ff" />
+    <title>Quản trị hệ thống | Intern Management System</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
-  <body data-required-roles="ADMIN">
-    <div class="dashboard">
-      <!-- HEADER -->
-      <header class="dashboard-header">
-        <div class="dashboard-brand">
-          <div class="dashboard-logo">IM</div>
+  <body class="admin-page" data-required-roles="ADMIN">
+    <div class="admin-shell" id="adminShell">
+      <aside class="admin-sidebar" id="adminSidebar" aria-label="Thanh công cụ quản trị">
+        <a class="sidebar-brand" href="user-manage.html" aria-label="Trang quản trị">
+          <span class="brand-mark">IM</span>
+          <span class="brand-copy"><strong>InternFlow</strong><small>ADMIN CONSOLE</small></span>
+        </a>
 
-          <div class="dashboard-title">
-            <span>INTERN MANAGEMENT SYSTEM</span>
-            <h1>Hệ thống quản lý Thực tập sinh</h1>
-          </div>
+        <div class="sidebar-workspace">
+          <span class="workspace-icon">✦</span>
+          <span><small>KHÔNG GIAN</small><strong>Quản trị hệ thống</strong></span>
         </div>
 
-        <button type="button" id="logoutBtn" class="btn-danger">
-          <span class="logout-icon">↪</span>
-          Đăng xuất
-        </button>
-      </header>
+        <div class="sidebar-section-label">CHỨC NĂNG</div>
+        <nav class="admin-nav" aria-label="Các màn hình quản trị">
+          <button type="button" class="nav-item is-active" data-admin-panel="create-user" data-title="Tạo tài khoản mới" data-description="Cấp tài khoản và phân quyền cho thành viên hệ thống." aria-current="page">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v6M23 11h-6"/></svg></span>
+            <span class="nav-copy"><strong>Tạo tài khoản</strong><small>Thêm người dùng</small></span>
+            <span class="nav-chevron">›</span>
+          </button>
+          <button type="button" class="nav-item" data-admin-panel="account-list" data-title="Quản lý tài khoản" data-description="Xem danh sách, đổi vai trò hoặc xóa tài khoản hệ thống.">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM20 8v8m-4-4h8"/></svg></span>
+            <span class="nav-copy"><strong>Quản lý tài khoản</strong><small>Vai trò và quyền truy cập</small></span>
+            <span class="nav-chevron">›</span>
+          </button>
+          <a class="nav-item nav-link" href="intern-manage.html" data-permission="interns.manage">
+            <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM16 11h5m-2.5-2.5v5"/></svg></span>
+            <span class="nav-copy"><strong>Hồ sơ &amp; hợp đồng</strong><small>Quản lý thực tập sinh</small></span>
+            <span class="nav-external">↗</span>
+          </a>
+        </nav>
 
-      <!-- MAIN CONTENT -->
-      <main class="dashboard-main">
-        <!-- CREATE USER -->
-        <section class="card">
-          <div class="section-heading">
-            <div>
-              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
-              <h2>Tạo tài khoản mới</h2>
-              <p>Thêm tài khoản và phân quyền sử dụng hệ thống.</p>
-            </div>
-            <div class="section-icon">＋</div>
+        <div class="sidebar-bottom">
+          <div class="sidebar-help"><span class="help-mark">i</span><span class="nav-copy"><strong>Quản trị an toàn</strong><small>Thao tác được ghi nhận</small></span></div>
+          <div class="sidebar-profile"><span class="profile-avatar">AD</span><span class="profile-copy"><strong>Quản trị viên</strong><small>ADMIN</small></span></div>
+          <button type="button" id="logoutBtn" class="sidebar-logout"><span aria-hidden="true">↪</span><span class="nav-copy">Đăng xuất</span></button>
+        </div>
+      </aside>
+
+      <button type="button" id="sidebarBackdrop" class="sidebar-backdrop" aria-label="Đóng thanh công cụ"></button>
+
+      <div class="admin-main">
+        <header class="admin-topbar">
+          <div class="topbar-leading">
+            <button type="button" id="sidebarToggle" class="sidebar-toggle" aria-label="Thu gọn thanh công cụ" aria-expanded="true" title="Thu gọn thanh công cụ"><span></span><span></span><span></span></button>
+            <button type="button" id="mobileMenuButton" class="mobile-menu-button" aria-label="Mở thanh công cụ" aria-expanded="false"><span></span><span></span><span></span></button>
+            <div class="breadcrumbs"><span>Không gian quản trị</span><b>/</b><strong id="breadcrumbTitle">Tạo tài khoản mới</strong></div>
+          </div>
+          <div class="topbar-trailing"><span class="secure-indicator"><i></i> Hệ thống an toàn</span><span class="topbar-avatar">AD</span></div>
+        </header>
+
+        <main class="admin-content">
+          <section class="welcome-panel">
+            <div class="welcome-copy"><span class="eyebrow"><i></i> ADMIN WORKSPACE</span><h1 id="pageTitle">Tạo tài khoản mới</h1><p id="pageDescription">Cấp tài khoản và phân quyền cho thành viên hệ thống.</p></div>
+            <div class="welcome-art" aria-hidden="true"><span class="art-ring ring-one"></span><span class="art-ring ring-two"></span><span class="art-spark">✦</span><span class="art-card"><b>IM</b><i></i><i></i><i></i></span></div>
+          </section>
+
+          <section class="admin-panel" data-admin-panel-view="create-user">
+            <div class="content-heading"><div><span class="section-kicker">TÀI KHOẢN CÁ NHÂN</span><h2>Tạo tài khoản mới</h2><p>Điền thông tin bên dưới để cấp quyền truy cập hệ thống.</p></div><button type="button" id="openExcelImport" class="excel-launch"><span class="excel-launch-mark">XLS</span><span>Tạo từ Excel</span><span class="excel-launch-arrow">↗</span></button></div>
+            <section class="surface-card form-card">
+              <div class="card-topline"><span class="card-symbol">01</span><div><h3>Thông tin tài khoản</h3><p>Các trường có dấu <em>*</em> là bắt buộc.</p></div></div>
+              <form id="createUserForm" class="create-user-form">
+                <div class="form-group"><label for="fullName">Họ và tên <em>*</em></label><input type="text" id="fullName" name="fullName" placeholder="Ví dụ: Nguyễn Minh Anh" autocomplete="name" required /></div>
+                <div class="form-group"><label for="email">Email <em>*</em></label><input type="email" id="email" name="email" placeholder="name@example.com" autocomplete="email" required /></div>
+                <div class="form-group"><label for="password">Mật khẩu <em>*</em></label><input type="password" id="password" name="password" placeholder="Tối thiểu 8 ký tự" minlength="8" autocomplete="new-password" required /><small class="field-hint">Dùng mật khẩu đủ mạnh để bảo vệ tài khoản.</small></div>
+                <div class="form-group"><label for="role">Vai trò <em>*</em></label><select id="role" name="role" required><option value="HR">HR</option><option value="MENTOR">Mentor</option><option value="INTERN">Thực tập sinh</option></select><small class="field-hint">Quyền truy cập được áp dụng theo vai trò.</small></div>
+                <div class="form-actions"><button type="submit" class="btn-primary"><span aria-hidden="true">＋</span> Tạo tài khoản</button></div>
+              </form>
+            </section>
+            <aside class="info-strip"><span class="info-icon">✓</span><p>Tài khoản mới sẽ xuất hiện trong mục <strong>Quản lý tài khoản</strong> sau khi tạo thành công.</p></aside>
+          </section>
+
+          <div id="excelImportModal" class="excel-modal" hidden>
+            <button type="button" class="excel-modal-backdrop" data-close-excel-modal aria-label="Đóng cửa sổ nhập Excel"></button>
+            <section class="excel-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="excelModalTitle" aria-describedby="excelModalDescription">
+              <header class="excel-modal-header">
+                <span class="excel-modal-icon">XLS</span>
+                <div><span class="section-kicker">NHẬP HÀNG LOẠT</span><h2 id="excelModalTitle">Tạo tài khoản từ Excel</h2><p id="excelModalDescription">Chọn tệp danh sách để tạo tài khoản thực tập sinh.</p></div>
+                <button type="button" id="closeExcelImport" class="modal-close" aria-label="Đóng">×</button>
+              </header>
+              <div class="excel-modal-body">
+                <div class="card-topline"><span class="card-symbol">01</span><div><h3>Chọn tệp danh sách</h3><p>Hỗ trợ Excel <strong>.xlsx</strong> và CSV <strong>.csv</strong>.</p></div></div>
+                <form id="internImportForm" class="create-user-form import-form" enctype="multipart/form-data">
+                  <div class="form-group"><label for="internExcelFile">Tệp Excel hoặc CSV <em>*</em></label><input id="internExcelFile" name="file" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required /></div>
+                  <div class="form-actions"><button type="submit" class="btn-primary">Tạo tài khoản từ Excel</button><button type="button" id="downloadImportTemplate" class="btn-secondary">Tải tệp mẫu</button></div>
+                </form>
+                <div class="import-note"><span>i</span><p>Tải tệp mẫu trước để kiểm tra đúng tên cột và định dạng dữ liệu.</p></div>
+                <p id="internImportMessage" class="import-message" role="status" aria-live="polite"></p>
+                <div id="internImportResults"></div>
+              </div>
+            </section>
           </div>
 
-          <form id="createUserForm" class="create-user-form">
-            <div class="form-group">
-              <label for="fullName">Họ và tên</label>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                placeholder="Nhập họ và tên"
-                autocomplete="name"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="example@email.com"
-                autocomplete="email"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="password">Mật khẩu</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                placeholder="Ít nhất 8 ký tự"
-                minlength="8"
-                autocomplete="new-password"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="role">Vai trò</label>
-              <select id="role" name="role" required>
-                <option value="HR">HR</option>
-                <option value="MENTOR">Mentor</option>
-                <option value="INTERN">Thực tập sinh</option>
-              </select>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">
-                <span>＋</span>
-                Tạo tài khoản
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section class="card">
-          <div class="section-heading">
-            <div>
-              <span class="section-label">NHẬP HÀNG LOẠT</span>
-              <h2>Tạo tài khoản thực tập sinh từ Excel</h2>
-              <p>Tải mẫu CSV và nhập trực tiếp, hoặc lưu thành .xlsx. Mỗi thực tập sinh sẽ có tài khoản đăng nhập riêng.</p>
-            </div>
-            <div class="section-icon">XLSX</div>
-          </div>
-          <form id="internImportForm" class="create-user-form" enctype="multipart/form-data">
-            <div class="form-group">
-              <label for="internExcelFile">Tệp Excel hoặc CSV (.xlsx, .csv)</label>
-              <input id="internExcelFile" name="file" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" required />
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Tạo tài khoản từ Excel</button>
-              <button type="button" id="downloadImportTemplate" class="btn-secondary">Tải tệp mẫu</button>
-            </div>
-          </form>
-          <p id="internImportMessage" role="status" aria-live="polite"></p>
-          <div id="internImportResults"></div>
-        </section>
-
-        <!-- USER LIST -->
-        <section class="card">
-          <div class="section-heading user-list-heading">
-            <div>
-              <span class="section-label">DANH SÁCH</span>
-              <h2>Quản lý tài khoản</h2>
-              <p>Danh sách tài khoản đang được quản lý trong hệ thống.</p>
-            </div>
-            <div class="user-list-icon">☷</div>
-          </div>
-
-          <div class="table-container">
-            <table class="user-table">
-              <thead>
-                <tr>
-                  <th>Họ và tên</th>
-                  <th>Email</th>
-                  <th>Vai trò</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-
-              <tbody id="userTableBody">
-                <!-- JavaScript sẽ hiển thị danh sách tài khoản tại đây -->
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-
-      <footer class="dashboard-footer">© 2026 Intern Management System</footer>
+          <section class="admin-panel" data-admin-panel-view="account-list" hidden>
+            <div class="content-heading"><div><span class="section-kicker">DANH SÁCH HỆ THỐNG</span><h2>Quản lý tài khoản</h2><p>Xem người dùng, điều chỉnh vai trò hoặc xóa tài khoản.</p></div><button type="button" id="userViewToggle" class="view-toggle" aria-label="Chuyển sang dạng ô" aria-pressed="false" title="Chuyển sang dạng ô"><svg class="list-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><svg class="grid-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button></div>
+            <section class="surface-card users-card">
+              <div class="users-card-heading"><div><h3>Tất cả tài khoản</h3><p>Thay đổi vai trò sẽ cập nhật ngay sau khi lưu.</p></div><span class="live-badge"><i></i> Dữ liệu trực tiếp</span></div>
+              <div class="table-container"><table class="user-table"><thead><tr><th>Họ và tên</th><th>Email</th><th>Vai trò</th><th>Hành động</th></tr></thead><tbody id="userTableBody"><!-- JavaScript sẽ hiển thị danh sách tài khoản tại đây --></tbody></table></div>
+              <div class="table-footnote"><span class="footnote-dot"></span> Bảo vệ quyền quản trị viên chính khỏi thao tác xóa.</div>
+            </section>
+          </section>
+        </main>
+        <footer class="dashboard-footer"><span>InternFlow Admin</span><span>Quản trị hệ thống thực tập sinh</span></footer>
+      </div>
     </div>
-
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/role-access.js"></script>
+    <script src="../js/admin-navigation.js"></script>
     <script src="../js/user-manage.js"></script>
   </body>
 </html>

@@ -60,6 +60,21 @@ public sealed class DatabaseInitializer
                 );
             END;
 
+            IF OBJECT_ID(N'dbo.InternContracts', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.InternContracts (
+                    ContractId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_InternContracts PRIMARY KEY,
+                    InternId INT NOT NULL CONSTRAINT UQ_InternContracts_InternId UNIQUE,
+                    FileName NVARCHAR(255) NOT NULL,
+                    StoredFileName NVARCHAR(100) NOT NULL,
+                    ContentType NVARCHAR(100) NOT NULL,
+                    FileSize BIGINT NOT NULL,
+                    UploadedAt DATETIME2 NOT NULL CONSTRAINT DF_InternContracts_UploadedAt DEFAULT SYSUTCDATETIME(),
+                    CONSTRAINT FK_InternContracts_Interns FOREIGN KEY (InternId) REFERENCES dbo.Interns(Id) ON DELETE CASCADE,
+                    CONSTRAINT CK_InternContracts_FileSize CHECK (FileSize > 0 AND FileSize <= 10485760)
+                );
+            END;
+
             IF OBJECT_ID(N'dbo.PasswordResetRequests', N'U') IS NULL
             BEGIN
                 CREATE TABLE dbo.PasswordResetRequests (
