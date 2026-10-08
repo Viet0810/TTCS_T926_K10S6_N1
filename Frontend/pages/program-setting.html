@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Quản lý chương trình | Hệ thống quản lý thực tập sinh</title>
+
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/program-date-setting.css" />
+  </head>
+
+  <body>
+    <div class="dashboard">
+
+      <!-- =========================
+           HEADER
+      ========================== -->
+      <header class="dashboard-header">
+
+        <div class="dashboard-brand">
+
+          <div class="dashboard-logo">
+            <img
+              src="../assets/codegym-logo.webp"
+              alt="CODEGYM"
+              width="1437"
+              height="312"
+            />
+          </div>
+
+          <div class="dashboard-title">
+            <span>
+              HỆ THỐNG QUẢN LÝ THỰC TẬP SINH
+            </span>
+
+            <h1>
+              Quản lý chương trình
+            </h1>
+          </div>
+
+        </div>
+
+
+        <div class="dashboard-session">
+
+          <span
+            id="roleBadge"
+            class="badge"
+          ></span>
+
+          <button
+            type="button"
+            id="logoutBtn"
+            class="btn-danger"
+          >
+            Đăng xuất
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- =========================
+           MENU
+      ========================== -->
+      <nav
+        id="roleMenu"
+        class="role-menu"
+        aria-label="Chức năng theo vai trò"
+      ></nav>
+
+
+      <!-- =========================
+           NỘI DUNG CHÍNH
+      ========================== -->
+      <main class="dashboard-main">
+
+
+        <!-- =========================
+             QUAY LẠI DASHBOARD
+        ========================== -->
+        <div class="program-toolbar">
+
+          <a
+            href="dashboard.html"
+            class="back-dashboard-btn"
+          >
+            ← Quay lại Bảng điều khiển
+          </a>
+
+        </div>
+
+
+        <!-- =========================
+             THIẾT LẬP THỜI GIAN
+        ========================== -->
+        <section class="card program-date-card">
+
+          <div class="program-date-header">
+
+            <div>
+
+              <span class="section-label">
+                QUẢN LÝ CHƯƠNG TRÌNH
+              </span>
+
+              <h2>
+                Thiết lập thời gian chương trình
+              </h2>
+
+              <p class="program-date-description">
+                Chọn ngày bắt đầu và ngày kết thúc
+                chương trình thực tập.
+              </p>
+
+            </div>
+
+
+            <span
+              id="programStatus"
+              class="program-status status-empty"
+            >
+              Chưa thiết lập
+            </span>
+
+          </div>
+
+
+          <form id="programDateForm">
+
+
+            <!-- Ngày bắt đầu / kết thúc -->
+            <div class="program-date-grid">
+
+
+              <!-- Ngày bắt đầu -->
+              <div class="program-form-group">
+
+                <label for="programStartDate">
+                  Ngày bắt đầu
+                  <span class="required">*</span>
+                </label>
+
+                <input
+                  type="date"
+                  id="programStartDate"
+                  name="startDate"
+                  required
+                />
+
+              </div>
+
+
+              <!-- Ngày kết thúc -->
+              <div class="program-form-group">
+
+                <label for="programEndDate">
+                  Ngày kết thúc
+                  <span class="required">*</span>
+                </label>
+
+                <input
+                  type="date"
+                  id="programEndDate"
+                  name="endDate"
+                  required
+                />
+
+              </div>
+
+            </div>
+
+
+            <!-- Tổng thời gian -->
+            <div class="program-summary">
+
+              <span>
+                Thời gian chương trình:
+              </span>
+
+              <strong id="programDuration">
+                Chưa xác định
+              </strong>
+
+            </div>
+
+
+            <!-- Thông báo -->
+            <div
+              id="programDateMessage"
+              class="program-date-message"
+              role="status"
+            ></div>
+
+
+            <!-- Nút thao tác -->
+            <div class="program-date-actions">
+
+              <button
+                type="button"
+                id="programCancelBtn"
+                class="btn-program-secondary"
+              >
+                Hủy
+              </button>
+
+
+              <button
+                type="submit"
+                id="programSaveBtn"
+                class="btn-program-primary"
+              >
+                Lưu thời gian
+              </button>
+
+            </div>
+
+          </form>
+
+        </section>
+
+
+        <!-- =========================
+             DANH SÁCH THỜI GIAN
+             ĐÃ THIẾT LẬP
+        ========================== -->
+        <section class="card program-history-card">
+
+          <div class="section-heading">
+
+            <div>
+
+              <span class="section-label">
+                DANH SÁCH CHƯƠNG TRÌNH
+              </span>
+
+              <h2>
+                Thời gian đã thiết lập
+              </h2>
+
+              <p class="program-date-description">
+                Danh sách các khoảng thời gian chương trình
+                thực tập đã được HR thiết lập.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="program-table-wrapper">
+
+            <table class="program-table">
+
+              <thead>
+
+                <tr>
+                  <th>STT</th>
+                  <th>Ngày bắt đầu</th>
+                  <th>Ngày kết thúc</th>
+                  <th>Thời gian</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+
+              </thead>
+
+
+              <tbody id="programHistoryBody">
+
+                <!--
+                  JavaScript sẽ tự động thêm
+                  dữ liệu vào đây.
+                -->
+
+              </tbody>
+
+            </table>
+
+
+            <!-- Khi chưa có dữ liệu -->
+            <p
+              id="emptyProgramHistory"
+              class="empty-program-history"
+            >
+              Chưa có thời gian chương trình nào được thiết lập.
+            </p>
+
+          </div>
+
+        </section>
+
+      </main>
+
+
+      <!-- =========================
+           FOOTER
+      ========================== -->
+      <footer class="dashboard-footer">
+        © 2026 Hệ thống quản lý thực tập sinh
+      </footer>
+
+    </div>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+    <script src="../js/api.js"></script>
+
+    <script src="../js/dashboard.js"></script>
+
+    <script src="../js/program-date-setting.js"></script>
+
+  </body>
+</html>
