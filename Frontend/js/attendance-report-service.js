@@ -101,6 +101,34 @@ const AttendanceService = {
   },
 
   async getAttendanceReport(filters = {}) {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const params = new URLSearchParams();
+        if (filters.internId) params.append("internId", filters.internId);
+        if (filters.keyword) params.append("search", filters.keyword);
+        if (filters.startDate) params.append("startDate", filters.startDate);
+        if (filters.endDate) params.append("endDate", filters.endDate);
+        if (filters.status && filters.status !== "ALL") params.append("status", filters.status);
+
+        const response = await fetch(`/api/attendance/report?${params.toString()}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (response.ok) {
+          const apiData = await response.json();
+          if (apiData && apiData.records && (apiData.records.length > 0 || apiData.stats?.totalShifts > 0)) {
+            return apiData;
+          }
+        }
+      } catch (err) {
+        console.warn("[attendance-report-service] Không thể gọi API thật, sử dụng dữ liệu cục bộ:", err);
+      }
+    }
+
     let list = this.getAllRecords();
 
     // 1. Lọc theo thực tập sinh cụ thể
