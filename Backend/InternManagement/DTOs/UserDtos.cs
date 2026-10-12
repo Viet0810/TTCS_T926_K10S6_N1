@@ -7,8 +7,9 @@ public sealed record CreateUserRequest : IValidatableObject
 	[Required, StringLength(200)]
 	public required string FullName { get; init; }
 
+    private string email=string.Empty;
 	[Required, EmailAddress, StringLength(254)]
-	public required string Email { get; init; }
+	public required string Email { get=>email; init=>email=value?.Trim()??string.Empty; }
 
     [StringLength(200)]
 	public string? Password { get; init; }

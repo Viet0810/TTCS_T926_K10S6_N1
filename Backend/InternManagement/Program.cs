@@ -40,6 +40,8 @@ builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddScoped<InternManagement.Services.ListPagingService>();
+builder.Services.AddScoped<InternManagement.Services.IEmailService,InternManagement.Services.EmailService>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 
 builder.Services.AddRateLimiter(options =>
@@ -171,8 +173,7 @@ app.MapGet(
             await using var command =
                 connection.CreateCommand();
 
-            command.CommandText =
-                "SELECT DB_NAME() AS DatabaseName, SUSER_SNAME() AS LoginName";
+            command.CommandText = "SELECT 1";
 
             await using var reader =
                 await command.ExecuteReaderAsync();
@@ -182,11 +183,7 @@ app.MapGet(
             return Results.Ok(
                 new
                 {
-                    connected = true,
-                    database =
-                        reader.GetString(0),
-                    login =
-                        reader.GetString(1)
+                    connected = true
                 }
             );
         }

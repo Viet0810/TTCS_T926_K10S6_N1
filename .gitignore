@@ -12,6 +12,10 @@
 .env
 .env.*
 !.env.example
+**/secrets.json
+**/appsettings.Local.json
+**/appsettings.*.local.json
+**/*.credentials.json
 
 # Log
 *.log

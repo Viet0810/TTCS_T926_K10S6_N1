@@ -5,6 +5,8 @@ Hướng dẫn cấu hình đăng nhập và email đặt lại mật khẩu: [d
 
 Cấu trúc backend, API hồ sơ và quyền HR: [docs/backend-frontend-contract.md](docs/backend-frontend-contract.md).
 
+Phân quyền động trên website, migration và bằng chứng kiểm thử: [docs/dynamic-rbac-2026-10-11.md](docs/dynamic-rbac-2026-10-11.md). Admin đổi quyền qua trang **Phân quyền hệ thống**, không cần sửa source; quyền trong các tài liệu cũ là template mặc định.
+
 ## 1. Tổng quan dự án
 
 **Hệ thống quản lý Thực tập sinh** là một hệ thống thông tin hỗ trợ quá trình tổ chức và quản lý thực tập cho sinh viên, giảng viên, cơ sở thực tập và các đơn vị liên quan.
@@ -189,3 +191,11 @@ Hệ thống tập trung giải quyết các vấn đề về:
 - Báo cáo và thống kê.
 
 Với các actor chính gồm **sinh viên, giảng viên, người hướng dẫn, đơn vị thực tập và quản trị viên**, hệ thống hướng tới việc tạo ra một môi trường quản lý thực tập tập trung, minh bạch và thuận tiện cho các bên liên quan.
+
+### Sprint 2
+
+Hồ sơ tiếp nhận dùng bản ghi Intern và đơn thực tập (`application`) hiện có. Đơn phải được duyệt, không có tài liệu bị từ chối, trước khi tải hợp đồng/phân công. Phân công cần hợp đồng và chương trình; đổi Mentor giữ chương trình khi request không gửi ProgramId. Check-in cần thực tập đang hoạt động trong kỳ chương trình. Lịch sử chấm công lấy theo user đăng nhập; báo cáo hỗ trợ ProgramId và đếm bản ghi hoàn thành/đang check-in.
+
+Admin có thể cấp/thu hồi riêng `REJECT_DOCUMENTS`, `ATTENDANCE_CHECK_IN`, `ATTENDANCE_CHECK_OUT`. Migration mới chỉ chuyển quyền gộp một lần, không phục hồi quyền đã bị thu hồi khi restart. Nghỉ phép chỉ tổng hợp trạng thái chấm công đã lưu; chưa triển khai Leave Request (US24).
+
+Kiểm thử riêng: `dotnet run --project Backend/InternManagement.Tests -- --sprint2-only`. Kiểm thử đầy đủ: `dotnet run --project Backend/InternManagement.Tests` (SQL database tạm được xóa sau test).

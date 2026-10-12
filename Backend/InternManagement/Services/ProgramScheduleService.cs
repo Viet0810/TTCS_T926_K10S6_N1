@@ -205,6 +205,18 @@ public class ProgramScheduleService
         return affectedRows > 0;
     }
 
+    public async Task<bool> UpdateAsync(int id, ProgramScheduleRequest request)
+    {
+        if(request.StartDate==default || request.EndDate==default || request.EndDate.Date<request.StartDate.Date)
+            throw new ArgumentException("Ngày bắt đầu/kết thúc không hợp lệ.");
+        await using var connection = new SqlConnection(_connectionString); await connection.OpenAsync();
+        await using var command = new SqlCommand("UPDATE dbo.InternshipPrograms SET Name=@name,Department=@department,StartDate=@start,EndDate=@end,UpdatedAt=SYSUTCDATETIME() WHERE Id=@id",connection);
+        command.Parameters.AddWithValue("@id",id); command.Parameters.AddWithValue("@start",request.StartDate.Date); command.Parameters.AddWithValue("@end",request.EndDate.Date);
+        command.Parameters.Add("@name",System.Data.SqlDbType.NVarChar,200).Value=(object?)request.Name?.Trim()??DBNull.Value;
+        command.Parameters.Add("@department",System.Data.SqlDbType.NVarChar,200).Value=(object?)request.Department?.Trim()??DBNull.Value;
+        return await command.ExecuteNonQueryAsync()==1;
+    }
+
     private static string GetStatus(
         DateTime startDate,
         DateTime endDate

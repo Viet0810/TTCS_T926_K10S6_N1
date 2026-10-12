@@ -6,6 +6,14 @@ namespace InternManagement.Services;
 public sealed class ContractService(IConfiguration config)
 {
     private readonly string connectionString = config.GetConnectionString("InternManagement")!;
+    public async Task<List<object>> GetCandidatesAsync(CancellationToken ct)
+    {
+        await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);
+        await using var command=new SqlCommand("SELECT Id,FullName,Email FROM dbo.Interns ORDER BY FullName,Id",connection);
+        await using var reader=await command.ExecuteReaderAsync(ct);var result=new List<object>();
+        while(await reader.ReadAsync(ct))result.Add(new{id=reader.GetInt32(0),fullName=reader.GetString(1),email=reader.GetString(2)});
+        return result;
+    }
     public async Task<List<ContractResponse>> ListAsync(int? owner, CancellationToken ct)
     {
         await using var connection = new SqlConnection(connectionString); await connection.OpenAsync(ct);
@@ -20,7 +28,7 @@ public sealed class ContractService(IConfiguration config)
         while (await reader.ReadAsync(ct)) result.Add(new(reader.GetInt32(0),reader.GetString(1),reader.GetString(2),reader.GetString(3),reader.GetInt64(4),reader.GetDateTime(5),reader.IsDBNull(6)?null:reader.GetDateTime(6),Convert.ToBase64String((byte[])reader[7])));
         return result;
     }
-    public async Task<string?> UploadAsync(int internId, int userId, IFormFile? file, CancellationToken ct)
+    public async Task<string?> UploadAsync(int internId, int userId, IFormFile? file, CancellationToken ct, bool allowCreate=true, bool allowUpdate=true)
     {
         var error = InternDocumentService.ValidateUpload("cv", file); if (error is not null) return error;
         using var buffer = new MemoryStream(); await file!.CopyToAsync(buffer,ct); var bytes=buffer.ToArray();
@@ -31,6 +39,12 @@ public sealed class ContractService(IConfiguration config)
             SET XACT_ABORT ON; BEGIN TRANSACTION;
             IF NOT EXISTS(SELECT 1 FROM dbo.Interns WITH(UPDLOCK,HOLDLOCK) WHERE Id=@Id)
             BEGIN ROLLBACK; SELECT 1; RETURN; END;
+            IF NOT EXISTS(SELECT 1 FROM dbo.InternDocuments WITH(HOLDLOCK) WHERE InternId=@Id AND Kind='application' AND ReviewStatus='approved')
+                OR EXISTS(SELECT 1 FROM dbo.InternDocuments WITH(HOLDLOCK) WHERE InternId=@Id AND ReviewStatus='rejected')
+            BEGIN ROLLBACK; SELECT 4; RETURN; END;
+            IF (EXISTS(SELECT 1 FROM dbo.InternContracts WITH(UPDLOCK,HOLDLOCK) WHERE InternId=@Id) AND @Update=0)
+                OR (NOT EXISTS(SELECT 1 FROM dbo.InternContracts WITH(UPDLOCK,HOLDLOCK) WHERE InternId=@Id) AND @Create=0)
+            BEGIN ROLLBACK; SELECT 3; RETURN; END;
             IF EXISTS(SELECT 1 FROM dbo.InternContracts WITH(UPDLOCK,HOLDLOCK) WHERE InternId=@Id AND ConfirmedAt IS NOT NULL)
             BEGIN ROLLBACK; SELECT 2; RETURN; END;
             UPDATE dbo.InternContracts SET FileName=@Name,Content=@Content,UploadedAt=SYSUTCDATETIME(),UploadedBy=@User WHERE InternId=@Id;
@@ -40,8 +54,10 @@ public sealed class ContractService(IConfiguration config)
         cmd.Parameters.Add("@Id",SqlDbType.Int).Value=internId; cmd.Parameters.Add("@User",SqlDbType.Int).Value=userId;
         cmd.Parameters.Add("@Name",SqlDbType.NVarChar,255).Value=Path.GetFileName(file.FileName.Replace('\\','/'));
         cmd.Parameters.Add("@Content",SqlDbType.VarBinary,-1).Value=bytes;
+        cmd.Parameters.Add("@Create",SqlDbType.Bit).Value=allowCreate;cmd.Parameters.Add("@Update",SqlDbType.Bit).Value=allowUpdate;
         var result=Convert.ToInt32(await cmd.ExecuteScalarAsync(ct));
-        return result==1?"Không tìm thấy thực tập sinh.":result==2?"Hợp đồng đã xác nhận, không thể thay thế.":null;
+        if(result==3)throw new UnauthorizedAccessException();
+        return result==1?"Không tìm thấy thực tập sinh.":result==2?"Hợp đồng đã xác nhận, không thể thay thế.":result==4?"Hồ sơ chưa được duyệt hoặc có tài liệu bị từ chối.":null;
     }
     public async Task<StoredDocument?> DownloadAsync(int internId,CancellationToken ct)
     {
@@ -58,5 +74,12 @@ public sealed class ContractService(IConfiguration config)
         cmd.CommandText="UPDATE dbo.InternContracts SET ConfirmedAt=SYSUTCDATETIME() WHERE InternId=@Id AND ConfirmedAt IS NULL AND Version=@Version";
         cmd.Parameters.Add("@Id",SqlDbType.Int).Value=internId; cmd.Parameters.Add("@Version",SqlDbType.Binary,8).Value=version;
         return await cmd.ExecuteNonQueryAsync(ct)==1;
+    }
+    public async Task<bool> DeleteAsync(int internId,CancellationToken ct)
+    {
+        await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);
+        await using var command=new SqlCommand("DELETE dbo.InternContracts WHERE InternId=@id",connection);
+        command.Parameters.Add("@id",SqlDbType.Int).Value=internId;
+        return await command.ExecuteNonQueryAsync(ct)==1;
     }
 }

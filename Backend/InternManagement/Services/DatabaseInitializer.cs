@@ -145,5 +145,7 @@ public sealed class DatabaseInitializer
         await Infrastructure.InternAssignmentMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.AccountPasswordMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint2CompletionMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.Sprint1PermissionMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.Sprint2ActionPermissionMigration.ApplyAsync(connection, cancellationToken);
     }
 }

@@ -4,8 +4,9 @@ namespace InternManagement.DTOs;
 
 public sealed record ForgotPasswordRequest
 {
+    private string email=string.Empty;
     [Required, EmailAddress, StringLength(254)]
-    public required string Email { get; init; }
+    public required string Email { get=>email; init=>email=value?.Trim()??string.Empty; }
 }
 
 public sealed record ResetPasswordRequest

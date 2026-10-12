@@ -122,7 +122,7 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status403Forbidden)]
     public IActionResult GetRolePermissions()
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ManagePermissions);
+        var decision = authorization.Evaluate(Request, PermissionNames.ReadPermissions);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 

@@ -40,6 +40,20 @@ await using (var create = master.CreateCommand())
 try
 {
     await new DatabaseInitializer().InitializeAsync(testSettings.ConnectionString);
+    if(args.Contains("--paging-only"))
+    {
+        await PagingChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
+    if(args.Contains("--attendance-only"))
+    {
+        await AttendanceRuleChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
+    if(args.Contains("--sprint2-only"))
+    {
+        await using var fixture=new SqlConnection(testSettings.ConnectionString);await fixture.OpenAsync();
+        await using var insert=fixture.CreateCommand();insert.CommandText="INSERT dbo.Interns(FullName,Email,Phone,School,Major) VALUES('Target fixture','target@ictu.edu.vn','0912345678','ICTU','IT')";await insert.ExecuteNonQueryAsync();
+        await ApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
     await using var database = new SqlConnection(testSettings.ConnectionString);
     await database.OpenAsync();
     async Task<object?> Sql(string query, params (string Name, object Value)[] parameters)
@@ -144,6 +158,14 @@ try
     Check(updated?.FullName == "Updated name" && (await interns.GetByIdAsync(created.Id,CancellationToken.None))?.Major == "Updated major", "intern edits persist to SQL Server");
     Check(await interns.UpdateAsync(int.MaxValue,new CreateInternRequest {FullName="Missing",Email="missing@example.invalid",Phone="0900000000",School="School",Major="Major"},CancellationToken.None) is null, "updating a nonexistent profile returns no success");
 
+    await EmailSystemChecks.RunAsync(Check,CaptureMail);
+    await Sql("DELETE FROM dbo.PasswordResetTokens WHERE UserId=@id",("@id",userId));
+    var unavailableTransport=new EmailSystemChecks.UnavailableTransport();
+    var failedRecovery=new PasswordResetService(configuration,hasher,NullLogger<PasswordResetService>.Instance,unavailableTransport);
+    await failedRecovery.RequestAsync(originalUser.Email,CancellationToken.None);
+    await failedRecovery.RequestAsync("unknown@outlook.com",CancellationToken.None);
+    Check(unavailableTransport.Attempts==1,"known and unknown recovery requests complete generically when SMTP fails");
+    Check((int)(await Sql("SELECT COUNT(*) FROM dbo.PasswordResetTokens WHERE UserId=@id",("@id",userId)))! == 0,"failed recovery delivery removes the undelivered token");
     await AccountEmailChecks.RunAsync(configuration, Check, CaptureMail);
     await ReviewEmailChecks.RunAsync(configuration, Check, CaptureMail);
     configuration["Smtp:Host"] = "";
@@ -151,7 +173,9 @@ try
     try { await recovery.RequestAsync(originalUser.Email,CancellationToken.None); }
     catch (InvalidOperationException) { missingSmtpRejected = true; }
     Check(missingSmtpRejected, "missing SMTP configuration does not pretend an email was sent");
+    if(args.Contains("--email-only"))return;
     await ProfileChecks.RunAsync(configuration, Check);
+    await AttendanceRuleChecks.RunAsync(testSettings.ConnectionString, Check);
     await ApiChecks.RunAsync(testSettings.ConnectionString, Check);
 }
 finally
@@ -188,13 +212,5 @@ static async Task<string> CaptureMail(TcpListener listener)
         else if (line.StartsWith("QUIT",StringComparison.OrdinalIgnoreCase)) { await writer.WriteLineAsync("221 Closing"); break; }
         else await writer.WriteLineAsync("250 localhost");
     }
-    var raw = content.ToString();
-    var split = raw.IndexOf("\r\n\r\n",StringComparison.Ordinal);
-    var headers = raw[..split];
-    var body = raw[(split+4)..];
-    if (headers.Contains("Content-Transfer-Encoding: base64",StringComparison.OrdinalIgnoreCase))
-        body = Encoding.UTF8.GetString(Convert.FromBase64String(body));
-    if (headers.Contains("Content-Transfer-Encoding: quoted-printable",StringComparison.OrdinalIgnoreCase))
-        body = Regex.Replace(body.Replace("=\r\n",""), "=([0-9A-F]{2})", m => ((char)Convert.ToByte(m.Groups[1].Value,16)).ToString());
-    return envelope + "\r\n" + headers + "\r\n\r\n" + body;
+    return envelope + "\r\n" + MailCaptureDecoder.Decode(content.ToString());
 }

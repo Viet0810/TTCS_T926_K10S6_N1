@@ -21,19 +21,21 @@ assert(request.url.endsWith('/document-reviews/42/cv/reject')&&payload.comment==
 assert(!document.getElementById('reviewDialog').open,'successful review closes dialog');
 '''),
     ('search-hr','hr-search-filter.html','HR','', '''
-assert(document.querySelector('#searchTableBody a').getAttribute('href')==='intern-manage.html?edit=42','HR search links to the selected profile');
+assert(document.querySelectorAll('#searchTableBody tr:first-child button').length===1&&!document.querySelector('#searchTableBody a'),'HR row only offers profile viewing');
 assert(!document.getElementById('addInternLink').hidden,'HR can add profiles');
 document.querySelector('#searchTableBody button').click();
 assert(document.getElementById('profileDialog').open,'profile detail dialog opens');
+assert(!document.getElementById('editProfileDialog').hidden,'HR can edit inside profile dialog');
 assert(document.getElementById('profileDialogDetails').textContent.includes('02/01/2004'),'birth date displays in Vietnamese format');
 assert(document.getElementById('profileDialogDetails').textContent.includes('mentor@example.invalid'),'mentor contact appears in details');
 assert(!document.querySelector('#profileDialogDetails b'),'notes render as plain text');
 document.getElementById('closeProfileDialog').click();
 assert(!document.getElementById('profileDialog').open,'close button dismisses profile dialog');
-document.getElementById('schoolFilter').value='UI check school';document.getElementById('majorFilter').value='UI check major';document.getElementById('searchInput').value='profile';
+document.getElementById('schoolFilter').value='UI check school';document.getElementById('majorFilter').value='UI check major';document.getElementById('searchInput').value='profile';document.getElementById('statusFilter').value='Đang thực tập';
 submit('filterForm');await tick();await tick();
-const request=calls.findLast(call=>call.url.includes('/interns/search?'));const query=new URL(request.url).searchParams;
-assert(query.get('search')==='profile'&&query.get('school')==='UI check school'&&query.get('major')==='UI check major','search passes real filter parameter names');
+const request=calls.findLast(call=>call.url.includes('/interns/search/page?'));const query=new URL(request.url).searchParams;
+assert(query.get('search')==='profile'&&query.get('school')==='UI check school'&&query.get('major')==='UI check major'&&query.get('status')==='Đang thực tập','search passes real filter parameter names');
+const beforeRefresh=calls.filter(call=>call.url.includes('/interns/search/page?')).length;document.getElementById('refreshSearchBtn').click();document.getElementById('refreshSearchBtn').click();await tick();await tick();assert(calls.filter(call=>call.url.includes('/interns/search/page?')).length===beforeRefresh+1,'refresh retains filters and guards double request');
 '''),
     ('search-mentor','hr-search-filter.html','MENTOR','', '''
 assert(!document.querySelector('#searchTableBody a'),'MENTOR sees no edit actions');
@@ -82,15 +84,17 @@ assert(!document.getElementById('permissionList')&&!document.getElementById('wel
 with TemporaryDirectory(prefix='intern-permissions-ui-') as temporary:
     temporary=Path(temporary)
     for name,page,role,query,actions in cases:
-        permissions=['VIEW_INTERNS','SEARCH_INTERNS','VIEW_PROFILE']+(['MANAGE_INTERNS','EDIT_INTERNS','APPROVE_DOCUMENTS'] if role=='HR' else [])
+        permissions=['VIEW_INTERNS','SEARCH_INTERNS','VIEW_PROFILE']+(['MANAGE_INTERNS','EDIT_INTERNS','APPROVE_DOCUMENTS','REJECT_DOCUMENTS','DOCUMENT_REVIEW_READ'] if role=='HR' else [])
         setup='''<script>localStorage.clear();localStorage.setItem('token','isolated-ui-test');const calls=[];let fixture='''+json.dumps(profile)+''';
 window.fetch=async(url,options={})=>{calls.push({url,options});let data;
 if(url.endsWith('/auth/me'))data='''+json.dumps({'user':{'id':1,'role':role,'fullName':'UI permission check'},'permissions':permissions})+''';
+else if(url.endsWith('/interns/search/options'))data={totalItems:1,schoolCount:1,majorCount:1,schools:[fixture.school],majors:[fixture.major]};
+else if(url.includes('/interns/search/page?')||url.includes('/interns/page?'))data={items:[fixture],page:1,pageSize:10,totalItems:1,totalPages:1};
 else if(url.endsWith('/interns/42')&&options.method!=='PUT')data=fixture;
 else if(options.method==='PUT'){fixture={...fixture,...JSON.parse(options.body)};data=fixture;}
 else data=[fixture];return{ok:true,status:200,json:async()=>data}};</script>'''
         contents=(root/'pages'/page).read_text(encoding='utf-8').replace('<head>','<head><base href="'+(root/'pages').as_uri()+'/">'+setup)
-        test='''<pre id="checkResult"></pre><script>(async()=>{try{const checks=[];const tick=()=>new Promise(resolve=>setTimeout(resolve,0));function assert(ok,name){if(!ok)throw Error(name);checks.push(name)}function submit(id){document.getElementById(id).dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))}await tick();await tick();'''+actions+'''document.getElementById('checkResult').textContent='PASS: '''+name+''' '+checks.join('; ')}catch(error){document.getElementById('checkResult').textContent='FAIL: '+error.message}})();</script>'''
+        test='''<pre id="checkResult"></pre><script>(async()=>{try{if(window.AppUI)AppUI.confirm=async()=>true;const checks=[];const tick=()=>new Promise(resolve=>setTimeout(resolve,0));function assert(ok,name){if(!ok)throw Error(name);checks.push(name)}function submit(id){document.getElementById(id).dispatchEvent(new Event('submit',{cancelable:true,bubbles:true}))}await tick();await tick();'''+actions+'''document.getElementById('checkResult').textContent='PASS: '''+name+''' '+checks.join('; ')}catch(error){document.getElementById('checkResult').textContent='FAIL: '+error.message}})();</script>'''
         target=temporary/(name+'.html');target.write_text(contents.replace('</body>',test+'</body>'),encoding='utf-8')
         result=subprocess.run([str(chrome),'--headless','--disable-gpu','--no-sandbox','--user-data-dir='+str(temporary/'profile'),'--virtual-time-budget=2000','--dump-dom',target.as_uri()+query],capture_output=True,timeout=30)
         match=re.search(r'<pre id="checkResult">(.*?)</pre>',result.stdout.decode('utf-8',errors='replace'),re.S)

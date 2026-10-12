@@ -92,7 +92,7 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
             OUTPUT INSERTED.Id
             VALUES (@email, @name, @email, @hash, 'INTERN');
             """;
-        command.Parameters.Add("@email", SqlDbType.NVarChar, 100).Value = request.Email.Trim();
+        command.Parameters.Add("@email", SqlDbType.NVarChar, 254).Value = request.Email.Trim();
         command.Parameters.Add("@name", SqlDbType.NVarChar, 200).Value = request.FullName.Trim();
         command.Parameters.Add("@hash", SqlDbType.NVarChar, 512).Value = passwords.Hash(request.Password);
         var id = (int)(await command.ExecuteScalarAsync(cancellationToken))!;

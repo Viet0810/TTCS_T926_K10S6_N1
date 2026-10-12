@@ -1,8 +1,8 @@
 const InternService = {
   getInterns(filters = {}) {
     const query = new URLSearchParams();
-    for (const key of ["search", "school", "major"]) if (filters[key]) query.set(key, filters[key]);
-    return requestApi(`/interns/search?${query}`, { headers: getAuthHeader() });
+    for (const key of ["search", "school", "major", "status", "page", "pageSize"]) if (filters[key]) query.set(key, filters[key]);
+    return requestApi(`/interns/search${filters.page ? "/page" : ""}?${query}`, { headers: getAuthHeader() });
   },
   exportCSV(interns) {
     // Quoting and neutralizing formula prefixes prevents spreadsheet injection.

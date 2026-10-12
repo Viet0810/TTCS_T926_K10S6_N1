@@ -6,12 +6,11 @@ namespace InternManagement.Controllers;
 [Route("api/interns/me/attendance")]
 public sealed class OwnAttendanceController(OwnAttendanceService service,InternDocumentService documents,RequestAuthorizationService auth):ControllerBase
 {
-    private async Task<(int? Owner,IActionResult? Denied)> Owner(CancellationToken ct)
+    private async Task<(int? Owner,IActionResult? Denied)> Owner(CancellationToken ct,string permission=PermissionNames.OwnAttendance)
     {
-        var access=auth.Evaluate(Request,PermissionNames.OwnAttendance);
+        var access=auth.Evaluate(Request,permission);
         if(access.Status!=AuthorizationStatus.Authorized)return(null,AuthorizationResponses.Denied(access.Status));
-        if(access.User!.Role!="INTERN")return(null,AuthorizationResponses.Denied(AuthorizationStatus.Forbidden));
-        var owner=await documents.GetOwnerIdAsync(access.User.Id,ct);
+        var owner=await documents.GetOwnerIdAsync(access.User!.Id,ct);
         return owner is null?(null,NotFound(new{message="Chưa có hồ sơ thực tập."})):(owner,null);
     }
     [HttpGet]
@@ -23,9 +22,14 @@ public sealed class OwnAttendanceController(OwnAttendanceService service,InternD
     public Task<IActionResult> CheckIn(CancellationToken ct)=>Record(false,ct);
     [HttpPost("check-out")]
     public Task<IActionResult> CheckOut(CancellationToken ct)=>Record(true,ct);
+    [HttpGet("history")]
+    public async Task<IActionResult> History(CancellationToken ct)
+    {
+        var owner=await Owner(ct);return owner.Denied??Ok(await service.HistoryAsync(owner.Owner!.Value,ct));
+    }
     private async Task<IActionResult> Record(bool checkOut,CancellationToken ct)
     {
-        var owner=await Owner(ct);if(owner.Denied is {} denied)return denied;
+        var owner=await Owner(ct,checkOut?PermissionNames.AttendanceCheckOut:PermissionNames.AttendanceCheckIn);if(owner.Denied is {} denied)return denied;
         var error=await service.RecordAsync(owner.Owner!.Value,checkOut,ct);
         return error is null?Ok(new{message=checkOut?"Đã check-out.":"Đã check-in."}):Conflict(new{message=error});
     }

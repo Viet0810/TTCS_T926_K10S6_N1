@@ -10,6 +10,8 @@ namespace InternManagement.DTOs;
 public sealed record AttendanceReportRequest : IValidatableObject
 {
     public int? InternId { get; init; }
+    [Range(1,int.MaxValue)]
+    public int? ProgramId { get; init; }
 
     [StringLength(254)]
     public string? Search { get; init; }

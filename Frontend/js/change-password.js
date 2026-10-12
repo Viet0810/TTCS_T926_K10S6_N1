@@ -22,6 +22,7 @@
     try {
       const result = await API.changePassword(payload);
       localStorage.setItem("token", result.token); localStorage.setItem("user", JSON.stringify(result.user)); localStorage.setItem("role", result.user.role);
+      window.AppUI?.flash("Đã đổi mật khẩu thành công.");
       form.reset(); location.replace("dashboard.html");
     } catch (error) {
       if (error.code === "INVALID_CURRENT_PASSWORD") Validation.showFieldError(fields[0], "Mật khẩu hiện tại không đúng.");

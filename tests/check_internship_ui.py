@@ -21,7 +21,7 @@ assert(!document.getElementById('retryProfileBtn').hidden && document.getElement
 mode='ready';document.getElementById('retryProfileBtn').click();await tick();await tick();await tick();assert(document.getElementById('internName').textContent==='Intern A','profile retry recovers');
 '''),
     ('internship-profile-wrong-role', 'internship-profile.html', 'HR', 'ready', '''
-assert(document.getElementById('profileMessage').textContent.includes('dành cho'),'profile role guard');
+assert(document.getElementById('profileMessage').textContent.includes('không có quyền'),'profile permission guard');
 assert(!requests.some(r=>r.url.endsWith('/interns/me')),'HR never requests intern profile');
 '''),
     ('assignment', 'mentor-assignment.html', 'HR', 'ready', '''
@@ -38,10 +38,10 @@ const payload=JSON.parse(puts[0].options.body);assert(payload.mentorUserId===22 
 assert(!button.disabled && !select.disabled,'save unlocks form');
 assert(!document.getElementById('assignmentRows') && document.querySelector('main a[href="mentor-assignment-list.html"]'),'form page contains no list and links to assignment list');
 assert(select.value==='12' && document.getElementById('mentorUserId').value==='22','save refreshes selected assignment');
-assert(message.textContent.includes('Trạng thái: Đang thực tập'),'save displays reloaded backend status');
+assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes('Trạng thái: Đang thực tập')&&message.textContent==='','save displays reloaded backend status');
 document.getElementById('mentorUserId').value='21';form.dispatchEvent(new Event('submit',{cancelable:true}));await tick();await tick();await tick();
 assert(interns.length===1 && document.getElementById('mentorUserId').value==='21','reassign updates one intern');
-mode='offline';form.dispatchEvent(new Event('submit',{cancelable:true}));await tick();await tick();assert(!button.disabled && !select.disabled && !message.hidden,'failure restores controls');
+mode='offline';form.dispatchEvent(new Event('submit',{cancelable:true}));await tick();await tick();assert(!button.disabled && !select.disabled && Boolean(document.querySelector('#toastRegion .is-error')),'failure restores controls');
 '''),
     ('assignment-refresh', 'mentor-assignment.html', 'HR', 'assigned', '''
 assert(select.value==='12' && document.getElementById('mentorUserId').value==='22' && document.getElementById('internshipProgramId').value==='31','query selects persisted assignment for update');
@@ -57,13 +57,13 @@ assert(document.getElementById('assignmentRows').textContent.includes('Đang th�
 assert(document.getElementById('assignmentRows').textContent.includes('Chưa có phân công'),'empty assignment list');
 '''),
     ('assignment-no-intern', 'mentor-assignment.html', 'HR', 'no-intern', '''
-assert(button.disabled && message.textContent.includes('Chưa có thực tập sinh'),'empty intern state');
+assert(button.disabled && document.querySelector("#toastRegion .ui-toast-text").textContent.includes('Chưa có thực tập sinh'),'empty intern state');
 '''),
     ('assignment-no-mentor', 'mentor-assignment.html', 'HR', 'no-mentor', '''
-assert(button.disabled && message.textContent.includes('Chưa có tài khoản Mentor'),'empty mentor state');
+assert(button.disabled && document.querySelector("#toastRegion .ui-toast-text").textContent.includes('Chưa có tài khoản Mentor'),'empty mentor state');
 '''),
     ('assignment-wrong-role', 'mentor-assignment.html', 'INTERN', 'ready', '''
-assert(form.hidden && message.textContent.includes('không có quyền'),'assignment role guard');
+assert(form.hidden && document.querySelector('#toastRegion .ui-toast-text').textContent.includes('không có quyền'),'assignment role guard');
 assert(!requests.some(r=>r.url.includes('/intern-assignments')),'wrong role does not load HR data');
 '''),
     ('schedule', 'intern-schedule.html', 'INTERN', 'ready', '''
@@ -101,7 +101,7 @@ if(mode==='assigned')Object.assign(interns[0],{mentorUserId:22,mentorName:'Mento
 window.fetch=async(url,options={})=>{
 requests.push({url,options});if(mode==='offline'||(mode==='offline-schedule'&&url.endsWith('/me/schedule'))||(mode==='offline-profile'&&url.endsWith('/interns/me')))throw new TypeError('offline');
 await new Promise(r=>setTimeout(r,0));let data;
-if(url.endsWith('/auth/me'))data={user:{role,fullName:'Test'},permissions:role==='HR'?['VIEW_PROFILE','VIEW_INTERNS','SEARCH_INTERNS','ASSIGN_MENTOR']:['VIEW_PROFILE']};
+if(url.endsWith('/auth/me'))data={user:{role,fullName:'Test'},permissions:role==='HR'?['VIEW_PROFILE','VIEW_INTERNS','SEARCH_INTERNS','ASSIGN_MENTOR','ASSIGNMENT_CREATE','ASSIGNMENT_UPDATE']:['VIEW_PROFILE','VIEW_OWN_PROFILE','EDIT_OWN_PROFILE','VIEW_OWN_SCHEDULE']};
 else if(options.method==='PUT') { const body=JSON.parse(options.body);Object.assign(interns[0],body,{mentorName:mentors.find(m=>m.id===body.mentorUserId).fullName,status:'Đang thực tập'});data={success:true}; }
 else if(url.endsWith('/intern-assignments/interns'))data=interns;
 else if(url.endsWith('/intern-assignments/mentors'))data=mentors;
@@ -120,7 +120,7 @@ with TemporaryDirectory(prefix='internship-ui-') as directory:
         preamble = setup.replace('MODE', json.dumps(mode)).replace('ROLE', json.dumps(role))
         html = original.read_text(encoding='utf-8').replace('<head>', '<head><base href="' + original.parent.as_uri() + '/">' + preamble)
         script = '''<pre id="result"></pre><script>(async()=>{try{
-const assert=(value,text)=>{if(!value)throw Error(text)},tick=()=>new Promise(r=>setTimeout(r,10));
+if(window.AppUI)AppUI.confirm=async()=>true;const assert=(value,text)=>{if(!value)throw Error(text)},tick=()=>new Promise(r=>setTimeout(r,10));
 await new Promise(r=>setTimeout(r,100));
 const form=document.getElementById('assignmentForm'),select=document.getElementById('internId'),button=document.getElementById('assignBtn'),message=document.getElementById('dashboardMessage');
 ''' + checks + '''

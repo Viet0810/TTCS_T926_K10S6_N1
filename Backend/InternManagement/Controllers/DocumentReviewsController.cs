@@ -1,6 +1,7 @@
 using InternManagement.DTOs;
 using InternManagement.Services;
 using Microsoft.AspNetCore.Mvc;
+using InternManagement.Infrastructure;
 
 namespace InternManagement.Controllers;
 
@@ -9,16 +10,13 @@ namespace InternManagement.Controllers;
 public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization,
     IInternService interns, PasswordResetService email, ILogger<DocumentReviewsController> logger) : ControllerBase
 {
-    private AuthorizationDecision Access()
+    private AuthorizationDecision Access(bool review = false)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ApproveDocuments);
-        return decision.Status == AuthorizationStatus.Authorized && decision.User!.Role != "HR"
-            ? new AuthorizationDecision(AuthorizationStatus.Forbidden, decision.User) : decision;
+        var decision = authorization.Evaluate(Request, review ? PermissionNames.ApproveDocuments : PermissionNames.ReadDocumentReviews);
+        return decision;
     }
 
-    private IActionResult Denied(AuthorizationDecision decision) => StatusCode(
-        decision.Status == AuthorizationStatus.Unauthenticated ? 401 : 403,
-        new { message = "Bạn cần quyền duyệt tài liệu để truy cập." });
+    private IActionResult Denied(AuthorizationDecision decision) => AuthorizationResponses.Denied(decision.Status);
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
@@ -44,7 +42,7 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
     [HttpPut("{id:int}/{kind}")]
     public async Task<IActionResult> Review(int id, string kind, ReviewDocumentRequest request, CancellationToken cancellationToken)
     {
-        var decision = Access();
+        var decision = authorization.Evaluate(Request, request.Status == "rejected" ? PermissionNames.RejectDocuments : PermissionNames.ApproveDocuments);
         if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
         if (!InternDocumentService.ValidKind(kind)) return BadRequest(new { message = "Loại tài liệu không hợp lệ." });
         if (request.Status == "rejected" && string.IsNullOrWhiteSpace(request.Comment))

@@ -58,7 +58,6 @@ public sealed class UsersController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
-        if (decision.User!.Role != "ADMIN") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
 
         var role = request.Role.Trim().ToUpperInvariant();
         if (role is not ("HR" or "MENTOR" or "INTERN"))
@@ -68,7 +67,7 @@ public sealed class UsersController : ControllerBase
         {
             if (role is "HR" or "MENTOR") request = request with { Password = TemporaryPasswordGenerator.Generate() };
             var user = await accounts.CreateAsync(request, role, cancellationToken);
-            logger.LogInformation("Account created. User {UserId}, recipient {Recipient}, role {Role}.", user.Id, user.Email, user.Role);
+            logger.LogInformation("Account created. User {UserId}, RecipientDomain {RecipientDomain}, role {Role}.", user.Id, new System.Net.Mail.MailAddress(user.Email).Host, user.Role);
             bool? emailSent = null;
             var message = "Tạo tài khoản thành công.";
             if (role is "HR" or "MENTOR")
@@ -77,8 +76,8 @@ public sealed class UsersController : ControllerBase
                 try { emailSent = await passwordReset.SendAccountCreatedAsync(user, request.Password!, cancellationToken); }
                 catch (Exception error)
                 {
-                    logger.LogWarning("Account setup email failed for user {UserId}, recipient {Recipient}, type {FailureType}, reason {Reason}.",
-                        user.Id, user.Email, error.GetType().Name, error is PasswordRecoveryUnavailableException ? error.Message : "Delivery unavailable");
+                    logger.LogWarning("Account setup email failed for user {UserId}, RecipientDomain {RecipientDomain}, type {FailureType}.",
+                        user.Id, new System.Net.Mail.MailAddress(user.Email).Host, error.GetType().Name);
                 }
                 message = emailSent == true
                     ? "Tạo tài khoản thành công. Email hướng dẫn đã được gửi đến người dùng."
@@ -113,7 +112,6 @@ public sealed class UsersController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
         if (decision.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(decision.Status);
-        if (decision.User!.Role != "ADMIN") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         var user = await accounts.GetByIdAsync(id, cancellationToken);
         if (user is null) return NotFound(new { message = "Không tìm thấy tài khoản." });
         if (user.Role is not ("HR" or "MENTOR")) return BadRequest(new { message = "Chỉ gửi lại email đăng nhập cho HR/Mentor." });
@@ -122,8 +120,8 @@ public sealed class UsersController : ControllerBase
             return NotFound(new { message = "Tài khoản không còn khả dụng." });
         var emailSent = false;
         try { emailSent = await passwordReset.SendAccountCreatedAsync(user, password, cancellationToken); }
-        catch (Exception error) { logger.LogWarning("Account email resend failed for user {UserId}, recipient {Recipient}, type {FailureType}, reason {Reason}.",
-            id, user.Email, error.GetType().Name, error is PasswordRecoveryUnavailableException ? error.Message : "Delivery unavailable"); }
+        catch (Exception error) { logger.LogWarning("Account email resend failed for user {UserId}, RecipientDomain {RecipientDomain}, type {FailureType}.",
+            id, new System.Net.Mail.MailAddress(user.Email).Host, error.GetType().Name); }
         return Ok(new { emailSent, mustChangePassword = true, message = emailSent
             ? "Đã gửi email với mật khẩu tạm mới."
             : "Đã thay mật khẩu tạm nhưng chưa gửi được email. Vui lòng kiểm tra SMTP rồi gửi lại." });

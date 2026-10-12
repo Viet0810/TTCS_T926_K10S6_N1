@@ -50,6 +50,13 @@ function submit(id){document.getElementById(id).dispatchEvent(new Event("submit"
 '''
 login_checks='''
 const password=document.getElementById("password");
+for(const domain of ["gmail.com","outlook.com","yahoo.com","ictu.edu.vn","company.vn","custom-domain.com"]){
+const email=document.getElementById("username");email.value="user@"+domain;
+assert(validateLoginField(email),"login accepts valid "+domain);
+}
+const malformed=document.getElementById("username");malformed.value="not-email";
+assert(!validateLoginField(malformed),"login rejects malformed email");
+assert(Validation.validateEmail("user@outlook.com")!=="","registration domain rule remains separate");
 document.querySelector('[data-password-toggle="password"]').click();
 assert(password.type==="text"&&document.querySelector('[data-password-toggle="password"]').getAttribute("aria-pressed")==="true","password visibility and accessible state");
 document.getElementById("username").value="auth-ui@gmail.com";
@@ -58,15 +65,15 @@ assert(document.getElementById("loginView").hidden&&!document.getElementById("fo
 responseStatus=200;responseData={message:"Nếu email đã được đăng ký, bạn sẽ nhận được liên kết."};
 submit("forgotForm");assert(document.getElementById("forgotSubmit").disabled,"recovery submit disabled while request is pending");await tick();
 assert(lastRequest.url.endsWith("/auth/forgot-password")&&JSON.parse(lastRequest.options.body).email==="auth-ui@gmail.com","recovery submits the correct API payload");
-assert(document.getElementById("forgotMessage").classList.contains("is-success")&&!document.getElementById("forgotSubmit").disabled,"recovery success feedback and submit restored");
+assert(document.querySelector("#toastRegion .ui-toast").classList.contains("is-success")&&!document.getElementById("forgotSubmit").disabled,"recovery success feedback and submit restored");
 responseStatus=503;responseData={message:"Chưa cấu hình địa chỉ trang đặt lại mật khẩu (PasswordReset:ResetPageUrl)."};submit("forgotForm");await tick();
-assert(!document.getElementById("forgotMessage").classList.contains("is-success")&&document.getElementById("forgotMessage").textContent===responseData.message,"recovery displays backend URL error without guessing SMTP failure");
+assert(!document.querySelector("#toastRegion .ui-toast").classList.contains("is-success")&&document.querySelector("#toastRegion .ui-toast-text").textContent===responseData.message,"recovery displays backend URL error without guessing SMTP failure");
 document.getElementById("backToLogin").click();
 responseStatus=401;responseData={message:"Thông tin đăng nhập không đúng."};
 password.value="Wrong-password-9";localStorage.setItem("token","old-session");submit("loginForm");await tick();
-assert(!document.getElementById("loginMessage").hidden&&!localStorage.getItem("token")&&!document.getElementById("loginSubmit").disabled,"login errors clear stale sessions and restore the form");
+assert(Boolean(document.querySelector("#toastRegion .is-error"))&&!localStorage.getItem("token")&&!document.getElementById("loginSubmit").disabled,"login errors clear stale sessions and restore the form");
 responseStatus=200;responseData={token:"invalid-session",user:{role:"INVALID"}};submit("loginForm");await tick();
-assert(!localStorage.getItem("token")&&!document.getElementById("loginMessage").hidden,"invalid account responses cannot create a session");
+assert(!localStorage.getItem("token")&&Boolean(document.querySelector("#toastRegion .is-error")),"invalid account responses cannot create a session");
 '''
 reset_checks='''
 assert(!location.hash,"reset token removed from browser address");

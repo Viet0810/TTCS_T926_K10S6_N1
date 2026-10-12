@@ -9,6 +9,14 @@ namespace InternManagement.Controllers;
 [Route("api/account")]
 public sealed class AccountController(AccountService accounts, AuthTokenService tokens, RequestAuthorizationService authorization) : ControllerBase
 {
+    [HttpGet("profile")]
+    public async Task<IActionResult> Profile(CancellationToken ct)
+    {
+        var decision=authorization.Evaluate(Request,PermissionNames.ViewProfile);
+        if(decision.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(decision.Status);
+        var user=await accounts.GetByIdAsync(decision.User!.Id,ct);
+        return user is null?Unauthorized():Ok(new UserResponse(user.Id,user.Username,user.FullName,user.Email,user.Role,user.MustChangePassword));
+    }
     [HttpPut("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken cancellationToken)
     {

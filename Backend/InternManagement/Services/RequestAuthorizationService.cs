@@ -30,11 +30,11 @@ public sealed class RequestAuthorizationService
             || !tokens.TryValidate(header[7..].Trim(), out var user))
             return new AuthorizationDecision(AuthorizationStatus.Unauthenticated, null);
 
-        if (requiredPermission is not null && !permissions.HasPermission(user!.Role, requiredPermission))
-            return new AuthorizationDecision(AuthorizationStatus.Forbidden, user);
-
         if (user!.MustChangePassword && RequestRequiresPasswordChange(request))
             return new AuthorizationDecision(AuthorizationStatus.PasswordChangeRequired, user);
+
+        if (requiredPermission is not null && !permissions.HasPermission(user.Role, requiredPermission))
+            return new AuthorizationDecision(AuthorizationStatus.Forbidden, user);
 
         return new AuthorizationDecision(AuthorizationStatus.Authorized, user);
     }

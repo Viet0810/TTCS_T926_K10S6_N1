@@ -5,8 +5,8 @@ import subprocess, re, os
 root = Path(__file__).resolve().parents[1] / 'Frontend'
 chrome = Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe'
 setup = """<script>
-let pageErrors=[];window.addEventListener('error',e=>pageErrors.push(e.message));window.addEventListener('unhandledrejection',e=>pageErrors.push(String(e.reason)));localStorage.setItem('token','test');let requests=[],response={records:[],stats:{totalShifts:0,attendanceRate:'0.0%',lateOrEarlyCount:0,approvedLeaveCount:0,absentCount:0}},mode='ok';
-window.fetch=async(url,options={})=>{requests.push({url,options});if(mode==='offline')throw new TypeError('offline');let data=url.endsWith('/auth/me')?{user:{role:'HR'},permissions:['VIEW_INTERNS','MANAGE_INTERNS','VIEW_ATTENDANCE_REPORT','MANAGE_PROGRAMS']}:url.endsWith('/interns')?[]:url.includes('program-schedule')?{data:[],message:'ok'}:response;return {ok:true,status:200,json:async()=>data}};
+let pageErrors=[];window.addEventListener('error',e=>pageErrors.push(e.message));window.addEventListener('unhandledrejection',e=>pageErrors.push(String(e.reason)));localStorage.setItem('token','test');let requests=[],response={records:[],stats:{totalShifts:0,completedCount:0,checkedInCount:0,approvedLeaveCount:0,absentCount:0}},mode='ok';
+window.fetch=async(url,options={})=>{requests.push({url,options});if(mode==='offline')throw new TypeError('offline');let data=url.endsWith('/auth/me')?{user:{role:'HR'},permissions:['VIEW_INTERNS','MANAGE_INTERNS','VIEW_ATTENDANCE_REPORT','MANAGE_PROGRAMS','PROGRAM_CREATE','PROGRAM_DELETE']}:url.endsWith('/interns')||url.endsWith('/report/programs')?[]:url.includes('program-schedule')?{data:[],message:'ok'}:response;return {ok:true,status:200,json:async()=>data}};
 window.confirm=()=>true;
 </script>"""
 checks = {
@@ -21,6 +21,7 @@ fill();form.dispatchEvent(new Event('submit',{cancelable:true}));form.dispatchEv
 assert(requests.some(r=>r.url.startsWith(BASE_URL+'/attendance/report?')),'correct backend report URL');assert(currentRecords.length===0&&document.getElementById('totalShiftsCount').textContent==='0','empty report is never replaced with mock data');
 assert(document.querySelectorAll('#internFilter option').length===1,'empty intern list stays empty');
 await AttendanceService.getAttendanceReport({internId:42,keyword:'Test',startDate:'2026-10-01',endDate:'2026-10-08',status:'LATE'});const request=requests.at(-1);assert(request.url.includes('internId=42')&&request.url.includes('search=Test')&&request.options.headers.Authorization==='Bearer test','filters and authorization');
+response={records:[{id:1,internId:42,date:'2026-10-08',name:'Test Intern',mssv:'A',department:'IT',checkIn:'08:07:00',checkOut:'17:35:00',checkInStatus:'LATE',checkOutStatus:'COMPLETED',hours:9.4,status:'LATE'}],stats:{totalShifts:1,completedCount:1,checkedInCount:0,approvedLeaveCount:0,absentCount:0}};await loadReport();assert(document.getElementById('reportTableBody').textContent.includes('Đi muộn')&&document.getElementById('reportTableBody').textContent.includes('Đủ giờ'),'report displays independent backend statuses');openDetailModal(1);assert(document.getElementById('modalCheckInStatus').textContent==='Đi muộn'&&document.getElementById('modalCheckOutStatus').textContent==='Đủ giờ','detail shows both classifications');
 mode='offline';await loadReport();assert(currentRecords.length===0&&document.getElementById('exportBtn').disabled,'error clears stale data and disables export');
 """,
 'pages/program-setting.html': """

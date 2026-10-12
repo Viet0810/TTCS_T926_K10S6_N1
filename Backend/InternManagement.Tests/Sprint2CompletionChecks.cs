@@ -73,6 +73,9 @@ internal static class Sprint2CompletionChecks
         using(var upload=await Upload("/api/interns/me/documents/cv"))check(upload.IsSuccessStatusCode,"US6 uploads real PDF");
         using(var upload=await Upload("/api/interns/me/documents/application"))check(upload.IsSuccessStatusCode,"US6 uploads real application PDF");
         await Login("permission-hr");
+        using(var pending=await Upload($"/api/contracts/{owner}"))check(pending.StatusCode==HttpStatusCode.BadRequest,"pending application cannot enter contract workflow");
+        var pendingMentors=await Get("/api/intern-assignments/mentors");
+        using(var pending=await http.PutAsJsonAsync($"/api/intern-assignments/{owner}",new{mentorUserId=pendingMentors[0].GetProperty("id").GetInt32()}))check(pending.StatusCode==HttpStatusCode.BadRequest,"pending application cannot enter assignment workflow");
         var queue=await Get("/api/document-reviews");
         foreach(var doc in queue.EnumerateArray().Where(d=>d.GetProperty("internId").GetInt32()==owner))
         {
@@ -109,13 +112,30 @@ internal static class Sprint2CompletionChecks
         using(var assigned=await http.PutAsJsonAsync($"/api/intern-assignments/{owner}",new{mentorUserId=mentor,internshipProgramId=programId}))check(assigned.IsSuccessStatusCode,"US12 assigns new intern to mentor/program");
         await Login(email,password);
         var schedule=await Get("/api/interns/me/schedule");check(schedule.GetProperty("departmentName").GetString()=="Engineering"&&schedule.GetProperty("startDate").GetString()=="2026-10-01","US14 sees real assigned program dates/department");
+        var configPermissions=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"ConnectionStrings:InternManagement",connectionString}}).Build();
+        var permissionService=new RolePermissionService(configPermissions);var grants=permissionService.GetPermissions("INTERN").ToArray();
+        await permissionService.SaveAsync("INTERN",grants.Where(p=>p!=PermissionNames.AttendanceCheckIn).ToArray(),default);
+        using(var denied=await http.PostAsync("/api/interns/me/attendance/check-in",null))check(denied.StatusCode==HttpStatusCode.Forbidden,"revoked check-in cannot bypass READ permission");
+        using(var readable=await http.GetAsync("/api/interns/me/attendance"))check(readable.IsSuccessStatusCode,"attendance READ remains after check-in revocation");
+        await permissionService.SaveAsync("INTERN",grants,default);
         using(var noIn=await http.PostAsync("/api/interns/me/attendance/check-out",null))check(noIn.StatusCode==HttpStatusCode.Conflict,"check-out before check-in rejected");
-        var attempts=await Task.WhenAll(Enumerable.Range(0,2).Select(_=>http.PostAsync("/api/interns/me/attendance/check-in",null)));
+        var attempts=await Task.WhenAll(Enumerable.Range(0,2).Select(_=>http.PostAsJsonAsync($"/api/interns/me/attendance/check-in?internId={otherBefore.GetProperty("id").GetInt32()}",new{internId=otherBefore.GetProperty("id").GetInt32(),date="1999-01-01",checkIn="07:45:00"})));
         check(attempts.Count(r=>r.StatusCode==HttpStatusCode.OK)==1&&attempts.Count(r=>r.StatusCode==HttpStatusCode.Conflict)==1,"concurrent check-in stores one record");foreach(var response in attempts)response.Dispose();
+        await permissionService.SaveAsync("INTERN",grants.Where(p=>p!=PermissionNames.AttendanceCheckOut).ToArray(),default);
+        using(var denied=await http.PostAsync("/api/interns/me/attendance/check-out",null))check(denied.StatusCode==HttpStatusCode.Forbidden,"revoked check-out cannot bypass check-in permission");
+        await permissionService.SaveAsync("INTERN",grants,default);
+        await Task.Delay(1100);
         using(var checkOut=await http.PostAsync("/api/interns/me/attendance/check-out",null))check(checkOut.IsSuccessStatusCode,"US21 checks out current own record");
         using(var duplicate=await http.PostAsync("/api/interns/me/attendance/check-out",null))check(duplicate.StatusCode==HttpStatusCode.Conflict,"duplicate check-out rejected");
         var today=await Get("/api/interns/me/attendance?internId=2147483647");check(today.GetProperty("checkIn").ValueKind==JsonValueKind.String&&today.GetProperty("checkOut").ValueKind==JsonValueKind.String,"own attendance reload returns durable timestamps");
-        await Login("permission-hr");var report=await Get($"/api/attendance/report?internId={owner}&search=Engineering");check(report.GetProperty("records").GetArrayLength()==1&&report.GetProperty("records")[0].GetProperty("department").GetString()=="Engineering","US22 report filters the same self attendance record by assigned program department");
+        var history=await Get("/api/interns/me/attendance/history?internId=2147483647");check(history.GetArrayLength()==1,"own history is durable and cannot select another owner");
+        check(today.GetProperty("date").GetString()!="1999-01-01","client date is ignored; server Vietnam workday is authoritative");
+        await Login("schedule-b@ictu.edu.vn","Schedule-test-9");
+        check((await Get("/api/interns/me/attendance/history")).GetArrayLength()==0,"Intern A cannot stamp Intern B via query or body owner override");
+        await Login(email,password);
+        await Login("permission-hr");var report=await Get($"/api/attendance/report?internId={owner}&programId={programId}&search=Engineering");check(report.GetProperty("records").GetArrayLength()==1&&report.GetProperty("records")[0].GetProperty("department").GetString()=="Engineering","US22 report filters the same self attendance record by assigned program department");
+        check(report.GetProperty("stats").GetProperty("completedCount").GetInt32()==1&&report.GetProperty("stats").GetProperty("checkedInCount").GetInt32()==0,"report counts completed attendance without inferring punctuality");
+        var mismatched=await Get($"/api/attendance/report?internId={owner}&programId=2147483647");check(mismatched.GetProperty("records").GetArrayLength()==0,"program filter excludes unrelated attendance");
         foreach(var role in new[]{"admin","mentor","hr"})
         {
             await Login("permission-"+role);
@@ -124,10 +144,27 @@ internal static class Sprint2CompletionChecks
             if(role!="hr"){using var deniedHr=await http.GetAsync("/api/contracts");check(deniedHr.StatusCode==HttpStatusCode.Forbidden,role+" cannot manage contracts");}
         }
         var config=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"ConnectionStrings:InternManagement",connectionString}}).Build();
+        await using(var sql=new SqlConnection(connectionString)){await sql.OpenAsync();await using var command=sql.CreateCommand();command.CommandText="UPDATE dbo.InternshipPrograms SET EndDate='2030-12-31' WHERE Id=@id";command.Parameters.AddWithValue("@id",programId);await command.ExecuteNonQueryAsync();}
         var clock=new TestClock(new DateTimeOffset(2030,1,1,17,5,0,TimeSpan.Zero));var attendance=new OwnAttendanceService(config,clock);
         check(await attendance.RecordAsync(owner,false,CancellationToken.None) is null,"check-in at Vietnam midnight uses next local day");
         clock.Now=clock.Now.AddHours(8);check(await attendance.RecordAsync(owner,true,CancellationToken.None) is null,"clock-controlled eight-hour check-out");
-        var timed=await attendance.TodayAsync(owner,CancellationToken.None);check(timed.Date=="2030-01-02"&&timed.CheckIn=="00:05:00"&&timed.Hours==8,"Vietnam timezone and working duration persist correctly");
+        var timed=await attendance.TodayAsync(owner,CancellationToken.None);check(timed.Date=="2030-01-02"&&timed.CheckIn=="00:05:00"&&timed.Hours==0.1m,"Vietnam timezone persists and early check-in earns no extra working hours");
+        await Login("schedule-b@ictu.edu.vn","Schedule-test-9");
+        var rejectedOwner=(await Get("/api/interns/me")).GetProperty("id").GetInt32();
+        using(var uploaded=await Upload("/api/interns/me/documents/application"))check(uploaded.IsSuccessStatusCode,"rejection fixture submits own application");
+        await Login("permission-hr");
+        var rejectedDoc=(await Get("/api/document-reviews")).EnumerateArray().Single(d=>d.GetProperty("internId").GetInt32()==rejectedOwner&&d.GetProperty("kind").GetString()=="application");
+        var rejectPayload=new{version=rejectedDoc.GetProperty("version").GetString(),comment="Application rejected"};
+        var hrGrants=permissionService.GetPermissions("HR").ToArray();
+        await permissionService.SaveAsync("HR",hrGrants.Where(p=>p!=PermissionNames.RejectDocuments).ToArray(),default);
+        using(var denied=await http.PutAsJsonAsync($"/api/document-reviews/{rejectedOwner}/application/reject",rejectPayload))check(denied.StatusCode==HttpStatusCode.Forbidden,"APPROVE does not bypass separately revoked REJECT");
+        await permissionService.SaveAsync("HR",hrGrants,default);
+        using(var rejected=await http.PutAsJsonAsync($"/api/document-reviews/{rejectedOwner}/application/reject",rejectPayload))check(rejected.IsSuccessStatusCode,"regranted REJECT stores decision");
+        using(var again=await http.PutAsJsonAsync($"/api/document-reviews/{rejectedOwner}/application/approve",rejectPayload))check(again.StatusCode==HttpStatusCode.Conflict,"rejected application cannot be approved again");
+        using(var rejected=await Upload($"/api/contracts/{rejectedOwner}"))check(rejected.StatusCode==HttpStatusCode.BadRequest,"rejected application cannot receive contract");
+        using(var rejected=await http.PutAsJsonAsync($"/api/intern-assignments/{rejectedOwner}",new{mentorUserId=mentor,internshipProgramId=programId}))check(rejected.StatusCode==HttpStatusCode.BadRequest,"rejected application cannot become active via mentor assignment");
+        await Login("schedule-b@ictu.edu.vn","Schedule-test-9");
+        using(var rejected=await http.PostAsync("/api/interns/me/attendance/check-in",null))check(rejected.StatusCode==HttpStatusCode.Conflict,"rejected intern cannot check in");
         await Login("permission-hr");
     }
     private sealed class TestClock(DateTimeOffset now):TimeProvider

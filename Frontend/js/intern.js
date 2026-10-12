@@ -10,11 +10,17 @@ let canEdit = false;
 let saving = false;
 const fields = InternProfile.fields.map((field) => field.key);
 const tableFields = ["studentCode", "fullName", "email", "phone", "school", "major", "organization", "status"];
+document.addEventListener('session-permissions-updated',event=>{
+  const session=event.detail;canCreate=Session.hasPermission(session,'MANAGE_INTERNS');canEdit=Session.hasPermission(session,'EDIT_INTERNS');
+  openFormBtn.hidden=!canCreate;document.getElementById('searchInternLink').hidden=!Session.hasPermission(session,'SEARCH_INTERNS');
+  if(!Session.hasPermission(session,'VIEW_INTERNS')){tableBody.replaceChildren();formSection.classList.add('hidden');openFormBtn.hidden=true;return;}
+  if((editingId!==null&&!canEdit)||(editingId===null&&!canCreate))closeForm();
+  if(!saving)renderInterns();
+});
 
 function showMessage(message, type = "error") {
   const box = document.getElementById("messageBox");
-  box.className = `message-box ${type}`;
-  box.textContent = message;
+  AppUI.feedback(box, message, type);
 }
 function closeForm() {
   if (saving) return;
@@ -65,16 +71,16 @@ function setSaving(busy) {
 }
 function renderInterns() {
   const keyword = searchInput.value.trim().toLocaleLowerCase("vi");
-  const visible = interns.filter((item) => [item.fullName, item.email, item.studentCode || "", item.organization || ""].some((text) => text.toLocaleLowerCase("vi").includes(keyword)));
   tableBody.replaceChildren();
-  if (!visible.length) {
+  if (!interns.length) {
     const row = tableBody.insertRow();
     const cell = row.insertCell();
     cell.colSpan = 9; cell.className = "empty-state";
     cell.textContent = keyword ? "Không tìm thấy hồ sơ phù hợp." : "Chưa có hồ sơ thực tập sinh.";
+    if (window.AppVisual) cell.prepend(AppVisual.illustration(keyword ? 'search' : 'profile'));
     return;
   }
-  for (const intern of visible) {
+  for (const intern of interns) {
     const row = tableBody.insertRow();
     for (const field of tableFields) {
       const cell = row.insertCell();
@@ -84,23 +90,17 @@ function renderInterns() {
     }
     const cell = row.insertCell();
     const view = document.createElement("button"); view.type = "button"; view.className = "btn-secondary btn-compact"; view.textContent = "Xem hồ sơ"; view.addEventListener("click", () => InternProfile.show(intern, canEdit ? openForm : null)); cell.appendChild(view);
-    if (canEdit) {
-      const button = document.createElement("button");
-      button.type = "button"; button.className = "btn-secondary btn-compact";
-      button.textContent = "Chỉnh sửa";
-      button.addEventListener("click", () => openForm(intern));
-      cell.appendChild(button);
-    }
   }
 }
-async function loadInterns() {
-  interns = await API.getInterns();
-  renderInterns();
-}
+const internPager = TableUI.server(tableBody,
+  (page,pageSize) => API.getInterns({page,pageSize,search:searchInput.value.trim()}),
+  items => { interns=items;renderInterns(); });
+async function loadInterns() { return internPager.load(); }
+
 openFormBtn.addEventListener("click", () => openForm());
 document.getElementById("closeFormBtn").addEventListener("click", closeForm);
 document.getElementById("cancelBtn").addEventListener("click", closeForm);
-searchInput.addEventListener("input", renderInterns);
+let internSearchTimer;searchInput.addEventListener("input",()=>{clearTimeout(internSearchTimer);internSearchTimer=setTimeout(()=>internPager.load(true).catch(error=>showMessage(error.message)),250);});
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (saving || (editingId !== null ? !canEdit : !canCreate)) return;
@@ -137,7 +137,7 @@ async function initializeInternPage() {
     if (targetId) {
       if (!canEdit) { showMessage("Bạn không có quyền chỉnh sửa hồ sơ."); return; }
       const target = /^[1-9][0-9]*$/.test(targetId)
-        ? interns.find((intern) => String(intern.id) === targetId) : null;
+        ? await requestApi(`/interns/${encodeURIComponent(targetId)}`,{headers:getAuthHeader()}) : null;
       if (target) openForm(target);
       else showMessage("Không tìm thấy hồ sơ cần chỉnh sửa.");
     }

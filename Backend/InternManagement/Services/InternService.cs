@@ -39,7 +39,7 @@ public sealed class InternService : IInternService
         command.CommandText = """
             UPDATE i SET FullName = @name, Phone = @phone, School = @school, Major = @major, Address = @address
             FROM dbo.Interns i INNER JOIN dbo.Users u ON u.Email = i.Email
-            WHERE u.Id = @userId AND u.Role = 'INTERN';
+            WHERE u.Id = @userId;
             """;
         command.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
         command.Parameters.Add("@name", SqlDbType.NVarChar, 200).Value = request.FullName;
@@ -100,15 +100,34 @@ public sealed class InternService : IInternService
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        command.CommandText = "SELECT Email FROM dbo.Interns WITH (UPDLOCK,HOLDLOCK) WHERE Id=@id";
+        var oldEmail = await command.ExecuteScalarAsync(cancellationToken) as string;
+        if (oldEmail is null) return null;
+        InternRecordMapper.AddParameters(command, request);
+        command.Parameters.Add("@oldEmail", SqlDbType.NVarChar, 254).Value = oldEmail;
+        // Email is the existing ownership link. Never transfer a profile to another account.
+        command.CommandText = """
+            IF EXISTS(SELECT 1 FROM dbo.Users WITH (UPDLOCK,HOLDLOCK)
+                WHERE Email=@email AND Email<>@oldEmail)
+                THROW 50001, 'Profile email already belongs to another account.', 1;
+            UPDATE dbo.Users SET Email=@email, FullName=@fullName,
+                Username=CASE WHEN Username=@oldEmail THEN @email ELSE Username END
+            WHERE Email=@oldEmail AND Role='INTERN';
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
         command.CommandText = """
             UPDATE dbo.Interns SET FullName = @fullName, Email = @email, Phone = @phone, School = @school, Major = @major, StudentCode = @studentCode, ClassName = @className, Faculty = @faculty, DateOfBirth = @dateOfBirth, Address = @address, Organization = @organization, OrganizationAddress = @organizationAddress, Department = @department, Position = @position, Mentor = @mentor, MentorEmail = @mentorEmail, MentorPhone = @mentorPhone, AcademicSupervisor = @academicSupervisor, StartDate = @startDate, EndDate = @endDate, Status = @status, InternshipTopic = @internshipTopic, Notes = @notes
             OUTPUT INSERTED.Id, INSERTED.FullName, INSERTED.Email, INSERTED.Phone, INSERTED.School, INSERTED.Major, INSERTED.CreatedAt, INSERTED.StudentCode, INSERTED.ClassName, INSERTED.Faculty, INSERTED.DateOfBirth, INSERTED.Address, INSERTED.Organization, INSERTED.OrganizationAddress, INSERTED.Department, INSERTED.Position, INSERTED.Mentor, INSERTED.MentorEmail, INSERTED.MentorPhone, INSERTED.AcademicSupervisor, INSERTED.StartDate, INSERTED.EndDate, INSERTED.Status, INSERTED.InternshipTopic, INSERTED.Notes
             WHERE Id = @id;
             """;
-        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
-        InternRecordMapper.AddParameters(command, request);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken) ? InternRecordMapper.Map(reader) : null;
+        InternResponse? result;
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            result = await reader.ReadAsync(cancellationToken) ? InternRecordMapper.Map(reader) : null;
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 }

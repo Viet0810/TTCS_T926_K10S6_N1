@@ -9,13 +9,13 @@ namespace InternManagement.Controllers;
 [Route("api/intern-assignments")]
 public sealed class InternAssignmentsController(
     InternAssignmentService assignments, ProgramScheduleService programs,
-    RequestAuthorizationService authorization) : ControllerBase
+    RequestAuthorizationService authorization, RolePermissionService permissions) : ControllerBase
 {
     private IActionResult? Denied()
     {
         var decision = authorization.Evaluate(Request, PermissionNames.AssignMentor);
         if (decision.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(decision.Status);
-        return decision.User!.Role == "HR" ? null : AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        return null;
     }
 
     [HttpGet]
@@ -36,10 +36,14 @@ public sealed class InternAssignmentsController(
     [HttpPut("{internId:int}")]
     public async Task<IActionResult> Assign(int internId, AssignMentorRequest request, CancellationToken cancellationToken)
     {
-        if (Denied() is { } denied) return denied;
+        var access=authorization.Evaluate(Request);
+        if(access.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(access.Status);
+        var create=permissions.HasPermission(access.User!.Role,PermissionNames.CreateAssignment);
+        var update=permissions.HasPermission(access.User.Role,PermissionNames.UpdateAssignment);
+        if(!create && !update)return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         try
         {
-            await assignments.AssignAsync(internId, request, cancellationToken);
+            await assignments.AssignAsync(internId, request, cancellationToken,create,update);
             return Ok(new { success = true, message = "Đã lưu phân công Mentor." });
         }
         catch (AssignmentValidationException error)
@@ -47,5 +51,13 @@ public sealed class InternAssignmentsController(
             var response = new ApiErrorResponse(false, error.Message, null);
             return error.NotFound ? NotFound(response) : BadRequest(response);
         }
+        catch(UnauthorizedAccessException) { return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden); }
+    }
+    [HttpDelete("{internId:int}")]
+    public async Task<IActionResult> Delete(int internId,CancellationToken ct)
+    {
+        var access=authorization.Evaluate(Request,PermissionNames.DeleteAssignment);
+        if(access.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(access.Status);
+        return await assignments.DeleteAsync(internId,ct)?Ok(new{message="Đã xóa phân công."}):NotFound(new{message="Không tìm thấy phân công."});
     }
 }

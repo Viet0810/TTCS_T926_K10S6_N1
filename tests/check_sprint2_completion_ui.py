@@ -7,11 +7,12 @@ setup='''<script>
 localStorage.setItem('token','test');const requests=[];let writes=0,confirmed=false,checkedIn=false,checkedOut=false,failReads=false;
 const role=ROLE;const contract={internId:12,fullName:'Intern <b>A</b>',email:'a@ictu.edu.vn',fileName:'contract.pdf',uploadedAt:'2026-10-09T00:00:00',confirmedAt:null,version:'AAAAAAAAAAA='};
 window.fetch=async(url,options={})=>{requests.push({url,options});await new Promise(r=>setTimeout(r,0));if(failReads&&url.endsWith('/attendance'))throw new TypeError('offline');let data;
-if(url.endsWith('/auth/me'))data={user:{role},permissions:role==='HR'?['VIEW_PROFILE','MANAGE_CONTRACTS']:role==='INTERN'?['VIEW_PROFILE','VIEW_OWN_CONTRACT','OWN_ATTENDANCE']:[]};
-else if(url.endsWith('/interns'))data=[{id:12,fullName:'Intern A',email:'a@ictu.edu.vn'}];
+if(url.endsWith('/auth/me'))data={user:{role},permissions:role==='HR'?['VIEW_PROFILE','MANAGE_CONTRACTS','CONTRACT_CREATE','CONTRACT_UPDATE']:role==='INTERN'?['VIEW_PROFILE','VIEW_OWN_CONTRACT','OWN_ATTENDANCE','ATTENDANCE_CHECK_IN','ATTENDANCE_CHECK_OUT']:[]};
+else if(url.endsWith('/contracts/interns'))data=[{id:12,fullName:'Intern A',email:'a@ictu.edu.vn'}];
 else if(options.method==='PUT'){writes++;if(url.endsWith('/confirm')){const body=JSON.parse(options.body);if(body.version!==contract.version)throw Error('version missing');confirmed=true;contract.confirmedAt='2026-10-09T01:00:00';}else{if(!(options.body instanceof FormData)||options.headers['Content-Type'])throw Error('invalid multipart');}data={message:'Saved'};}
 else if(options.method==='POST'){writes++;if(url.endsWith('check-in'))checkedIn=true;else checkedOut=true;data={message:'Saved'};}
-else if(url.endsWith('/attendance'))data={date:'2026-10-09',checkIn:checkedIn?'08:00:00':null,checkOut:checkedOut?'17:00:00':null,hours:checkedOut?9:0,status:checkedIn?'ON_TIME':null};
+else if(url.endsWith('/attendance'))data={date:'2026-10-09',checkIn:checkedIn?'08:07:00':null,checkOut:checkedOut?'17:00:00':null,hours:checkedOut?9:0,status:checkedIn?'LATE':null,checkInStatus:checkedIn?'LATE':null,checkOutStatus:checkedOut?'COMPLETED':null};
+else if(url.endsWith('/attendance/history'))data=checkedIn?[{date:'2026-10-09',checkIn:'08:07:00',checkOut:checkedOut?'17:00:00':null,hours:checkedOut?9:0,status:'LATE',checkInStatus:'LATE',checkOutStatus:checkedOut?'COMPLETED':null}]:[];
 else if(url.endsWith('/contracts'))data=[contract];
 else if(url.endsWith('/contract'))data=contract;
 else return{ok:true,status:200,blob:async()=>new Blob(['%PDF-1.4'])};
@@ -30,6 +31,7 @@ document.getElementById('confirmContractBtn').click();document.getElementById('c
 assert(requests.some(r=>r.url.endsWith('/interns/me/contract/confirm')&&JSON.parse(r.options.body).version),'version and own route');
 '''),('intern-attendance.html','INTERN','''
 const start=document.getElementById('checkInBtn'),end=document.getElementById('checkOutBtn');assert(!start.disabled&&end.disabled,'initial attendance controls');start.click();start.click();await settle();assert(writes===1&&start.disabled&&!end.disabled,'check-in locks duplicate');end.click();await settle();assert(writes===2&&end.disabled&&document.getElementById('attendanceOut').textContent==='17:00:00','check-out reload');
+assert(document.getElementById('attendanceInStatus').textContent==='Đi muộn'&&document.getElementById('attendanceOutStatus').textContent==='Đủ giờ','backend arrival/departure classifications visible');assert(document.getElementById('attendanceInStatus').classList.contains('status-late')&&document.getElementById('attendanceOutStatus').classList.contains('status-ontime'),'soft warning/success colors');assert(document.getElementById('attendanceHistory').textContent.includes('Đi muộn'),'history arrival classification');
 assert(requests.filter(r=>r.options.method==='POST').every(r=>!r.options.body),'client supplies no owner or time');
 checkedIn=false;checkedOut=false;document.getElementById('attendanceRefreshBtn').click();await settle();failReads=true;start.click();await settle();assert(start.disabled&&end.disabled,'saved check-in with failed reload keeps stale controls locked');failReads=false;document.getElementById('attendanceRefreshBtn').click();await settle();assert(start.disabled&&!end.disabled,'refresh recovers persisted check-in');
 ''')]

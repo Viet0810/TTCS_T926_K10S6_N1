@@ -3,10 +3,23 @@ let reviewDocuments = [];
 let selectedDocument = null;
 let reviewing = false;
 let allowed = false;
+let canApprove = false, canReject = false, canViewProfile = false;
 let detailsReady = false;
 let detailsRequest = 0;
 const reviewDialog = document.getElementById("reviewDialog");
 const reviewMessage = document.getElementById("reviewMessage");
+document.addEventListener('session-permissions-updated', event => {
+  const session = event.detail;
+  canApprove = Session.hasPermission(session, 'APPROVE_DOCUMENTS');
+  canReject = Session.hasPermission(session, 'REJECT_DOCUMENTS');
+  allowed = Session.hasPermission(session, 'DOCUMENT_REVIEW_READ');
+  canViewProfile = Session.hasPermission(session,'VIEW_INTERNS');
+  if (!allowed) {
+    reviewDialog.close(); document.getElementById('reviewRows').replaceChildren();
+    reviewMessage.textContent = 'Bạn không còn quyền xem tài liệu.';
+  }
+  if (!reviewing) setReviewBusy(false);
+});
 const utcDisplay = (value) => value ? new Date(value + (/[Z+]/.test(value) ? "" : "Z")).toLocaleString("vi-VN") : "";
 function reviewErrorMessage(error) {
   if (error.status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
@@ -21,7 +34,7 @@ async function downloadReview(item, button) {
     const blob = await API.downloadDocumentReview(item.internId, item.kind);
     saveDownload(blob, item.fileName);
   } catch (error) {
-    reviewMessage.textContent = reviewErrorMessage(error);
+    AppUI.feedback(reviewMessage, reviewErrorMessage(error), "error");
   } finally { button.disabled = false; }
 }
 
@@ -37,7 +50,7 @@ async function openReview(item) {
   setReviewBusy(false);
   reviewDialog.showModal();
   try {
-    const profile = await requestApi(`/interns/${encodeURIComponent(item.internId)}`, { headers: getAuthHeader() });
+    const profile = canViewProfile ? await requestApi(`/interns/${encodeURIComponent(item.internId)}`, { headers: getAuthHeader() }) : item;
     if (request !== detailsRequest || !reviewDialog.open) return;
     InternProfile.details(document.getElementById("reviewDetails"), profile);
     detailsReady = true;
@@ -52,13 +65,13 @@ function setReviewBusy(busy) {
   reviewing = busy;
   document.getElementById("closeReviewTop").disabled = busy;
   document.getElementById("reviewForm").setAttribute("aria-busy", String(busy));
-  document.getElementById("reviewCommentArea").hidden = selectedDocument?.status !== "pending";
+  document.getElementById("reviewCommentArea").hidden = (!canApprove && !canReject) || selectedDocument?.status !== "pending";
   for (const element of document.getElementById("reviewForm").elements) {
     if (element.type === "submit") {
-      element.hidden = selectedDocument?.status !== "pending";
+      element.hidden = !(element.value === "approved" ? canApprove : canReject) || selectedDocument?.status !== "pending";
       element.textContent = busy ? "Đang lưu…" : element.value === "approved" ? "Duyệt" : "Từ chối";
     }
-    element.disabled = busy || (element.type === "submit" && (!detailsReady || !selectedDocument?.version || selectedDocument?.status !== "pending"));
+    element.disabled = busy || (element.type === "submit" && (!(element.value === "approved" ? canApprove : canReject) || !detailsReady || !selectedDocument?.version || selectedDocument?.status !== "pending"));
   }
 }
 
@@ -71,10 +84,11 @@ function reviewValidation(status, comment) {
   return "";
 }
 function renderReviews() {
+  for (const status of Object.keys(reviewStatuses)) { const count=document.getElementById(`reviewCount-${status}`); if(count)count.textContent=reviewDocuments.filter(d=>d.kind==='application'&&d.status===status).length; }
   const search = document.getElementById("reviewSearch").value.trim().toLocaleLowerCase("vi"), status = document.getElementById("reviewFilter").value;
   const rows = document.getElementById("reviewRows"); rows.replaceChildren();
   const visible = reviewDocuments.filter((item) => (!status || item.status === status) && [item.fullName, item.studentCode, item.email].some((text) => (text || "").toLocaleLowerCase("vi").includes(search)));
-  if (!visible.length) { const cell = rows.insertRow().insertCell(); cell.colSpan = 6; cell.textContent = "Chưa có tài liệu phù hợp."; return; }
+  if (!visible.length) { const cell = rows.insertRow().insertCell(); cell.colSpan = 6; if (window.AppVisual) cell.append(AppVisual.illustration('file')); cell.append("Chưa có tài liệu phù hợp."); return; }
   for (const item of visible) {
     const row = rows.insertRow();
     const addLine = (cell, text, className) => {
@@ -91,6 +105,7 @@ function renderReviews() {
     const documentCell = row.insertCell();
     addLine(documentCell, item.kind === "cv" ? "CV" : "Đơn xin thực tập", "review-primary");
     addLine(documentCell, item.fileName, "review-filename");
+    addLine(documentCell, `Dung lượng: ${(item.size / 1024 / 1024).toFixed(2)} MB`, "review-meta");
     addLine(documentCell, `Đăng ký: ${utcDisplay(item.createdAt)}`, "review-meta");
     addLine(documentCell, `Nộp: ${utcDisplay(item.uploadedAt)}`, "review-meta");
     row.insertCell();
@@ -109,8 +124,10 @@ function renderReviews() {
 }
 async function loadReviews() {
   if (!allowed) return;
-  reviewDocuments = await API.getDocumentReviews();
-  renderReviews();
+  const stopLoading = window.AppUI?.loading(document.getElementById("reviewRows"), 6);
+  try { reviewDocuments = await API.getDocumentReviews(); renderReviews(); }
+  catch (error) { renderReviews(); throw error; }
+  finally { stopLoading?.(); }
 }
 document.getElementById("reviewSearch").addEventListener("input", renderReviews);
 document.getElementById("reviewFilter").addEventListener("change", renderReviews);
@@ -118,8 +135,8 @@ document.getElementById("refreshBtn").onclick = async (event) => {
   if (!allowed || reviewing) return;
   const button = event.currentTarget;
   button.disabled = true;
-  try { await loadReviews(); reviewMessage.textContent = "Đã tải lại danh sách."; }
-  catch (error) { reviewMessage.textContent = reviewErrorMessage(error); }
+  try { await loadReviews(); AppUI.feedback(reviewMessage, "Đã tải lại danh sách.", "info"); }
+  catch (error) { AppUI.feedback(reviewMessage, reviewErrorMessage(error), "error"); }
   finally { button.disabled = false; }
 };
 function closeReviewDialog() { if (!reviewing) reviewDialog.close(); }
@@ -130,20 +147,22 @@ document.getElementById("reviewForm").addEventListener("submit", async (event) =
   event.preventDefault(); if (!allowed || reviewing || !selectedDocument) return;
   const status = event.submitter?.value, comment = document.getElementById("reviewComment").value.trim(), message = document.getElementById("dialogMessage");
   if (!status) return;
+  if (!(status === 'approved' ? canApprove : canReject)) return;
   const validation = reviewValidation(status, comment);
-  if (validation) { message.textContent = validation; return; }
+  if (validation) { message.hidden = false; message.textContent = validation; return; }
   setReviewBusy(true);
   try {
+    if (!await AppUI.confirm(`${status==='approved'?'Duyệt':'Từ chối'} ${selectedDocument.kind==='application'?'đơn thực tập':'CV'} của ${selectedDocument.fullName}?`, 'Xác nhận xét duyệt', status==='approved'?'Duyệt':'Từ chối')) return;
     if (!["approved", "rejected"].includes(status)) { message.textContent = "Kết quả duyệt không hợp lệ."; return; }
     const result = await requestApi(`/document-reviews/${encodeURIComponent(selectedDocument.internId)}/${encodeURIComponent(selectedDocument.kind)}/${status === "approved" ? "approve" : "reject"}`, {
       method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ comment, version: selectedDocument.version }),
     });
     selectedDocument.status = status; selectedDocument.comment = comment; selectedDocument.version = null;
     renderReviews();
-    reviewDialog.close(); reviewMessage.textContent = result.message || "Đã lưu kết quả duyệt.";
+    reviewDialog.close(); AppUI.feedback(reviewMessage, result.message || "Đã lưu kết quả duyệt.", result.emailSent === false ? "warning" : "success");
     try { await loadReviews(); }
-    catch (error) { reviewMessage.textContent = `Đã lưu kết quả duyệt, nhưng chưa tải lại được danh sách: ${reviewErrorMessage(error)}`; }
-  } catch (error) { message.textContent = reviewErrorMessage(error); reviewMessage.textContent = message.textContent; }
+    catch (error) { AppUI.feedback(reviewMessage, `Đã lưu kết quả duyệt, nhưng chưa tải lại được danh sách: ${reviewErrorMessage(error)}`, "warning"); }
+  } catch (error) { message.textContent = ""; AppUI.feedback(reviewMessage, reviewErrorMessage(error), "error"); }
   finally { setReviewBusy(false); }
 });
 async function initializeReviews() {
@@ -151,7 +170,10 @@ async function initializeReviews() {
   if (!localStorage.getItem("token")) { location.href = "../index.html"; return; }
   try {
     const session = await API.getCurrentUser();
-    allowed = session.user?.role === "HR" && Session.hasPermission(session, "APPROVE_DOCUMENTS");
+    allowed = Session.hasPermission(session, "DOCUMENT_REVIEW_READ");
+    canApprove = Session.hasPermission(session, "APPROVE_DOCUMENTS");
+    canReject = Session.hasPermission(session, "REJECT_DOCUMENTS");
+    canViewProfile = Session.hasPermission(session, "VIEW_INTERNS");
     if (!allowed) { reviewMessage.textContent = "Bạn không có quyền duyệt tài liệu."; return; }
     await loadReviews();
     reviewMessage.textContent = "";

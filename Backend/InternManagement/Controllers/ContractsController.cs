@@ -5,25 +5,38 @@ using Microsoft.AspNetCore.Mvc;
 namespace InternManagement.Controllers;
 
 [ApiController]
-public sealed class ContractsController(ContractService contracts, InternDocumentService documents, RequestAuthorizationService auth) : ControllerBase
+public sealed class ContractsController(ContractService contracts, InternDocumentService documents, RequestAuthorizationService auth, RolePermissionService permissions) : ControllerBase
 {
     private AuthorizationDecision Access(bool hr) => auth.Evaluate(Request, hr?PermissionNames.ManageContracts:PermissionNames.ViewOwnContract);
     private static IActionResult? Denied(AuthorizationDecision decision,bool hr) => decision.Status!=AuthorizationStatus.Authorized
-        ? AuthorizationResponses.Denied(decision.Status):decision.User!.Role!=(hr?"HR":"INTERN")?AuthorizationResponses.Denied(AuthorizationStatus.Forbidden):null;
+        ? AuthorizationResponses.Denied(decision.Status):null;
     [HttpGet("api/contracts")]
     public async Task<IActionResult> List(CancellationToken ct)
     {
         var access=Access(true); if(Denied(access,true) is {} denied)return denied;
         return Ok(await contracts.ListAsync(null,ct));
     }
+    [HttpGet("api/contracts/interns")]
+    public async Task<IActionResult> Candidates(CancellationToken ct)
+    {
+        var access=Access(true);if(Denied(access,true) is {} denied)return denied;
+        return Ok(await contracts.GetCandidatesAsync(ct));
+    }
     [HttpPut("api/contracts/{internId:int}")]
     [RequestSizeLimit(6*1024*1024)]
     [RequestFormLimits(MultipartBodyLengthLimit=6*1024*1024)]
     public async Task<IActionResult> Upload(int internId,IFormFile? file,CancellationToken ct)
     {
-        var access=Access(true); if(Denied(access,true) is {} denied)return denied;
-        var error=await contracts.UploadAsync(internId,access.User!.Id,file,ct);
-        return error is null?Ok(new{message="Đã lưu hợp đồng."}):BadRequest(new{message=error});
+        var access=auth.Evaluate(Request); if(Denied(access,true) is {} denied)return denied;
+        var create=permissions.HasPermission(access.User!.Role,PermissionNames.CreateContract);
+        var update=permissions.HasPermission(access.User.Role,PermissionNames.UpdateContract);
+        if(!create && !update)return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        try
+        {
+            var error=await contracts.UploadAsync(internId,access.User.Id,file,ct,create,update);
+            return error is null?Ok(new{message="Đã lưu hợp đồng."}):BadRequest(new{message=error});
+        }
+        catch(UnauthorizedAccessException) { return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden); }
     }
     [HttpGet("api/contracts/{internId:int}/file")]
     public async Task<IActionResult> Download(int internId,CancellationToken ct)
@@ -60,5 +73,12 @@ public sealed class ContractsController(ContractService contracts, InternDocumen
     {
         var file=await contracts.DownloadAsync(owner,ct);
         return file is null?NotFound(new{message="Chưa có hợp đồng."}):File(file.Content,"application/pdf",file.FileName);
+    }
+    [HttpDelete("api/contracts/{internId:int}")]
+    public async Task<IActionResult> Delete(int internId,CancellationToken ct)
+    {
+        var access=auth.Evaluate(Request,PermissionNames.DeleteContract);
+        if(Denied(access,true) is {} denied)return denied;
+        return await contracts.DeleteAsync(internId,ct)?Ok(new{message="Đã xóa hợp đồng."}):NotFound(new{message="Không tìm thấy hợp đồng."});
     }
 }

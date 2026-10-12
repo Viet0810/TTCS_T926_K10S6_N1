@@ -25,7 +25,7 @@ internal static class ReviewEmailChecks
         var tokens = new AuthTokenService(new EphemeralDataProtectionProvider(),config);
         var context = new DefaultHttpContext(); context.Request.Path="/api/document-reviews";
         context.Request.Headers.Authorization="Bearer " + tokens.Issue(user!);
-        var controller = new DocumentReviewsController(new InternDocumentService(config),new RequestAuthorizationService(tokens,new RolePermissionService()),
+        var controller = new DocumentReviewsController(new InternDocumentService(config),new RequestAuthorizationService(tokens,new RolePermissionService(config)),
             interns,new PasswordResetService(config,hasher,NullLogger<PasswordResetService>.Instance),NullLogger<DocumentReviewsController>.Instance)
             { ControllerContext=new ControllerContext { HttpContext=context } };
         await using var sql = new SqlConnection(config.GetConnectionString("InternManagement")); await sql.OpenAsync();

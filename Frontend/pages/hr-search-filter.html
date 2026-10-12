@@ -4,6 +4,9 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tìm kiếm thực tập sinh | Hệ thống quản lý thực tập sinh</title>
   <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css"><link rel="stylesheet" href="../css/hr-search-filter.css">
+    <link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/visuals.css">
+<link rel="stylesheet" href="../css/tables.css">
 </head>
 <body>
 <div class="dashboard">
@@ -18,6 +21,8 @@
         <div class="form-group"><label for="searchInput">Từ khóa</label><input type="search" id="searchInput" placeholder="Nhập tên, email, số điện thoại…" maxlength="254"></div>
         <div class="form-group"><label for="schoolFilter">Trường đào tạo</label><select id="schoolFilter"><option value="">Tất cả trường</option></select></div>
         <div class="form-group"><label for="majorFilter">Chuyên ngành</label><select id="majorFilter"><option value="">Tất cả chuyên ngành</option></select></div>
+        <div class="form-group"><label for="statusFilter">Trạng thái</label><select id="statusFilter"><option value="">Tất cả trạng thái</option><option>Chờ tiếp nhận</option><option>Đang thực tập</option><option>Đã hoàn thành</option><option>Đã dừng</option></select></div>
+        <button type="button" class="btn-secondary" id="refreshSearchBtn">Tải lại</button>
         <button type="reset" class="btn-secondary">Đặt lại</button>
       </form>
       <p id="searchMessage" class="dashboard-message" role="status" aria-live="polite"></p>
@@ -28,7 +33,7 @@
     </section>
   </main><footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
 </div>
-<script src="../js/api.js"></script><script src="../js/navigation.js"></script><script src="../js/intern-profile.js"></script><script src="../js/hr-search-filter-service.js"></script><script src="../js/hr-search-filter.js"></script>
+<script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/tables.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/intern-profile.js"></script><script src="../js/hr-search-filter-service.js"></script><script src="../js/hr-search-filter.js"></script>
 <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle"><div class="card-header"><h2 id="profileDialogTitle">Hồ sơ thực tập sinh</h2><button type="button" id="closeProfileDialog" class="btn-secondary">Đóng</button></div><div id="profileDialogDetails"></div></dialog>
 </body>
 </html>

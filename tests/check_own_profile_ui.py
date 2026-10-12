@@ -8,8 +8,9 @@ setup = '''<script>
 localStorage.setItem('token','test');const role=ROLE;let writes=0,reads=0,payload;
 let profile={id:7,fullName:'Intern <b>A</b>',email:'a@ictu.edu.vn',phone:'0912345678',school:'ICTU',major:'IT',address:'Hanoi'};
 window.fetch=async(url,options={})=>{await new Promise(r=>setTimeout(r,10));let data;
-if(url.endsWith('/auth/me'))data={user:{fullName:'Account',email:profile.email,username:profile.email,role},permissions:['VIEW_PROFILE']};
+if(url.endsWith('/auth/me'))data={user:{fullName:'Account',email:profile.email,username:profile.email,role},permissions:role==='INTERN'?['VIEW_PROFILE','VIEW_OWN_PROFILE','EDIT_OWN_PROFILE']:['VIEW_PROFILE']};
 else if(url.endsWith('/interns/me')){reads++;if(options.method==='PUT'){writes++;payload=JSON.parse(options.body);profile={...profile,...payload};}data=profile;}
+else if(url.endsWith('/account/profile'))data={fullName:'Account',email:profile.email,username:profile.email,role};
 else throw Error('Unexpected API');return{ok:true,status:200,json:async()=>structuredClone(data)};};
 </script>'''
 actions = '''
@@ -23,7 +24,9 @@ name.value='  Updated name  ';form.dispatchEvent(new Event('submit',{cancelable:
 assert(writes===1&&form.hidden&&document.getElementById('profileName').textContent==='Updated name','one successful save updates view');
 assert(Object.keys(payload).sort().join(',')==='address,fullName,major,phone,school','only editable fields sent');
 assert(document.getElementById('profileEmail').textContent==='a@ictu.edu.vn'&&!form.querySelector('[name=email]'),'email readonly');
-assert(document.getElementById('profileMessage').textContent.includes('thành công'),'success feedback');
+assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes('thành công')&&document.getElementById('profileMessage').textContent==='','success feedback');
+document.dispatchEvent(new CustomEvent('session-permissions-updated',{detail:{user:{role:'INTERN'},permissions:['VIEW_OWN_PROFILE']}}));
+assert(edit.hidden&&form.hidden&&!document.getElementById('ownProfile').hidden,'read-only grant keeps profile and hides edit');edit.click();form.dispatchEvent(new Event('submit',{cancelable:true}));await settle();assert(writes===1&&form.hidden,'forged read-only edit cannot issue API write');
 '''
 chrome=Path(os.environ.get('PROGRAMFILES','C:/Program Files'))/'Google/Chrome/Application/chrome.exe'
 with TemporaryDirectory(prefix='own-profile-') as directory:

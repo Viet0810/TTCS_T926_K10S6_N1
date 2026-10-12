@@ -37,7 +37,7 @@ internal static class AccountEmailChecks
         var accounts = new AccountService(config, hasher);
         var admin = await accounts.CreateAsync(new CreateUserRequest { FullName="Email test admin", Email="email-admin@gmail.com", Password="Account-test-9", Role="ADMIN" }, "ADMIN", default);
         var tokens = new AuthTokenService(new EphemeralDataProtectionProvider(), config);
-        var auth = new RequestAuthorizationService(tokens, new RolePermissionService());
+        var auth = new RequestAuthorizationService(tokens, new RolePermissionService(config));
         var recovery = new PasswordResetService(config, hasher, NullLogger<PasswordResetService>.Instance);
         UsersController Controller(string role)
         {
@@ -61,7 +61,8 @@ internal static class AccountEmailChecks
         config["Smtp:Port"] = ((IPEndPoint)smtp.LocalEndpoint).Port.ToString();
         foreach (var role in new[] { "HR", "MENTOR" })
         {
-            var request = new CreateUserRequest { FullName="Email account test", Email=$"setup-{role.ToLowerInvariant()}@gmail.com", Password="Account-test-9", Role=role };
+            var domain=role=="MENTOR"?"outlook.com":"gmail.com";
+            var request = new CreateUserRequest { FullName="Email account test", Email=$"setup-{role.ToLowerInvariant()}@{domain}", Password="Account-test-9", Role=role };
             var mailTask = captureMail(smtp);
             var result = await controller.CreateUser(request, default) as CreatedAtActionResult;
             var data = JsonSerializer.SerializeToElement(result!.Value, new JsonSerializerOptions(JsonSerializerDefaults.Web));

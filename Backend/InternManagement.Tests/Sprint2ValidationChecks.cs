@@ -35,7 +35,7 @@ internal static class Sprint2ValidationChecks
         {
             ["ConnectionStrings:InternManagement"]="Server=localhost;Database=Unused;Integrated Security=true"
         }).Build();
-        var authorization = new RequestAuthorizationService(new AuthTokenService(new EphemeralDataProtectionProvider(), config), new RolePermissionService());
+        var authorization = new RequestAuthorizationService(new AuthTokenService(new EphemeralDataProtectionProvider(), config), new RolePermissionService(config));
         var controller = new ProgramScheduleController(new ProgramScheduleService(config), authorization)
         {
             ControllerContext = new ControllerContext { HttpContext=new DefaultHttpContext() }

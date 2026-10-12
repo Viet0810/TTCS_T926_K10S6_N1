@@ -7,14 +7,14 @@ let creatingUser = false;
 let canCreateUser = false;
 let canDeleteUser = false;
 
-function accountMessage(text) {
+function accountMessage(text, type = "error") {
   let box = document.getElementById("accountMessage");
   if (!box) {
     box = document.createElement("p"); box.id = "accountMessage"; box.className = "inline-notice";
     box.setAttribute("role", "status"); box.setAttribute("aria-live", "polite");
     const content = document.querySelector(".dashboard-main .card"); content.append(box);
   }
-  box.textContent = text;
+  AppUI.feedback(box, text, type);
 }
 
 function updateAccountPasswordFields() {
@@ -42,20 +42,15 @@ function roleClass(userRole) {
   return String(userRole).toLowerCase();
 }
 
-async function loadUsers() {
-  users = await API.getUsers();
-  renderUsers();
-}
+const userPager = tableBody ? TableUI.server(tableBody,
+  (page,pageSize) => API.getUsers({page,pageSize,search:searchInput.value.trim()}),
+  items => {users=items;renderUsers();}) : null;
+async function loadUsers() { return userPager.load(); }
 
 function renderUsers() {
   const keyword = searchInput.value.trim().toLowerCase();
-  const visibleUsers = users.filter((user) =>
-    `${user.fullName} ${user.email} ${user.role}`
-      .toLowerCase()
-      .includes(keyword),
-  );
 
-  tableBody.innerHTML = visibleUsers
+  tableBody.innerHTML = users
     .map(
       (user) => `
         <tr>
@@ -69,7 +64,7 @@ function renderUsers() {
         </tr>`,
     )
     .join("");
-  if (!visibleUsers.length) {
+  if (!users.length) {
     const cell = tableBody.insertRow().insertCell(); cell.colSpan = 4; cell.className = "empty-state";
     cell.textContent = keyword ? "Không tìm thấy tài khoản phù hợp." : "Chưa có tài khoản.";
   }
@@ -105,25 +100,25 @@ async function initializePage() {
 }
 
 
-searchInput?.addEventListener("input", renderUsers);
+let userSearchTimer;searchInput?.addEventListener("input",()=>{clearTimeout(userSearchTimer);userSearchTimer=setTimeout(()=>userPager.load(true).catch(error=>accountMessage(error.message)),250);});
 
 tableBody?.addEventListener("click", async (event) => {
   const resend = event.target.closest("[data-resend-id]");
   if (resend) {
-    if (!canCreateUser || resend.disabled || !confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?")) return;
+    if (!canCreateUser || resend.disabled || !await AppUI.confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?", "Gửi lại email đăng nhập")) return;
     resend.disabled = true;
-    try { const result = await API.resendLoginEmail(resend.dataset.resendId); accountMessage(result.message); }
+    try { const result = await API.resendLoginEmail(resend.dataset.resendId); accountMessage(result.message, result.emailSent === false ? "warning" : "success"); }
     catch (error) { accountMessage(error.message); Session.redirectIfExpired(error); }
     finally { resend.disabled = false; }
     return;
   }
   const button = event.target.closest("[data-user-id]");
-  if (!button || button.disabled || !canDeleteUser || !confirm("Bạn có chắc muốn xóa tài khoản này?")) return;
+  if (!button || button.disabled || !canDeleteUser || !await AppUI.confirm("Bạn có chắc muốn xóa tài khoản này?", "Xóa tài khoản", "Xóa tài khoản")) return;
 
   button.disabled = true;
   try {
     await API.deleteUser(button.dataset.userId);
-    accountMessage("Đã xóa tài khoản.");
+    accountMessage("Đã xóa tài khoản.", "success");
     try { await loadUsers(); }
     catch (error) { accountMessage(`Đã xóa tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
   } catch (error) {
@@ -171,7 +166,7 @@ createForm?.addEventListener("submit", async function (event) {
         role,
       });
 
-      accountMessage(result.message);
+      accountMessage(result.message, result.emailSent === false ? "warning" : "success");
 
       this.reset();
       updateAccountPasswordFields();

@@ -2,7 +2,9 @@ const loginForm = document.getElementById("loginForm");
 const forgotForm = document.getElementById("forgotForm");
 const loginFields = [document.getElementById("username"), document.getElementById("password")];
 function validateLoginField(input) {
-  const message = input.id === "username" ? Validation.validateEmail(input.value) : Validation.validatePassword(input.value);
+  const message = input.id === "username"
+    ? (!input.value.trim() ? "Vui lòng nhập email." : input.validity.typeMismatch ? "Địa chỉ email không hợp lệ." : "")
+    : Validation.validatePassword(input.value);
   Validation.showFieldError(input, message);
   return !message;
 }

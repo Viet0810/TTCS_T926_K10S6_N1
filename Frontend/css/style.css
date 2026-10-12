@@ -68,11 +68,11 @@
 }
 .card {
   width: 100%;
-  padding: 28px;
+  padding: 24px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0 12px 35px rgba(36, 65, 111, 0.06);
+  box-shadow: 0 4px 16px rgba(36, 65, 111, 0.04);
 }
 .section-heading {
   display: flex;

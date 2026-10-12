@@ -9,6 +9,7 @@ let reportRequest = 0;
 
 function showReportError(error) {
   if (Session.redirectIfExpired(error)) return;
+  window.AppUI?.toast(error.message || "Không thể tải báo cáo. Vui lòng thử lại.", "error");
   currentRecords = [];
   renderTable([]);
   for (const id of ["totalShiftsCount", "attendanceRate", "lateEarlyCount", "approvedLeaveCount", "approvedLeaveSub"])
@@ -30,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function initSession() {
   if (!localStorage.getItem("token")) { location.href = "../index.html"; return false; }
   const session = await API.getCurrentUser();
-  if (session.user?.role !== "HR" || !Session.hasPermission(session, "VIEW_ATTENDANCE_REPORT")) {
+  if (!Session.hasPermission(session, "VIEW_ATTENDANCE_REPORT")) {
     location.href = "dashboard.html"; return false;
   }
   document.getElementById("roleBadge").textContent = session.user.role;
@@ -41,6 +42,9 @@ async function initInternOptions() {
   const internSelect = document.getElementById("internFilter");
   if (!internSelect) return;
 
+  const programs=await requestApi("/attendance/report/programs",{headers:getAuthHeader()});
+  const select=document.getElementById("programFilter");
+  for(const program of programs){const option=document.createElement("option");option.value=program.id;option.textContent=program.name||`Program #${program.id}`;select.append(option);}
   currentInterns = await AttendanceService.getInterns();
   internSelect.innerHTML = `<option value="">Tất cả thực tập sinh (${currentInterns.length})</option>`;
 
@@ -124,7 +128,7 @@ function setupEventListeners() {
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
       if (currentRecords.length === 0) {
-        alert("Không có dữ liệu báo cáo để xuất file.");
+        document.getElementById("reportCount").textContent="Không có dữ liệu để xuất file.";
         return;
       }
       AttendanceService.exportCSV(currentRecords);
@@ -191,6 +195,7 @@ async function loadReport() {
 
   const result = await AttendanceService.getAttendanceReport({
     internId,
+    programId:document.getElementById("programFilter").value,
     keyword,
     startDate,
     endDate,
@@ -217,8 +222,8 @@ function renderStats(stats) {
   const exportBtn = document.getElementById("exportBtn");
 
   if (totalEl) totalEl.textContent = stats.totalShifts;
-  if (rateEl) rateEl.textContent = stats.attendanceRate;
-  if (lateEarlyEl) lateEarlyEl.textContent = stats.lateOrEarlyCount;
+  if (rateEl) rateEl.textContent = stats.completedCount;
+  if (lateEarlyEl) lateEarlyEl.textContent = stats.checkedInCount;
   if (leaveEl) leaveEl.textContent = stats.approvedLeaveCount;
   if (leaveSubEl) {
     leaveSubEl.textContent = `${stats.approvedLeaveCount} có phép • ${stats.absentCount} không phép`;
@@ -242,7 +247,7 @@ function renderTable(records) {
   if (records.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" class="empty-state">
+        <td colspan="11" class="empty-state">
           Không tìm thấy bản ghi điểm danh phù hợp với bộ lọc đã chọn.
         </td>
       </tr>
@@ -267,6 +272,8 @@ function renderTable(records) {
       </td>
       <td>${escapeHtml(r.checkIn)}</td>
       <td>${escapeHtml(r.checkOut)}</td>
+      <td><span class="status-badge ${AttendanceService.getRuleLabel(r.checkInStatus).className}">${AttendanceService.getRuleLabel(r.checkInStatus).label}</span></td>
+      <td><span class="status-badge ${AttendanceService.getRuleLabel(r.checkOutStatus).className}">${AttendanceService.getRuleLabel(r.checkOutStatus).label}</span></td>
       <td class="work-hours">${r.hours > 0 ? `${r.hours}h` : "—"}</td>
       <td>
         <span class="status-badge ${statusMeta.className}">
@@ -304,6 +311,7 @@ window.openDetailModal = function (recordId) {
   document.getElementById("modalDate").textContent = displayDate;
   document.getElementById("modalCheckIn").textContent = record.checkIn;
   document.getElementById("modalCheckOut").textContent = record.checkOut;
+  for(const [id,status] of [["modalCheckInStatus",record.checkInStatus],["modalCheckOutStatus",record.checkOutStatus]]){const meta=AttendanceService.getRuleLabel(status),element=document.getElementById(id);element.textContent=meta.label;element.className="status-badge "+meta.className;}
   document.getElementById("modalHours").textContent = record.hours > 0 ? `${record.hours} giờ` : "0 giờ";
 
   const modalStatusEl = document.getElementById("modalStatus");
@@ -328,3 +336,9 @@ function truncate(str, maxLen) {
   if (!str) return "";
   return str.length > maxLen ? str.slice(0, maxLen) + "…" : str;
 }
+
+document.addEventListener('session-permissions-updated',event=>{
+  if(!Session.hasPermission(event.detail,'VIEW_ATTENDANCE_REPORT')){
+    reportRequest++;currentRecords=[];renderTable([]);document.getElementById('attendanceDialog').close();showReportError({message:'Permission revoked'});
+  }
+});

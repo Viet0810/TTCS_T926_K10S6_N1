@@ -14,4 +14,6 @@ public sealed record InternFilterRequest
     public string? School { get; init; }
     [StringLength(200)]
     public string? Major { get; init; }
+    [StringLength(50), RegularExpression(@"^(Chờ tiếp nhận|Đang thực tập|Đã hoàn thành|Đã dừng)$")]
+    public string? Status { get; init; }
 }

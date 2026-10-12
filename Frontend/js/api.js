@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5024/api";
+const BASE_URL = window.INTERN_API_BASE_URL || "http://localhost:5024/api";
 
 class ApiError extends Error {
   constructor(message, status = 0, context = {}) {
@@ -107,7 +107,11 @@ function saveDownload(blob, fileName) {
 }
 
 const API = {
+  getPermissionMatrix: () => requestApi("/permissions", { headers: getAuthHeader() }),
+  getPermissionDefaults: (role) => requestApi(`/permissions/${encodeURIComponent(role)}/defaults`, { headers: getAuthHeader() }),
+  savePermissions: (role, permissions) => requestApi(`/permissions/${encodeURIComponent(role)}`, { method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ permissions }) }),
   changePassword: (data) => requestApi("/account/change-password", { method: "PUT", headers: getAuthHeader(), body: JSON.stringify(data) }),
+  getAccountProfile: () => requestApi('/account/profile',{headers:getAuthHeader()}),
   resendLoginEmail: (id) => requestApi(`/users/${encodeURIComponent(id)}/resend-login-email`, { method: "POST", headers: getAuthHeader() }),
   getAssignments: () => requestApi("/intern-assignments", { headers: getAuthHeader() }),
   getAssignmentInterns: () => requestApi("/intern-assignments/interns", { headers: getAuthHeader() }),
@@ -142,7 +146,7 @@ const API = {
   reviewDocument: (id, kind, decision) => requestApi(`/document-reviews/${encodeURIComponent(id)}/${encodeURIComponent(kind)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(decision),
   }),
-  getInterns: () => requestApi("/interns", { headers: getAuthHeader() }),
+  getInterns: (paging) => requestApi(paging ? `/interns/page?${new URLSearchParams(paging)}` : "/interns", { headers: getAuthHeader() }),
   getMyInternProfile: () => requestApi("/interns/me", { headers: getAuthHeader() }),
   updateMyInternProfile: (profile) => requestApi("/interns/me", {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(profile),
@@ -164,7 +168,7 @@ const API = {
     return session;
   },
   getRolePermissions: () => requestApi("/auth/roles/permissions", { headers: getAuthHeader() }),
-  getUsers: () => requestApi("/users", { headers: getAuthHeader() }),
+  getUsers: (paging) => requestApi(paging ? `/users/page?${new URLSearchParams(paging)}` : "/users", { headers: getAuthHeader() }),
   createUser: (userData) => requestApi("/users", {
     method: "POST",
     headers: getAuthHeader(),

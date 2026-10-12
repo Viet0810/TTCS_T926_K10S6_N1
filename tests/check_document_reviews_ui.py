@@ -8,10 +8,10 @@ chrome = Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chro
 setup = '''<script>
 localStorage.clear();localStorage.setItem('token','review-test');
 let role='HR',items=['cv','application'].map((kind,i)=>({internId:1,fullName:'Test intern',email:'test@example.invalid',phone:'0912345678',school:'Test school',major:'Test major',createdAt:'2026-10-01T00:00:00+07:00',kind,fileName:kind+'.pdf',size:100,uploadedAt:'2026-10-02T00:00:00',status:'pending',version:'v'+i}));
-let puts=0,downloaded=false,failList=false,failStatus=0,offline=false,hold=false,releaseReview,lastBody;
+let puts=0,downloaded=false,failList=false,failStatus=0,offline=false,hold=false,releaseReview,lastBody,readOnly=false,profileReads=0;
 window.fetch=async(url,options={})=>{
 if(offline)throw new TypeError('network');
-if(url.endsWith('/auth/me'))return{ok:true,json:async()=>({user:{role},permissions:['APPROVE_DOCUMENTS']})};
+if(url.endsWith('/auth/me'))return{ok:true,json:async()=>({user:{role},permissions:readOnly?['DOCUMENT_REVIEW_READ']:['APPROVE_DOCUMENTS','REJECT_DOCUMENTS','DOCUMENT_REVIEW_READ','VIEW_INTERNS']})};
 if(failStatus)return{ok:false,status:failStatus,json:async()=>({message:'Test API error'})};
 if(options.method==='PUT'){
 puts++;lastBody=JSON.parse(options.body);if(hold)await new Promise(resolve=>releaseReview=resolve);
@@ -20,7 +20,7 @@ Object.assign(item,lastBody,{status:parts.at(-1)==='approve'?'approved':'rejecte
 return{ok:true,json:async()=>({message:'saved'})};
 }
 if(url.endsWith('/document-reviews')){if(failList)throw new TypeError('list unavailable');return{ok:true,json:async()=>structuredClone(items)}}
-if(url.endsWith('/interns/1'))return{ok:true,json:async()=>({...items[0],id:1})};
+if(url.endsWith('/interns/1')){profileReads++;return{ok:true,json:async()=>({...items[0],id:1})};}
 return{ok:true,blob:async()=>new Blob(['%PDF-1.4'],{type:'application/pdf'})};
 };
 HTMLAnchorElement.prototype.click=function(){downloaded=this.download==='cv.pdf'};
@@ -45,20 +45,25 @@ filter.value='';filter.dispatchEvent(new Event('change'));
 document.querySelector('#reviewRows tr button').click();await settle();assert(downloaded,'PDF download');
 await open();assert(document.getElementById('reviewDetails').textContent.includes('Test school'),'full candidate details');
 submit('rejected');assert(puts===0&&document.getElementById('dialogMessage').textContent.includes('lý do'),'rejection reason required');
-hold=true;submit('approved');submit('approved');assert(puts===1&&document.querySelector('#reviewForm button').disabled,'loading and double submit guard');
+AppUI.confirm=()=>Promise.resolve(true);hold=true;submit('approved');submit('approved');await settle();assert(puts===1&&document.querySelector('#reviewForm button').disabled,'loading and double submit guard');
 hold=false;releaseReview();await settle();assert(!document.getElementById('reviewDialog').open&&document.getElementById('reviewRows').textContent.includes('Đã duyệt'),'approval updates table');
 assert(lastBody.version==='v0'&&!('status' in lastBody),'explicit decision contract');
 await open();assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'processed document hides actions');
 submit('rejected');assert(puts===1,'processed document cannot submit');document.getElementById('closeReview').click();
 await open(1);failStatus=500;document.getElementById('reviewComment').value='Missing details';submit('rejected');await settle();
-assert(document.getElementById('reviewDialog').open&&document.getElementById('dialogMessage').textContent==='Test API error'&&!document.querySelector('#reviewForm button').disabled,'server failure keeps dialog and restores controls');
-failStatus=0;failList=true;submit('rejected');await settle();assert(!document.getElementById('reviewDialog').open&&document.getElementById('reviewMessage').textContent.includes('Đã lưu kết quả duyệt, nhưng'),'successful save with failed refresh');
+assert(document.getElementById('reviewDialog').open&&document.querySelector('#toastRegion .ui-toast-text').textContent==='Test API error'&&document.getElementById('dialogMessage').textContent===''&&!document.querySelector('#reviewForm button').disabled,'server failure keeps dialog and restores controls');
+failStatus=0;failList=true;submit('rejected');await settle();assert(!document.getElementById('reviewDialog').open&&document.querySelector('#toastRegion .ui-toast-text').textContent.includes('Đã lưu kết quả duyệt, nhưng')&&document.getElementById('reviewMessage').textContent==='','successful save with failed refresh');
 await open(1);assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'saved status prevents stale resubmission');document.getElementById('closeReview').click();
 failList=false;document.getElementById('refreshBtn').click();await settle();
-for(const [status,part] of [[401,'đăng nhập lại'],[403,'không có quyền'],[404,'Không tìm thấy'],[409,'Test API error'],[500,'Test API error']]){failStatus=status;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes(part),'HTTP '+status+' feedback')}
-failStatus=0;offline=true;document.querySelector('#reviewRows tr button').click();await settle();assert(document.getElementById('reviewMessage').textContent.includes('Không thể kết nối'),'network error');offline=false;
-document.getElementById('reviewRows').replaceChildren();role='ADMIN';await initializeReviews();assert(!allowed&&document.getElementById('reviewRows').children.length===0,'admin blocked despite permission');
-document.getElementById('result').textContent='PASS: HR-only list/details/download, pending approval/rejection, locked final states, loading, API contract and error handling';
+for(const [status,part] of [[401,'đăng nhập lại'],[403,'không có quyền'],[404,'Không tìm thấy'],[409,'Test API error'],[500,'Test API error']]){failStatus=status;document.querySelector('#reviewRows tr button').click();await settle();assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes(part)&&document.getElementById('reviewMessage').textContent==='','HTTP '+status+' feedback')}
+failStatus=0;offline=true;document.querySelector('#reviewRows tr button').click();await settle();assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes('Không thể kết nối'),'network error');offline=false;
+readOnly=true;items[0].status='pending';const readCount=profileReads,putCount=puts;await initializeReviews();await open();
+assert(document.getElementById('reviewDetails').textContent.includes('Test school')&&profileReads===readCount,'read-only review uses accessible queue metadata without profile permission');
+assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'read-only HR sees no decisions');submit('approved');await settle();assert(puts===putCount,'forged read-only decision never reaches API');document.getElementById('closeReview').click();
+document.getElementById('reviewRows').replaceChildren();role='MENTOR';await initializeReviews();assert(allowed&&document.getElementById('reviewRows').children.length>0,'Mentor with delegated READ can use review UI');
+assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>button.hidden),'delegated read-only Mentor has no approval buttons');
+readOnly=false;await initializeReviews();await open();assert([...document.querySelectorAll('#reviewForm button[type=submit]')].every(button=>!button.hidden),'Mentor with delegated APPROVE can use actions');document.getElementById('closeReview').click();
+document.getElementById('result').textContent='PASS: permission-based list/details/download, pending approval/rejection, locked final states, loading, API contract and error handling';
 }catch(error){document.getElementById('result').textContent='FAIL: '+error.message}})();</script>'''
 with TemporaryDirectory(prefix='intern-review-ui-') as temporary:
     temporary = Path(temporary)

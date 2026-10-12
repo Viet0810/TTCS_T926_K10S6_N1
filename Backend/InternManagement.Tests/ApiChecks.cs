@@ -29,6 +29,44 @@ internal static class ApiChecks
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         using var http = new HttpClient { BaseAddress=new Uri($"http://127.0.0.1:{port}"), Timeout=TimeSpan.FromSeconds(5) };
+        Process? restartedProcess = null;
+        Task<string>? restartedStdout = null, restartedStderr = null;
+        async Task RestartAsync()
+        {
+            process.Kill(entireProcessTree:true); await process.WaitForExitAsync();
+            restartedProcess = Process.Start(start) ?? throw new Exception("Could not restart test API.");
+            restartedStdout = restartedProcess.StandardOutput.ReadToEndAsync();
+            restartedStderr = restartedProcess.StandardError.ReadToEndAsync();
+            for (var attempt=0;attempt<60;attempt++)
+            {
+                if (restartedProcess.HasExited) throw new Exception("Restarted test API exited.");
+                try { using var response = await http.GetAsync("/api/database/status"); if(response.IsSuccessStatusCode) return; }
+                catch(HttpRequestException) { }
+                await Task.Delay(100);
+            }
+            throw new Exception("Restarted test API did not become ready.");
+        }
+        async Task CheckLiveBrowserAsync()
+        {
+            var repo = new DirectoryInfo(Path.GetDirectoryName(assembly)!);
+            while(!Directory.Exists(Path.Combine(repo.FullName,"Frontend"))) repo = repo.Parent ?? throw new Exception("Repository not found.");
+            var browserStart = new ProcessStartInfo("python")
+            {
+                UseShellExecute=false, CreateNoWindow=true, WindowStyle=ProcessWindowStyle.Hidden,
+                RedirectStandardInput=true, RedirectStandardOutput=true, RedirectStandardError=true,
+                WorkingDirectory=repo.FullName
+            };
+            browserStart.ArgumentList.Add(Path.Combine(repo.FullName,"tests","check_rbac_live.py"));
+            using var browser = Process.Start(browserStart) ?? throw new Exception("Could not start live browser check.");
+            await browser.StandardInput.WriteLineAsync(System.Text.Json.JsonSerializer.Serialize(new{ @base=http.BaseAddress!.ToString() }));
+            browser.StandardInput.Close();
+            var output = browser.StandardOutput.ReadToEndAsync(); var errors = browser.StandardError.ReadToEndAsync();
+            await browser.WaitForExitAsync();
+            if(browser.ExitCode!=0) throw new Exception("Live RBAC browser check failed: "+await errors);
+            await using(var sql=new Microsoft.Data.SqlClient.SqlConnection(connectionString)){await sql.OpenAsync();await using var cleanup=sql.CreateCommand();cleanup.CommandText="DELETE dbo.Interns WHERE Email='live-sprint2@ictu.edu.vn';DELETE dbo.Users WHERE Email='live-sprint2@ictu.edu.vn';DELETE dbo.InternshipPrograms WHERE Name='Live lifecycle'";await cleanup.ExecuteNonQueryAsync();}
+            check((await output).Contains("PASS:"),"real Admin browser saves HR/Mentor/Intern grants through SQL, enforcing UPDATE 403/200, APPROVE 403 and own-document READ 403");
+        }
+        var completed=false;
         try
         {
             var ready = false;
@@ -41,6 +79,10 @@ internal static class ApiChecks
             }
             check(ready,"application starts with routing and rate limiting enabled");
             await RolePermissionChecks.RunAsync(http, connectionString, check);
+            if(Environment.GetCommandLineArgs().Contains("--sprint2-only")){await InternAssignmentChecks.RunAsync(http,connectionString,check);await Sprint2CompletionChecks.RunAsync(http,connectionString,check);completed=true;return;}
+            await Sprint1RbacChecks.RunAsync(http, connectionString, check, RestartAsync, CheckLiveBrowserAsync);
+            await DynamicRbacChecks.RunAsync(http, connectionString, check);
+            await Sprint1ProfileChecks.RunAsync(http, connectionString, check);
             await AccountChecks.RunAsync(http, connectionString, check);
             await DocumentChecks.RunAsync(http, connectionString, check);
             await AttendanceReportChecks.RunAsync(http, connectionString, check);
@@ -92,15 +134,22 @@ internal static class ApiChecks
                 if(response.StatusCode==HttpStatusCode.TooManyRequests) { throttled=true;break; }
             }
             check(throttled,"repeated recovery requests receive HTTP 429");
+            completed=true;
         }
         finally
         {
             if(!process.HasExited) { process.Kill(entireProcessTree:true); await process.WaitForExitAsync(); }
+            if(restartedProcess is not null)
+            {
+                if(!restartedProcess.HasExited) { restartedProcess.Kill(entireProcessTree:true); await restartedProcess.WaitForExitAsync(); }
+                await Task.WhenAll(restartedStdout!,restartedStderr!);
+                restartedProcess.Dispose();
+            }
             await Task.WhenAll(stdout,stderr);
-            var diagnostics = await stdout;
-            check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
+            var diagnostics = await stdout + (restartedStdout is null ? "" : await restartedStdout);
+            if(completed&&!Environment.GetCommandLineArgs().Contains("--sprint2-only"))check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
                 && diagnostics.Contains("trace") && diagnostics.Contains("UTC"), "backend failure logs identify endpoint, trace and time");
-            check(!diagnostics.Contains("Permission-test-9") && !diagnostics.Contains("Account-test-9")
+            if(completed)check(!diagnostics.Contains("Permission-test-9") && !diagnostics.Contains("Account-test-9")
                 && !diagnostics.Contains("Temporary-test-9") && !diagnostics.Contains("Replacement-test-9")
                 && !diagnostics.Contains("PBKDF2-SHA256$") && !diagnostics.Contains("Bearer "),
                 "backend request logs omit passwords, hashes and authorization headers");

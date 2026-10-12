@@ -8,9 +8,9 @@ namespace InternManagement.Controllers;
 [Route("api/interns/me/documents")]
 public sealed class InternDocumentsController(InternDocumentService documents, RequestAuthorizationService authorization) : ControllerBase
 {
-    private async Task<int?> OwnProfile(CancellationToken cancellationToken)
+    private async Task<int?> OwnProfile(CancellationToken cancellationToken, bool upload = false)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.UploadDocuments);
+        var decision = authorization.Evaluate(Request, upload ? PermissionNames.UploadDocuments : PermissionNames.ViewDocuments);
         if (decision.Status != AuthorizationStatus.Authorized)
         {
             Response.StatusCode = decision.Status == AuthorizationStatus.Unauthenticated ? 401 : 403;
@@ -39,7 +39,7 @@ public sealed class InternDocumentsController(InternDocumentService documents, R
     [RequestFormLimits(MultipartBodyLengthLimit = InternDocumentService.MaxBytes + 65536)]
     public async Task<IActionResult> Upload(string kind, [FromForm] IFormFile? file, CancellationToken cancellationToken)
     {
-        var ownerId = await OwnProfile(cancellationToken);
+        var ownerId = await OwnProfile(cancellationToken, true);
         if (ownerId is null) return Denied();
         var validation = await documents.UploadAsync(ownerId.Value, kind, file, cancellationToken);
         return validation is null

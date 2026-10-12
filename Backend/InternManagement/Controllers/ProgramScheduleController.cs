@@ -21,12 +21,12 @@ public class ProgramScheduleController : ControllerBase
         this.authorization = authorization;
     }
 
-    private IActionResult? CheckAccess()
+    private IActionResult? CheckAccess(string permission = PermissionNames.ManagePrograms)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ManagePrograms);
+        var decision = authorization.Evaluate(Request, permission);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
-        return decision.User!.Role == "HR" ? null : AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        return null;
     }
 
     // GET api/program-schedule
@@ -69,7 +69,7 @@ public class ProgramScheduleController : ControllerBase
         [FromBody] ProgramScheduleRequest request
     )
     {
-        if (CheckAccess() is { } denied) return denied;
+        if (CheckAccess(PermissionNames.CreateProgram) is { } denied) return denied;
         try
         {
             var data =
@@ -114,7 +114,7 @@ public class ProgramScheduleController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        if (CheckAccess() is { } denied) return denied;
+        if (CheckAccess(PermissionNames.DeleteProgram) is { } denied) return denied;
         try
         {
             var deleted =
@@ -153,5 +153,17 @@ public class ProgramScheduleController : ControllerBase
                 }
             );
         }
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, ProgramScheduleRequest request)
+    {
+        if (CheckAccess(PermissionNames.UpdateProgram) is {} denied) return denied;
+        try
+        {
+            if (!await _service.UpdateAsync(id,request)) return NotFound(new{message="Không tìm thấy chương trình."});
+            return Ok(new{status="success",message="Đã cập nhật chương trình.",data=(await _service.GetAllAsync()).FirstOrDefault(p=>p.Id==id)});
+        }
+        catch(ArgumentException error) { return BadRequest(new{message=error.Message}); }
     }
 }

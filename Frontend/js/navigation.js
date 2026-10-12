@@ -2,25 +2,27 @@ window.AppNavigation = (() => {
   const items = [
     { label: "Bảng điều khiển", href: "dashboard.html" },
     { label: "Quản lý tài khoản", href: "user-manage.html", permissions: ["MANAGE_USERS"] },
-    { label: "Xem danh sách thực tập sinh", href: "intern-manage.html", permissions: ["VIEW_INTERNS", "MANAGE_INTERNS", "EDIT_INTERNS"] },
+    { label: "Xem danh sách thực tập sinh", href: "intern-manage.html", permissions: ["VIEW_INTERNS"] },
     { label: "Tìm kiếm & Lọc thực tập sinh", href: "hr-search-filter.html", permissions: ["SEARCH_INTERNS"] },
-    { label: "Phân công Mentor", href: "mentor-assignment.html", permissions: ["ASSIGN_MENTOR"], role: "HR" },
-    { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR"], role: "HR" },
-    { label: "Hồ sơ cá nhân", href: "profile.html", permissions: ["VIEW_PROFILE"] },
-    { label: "Lịch thực tập", href: "intern-schedule.html", permissions: ["VIEW_PROFILE"], role: "INTERN" },
-    { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html", permissions: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS"], role: "INTERN" },
-    { label: "Hồ sơ thực tập", href: "internship-profile.html", permissions: ["VIEW_PROFILE"], role: "INTERN" },
-    { label: "Xem và duyệt tài liệu", href: "document-reviews.html", permissions: ["APPROVE_DOCUMENTS"], role: "HR" },
-    { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"], role: "HR" },
-    { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"], role: "INTERN" },
-    { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"], role: "INTERN" },
-    { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"], role: "HR" },
-    { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"], role: "HR" },
-    { label: "Ma trận phân quyền", href: "permissions.html", permissions: ["MANAGE_PERMISSIONS"] },
+    { label: "Phân công Mentor", href: "mentor-assignment.html", permissions: ["ASSIGN_MENTOR"] },
+    { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR"] },
+    { label: "Hồ sơ cá nhân", href: "profile.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
+    { label: "Lịch thực tập", href: "intern-schedule.html", permissions: ["VIEW_OWN_SCHEDULE"] },
+    { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html", permissions: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS"] },
+    { label: "Hồ sơ thực tập", href: "internship-profile.html", permissions: ["VIEW_OWN_PROFILE"] },
+    { label: "Xem và duyệt tài liệu", href: "document-reviews.html", permissions: ["DOCUMENT_REVIEW_READ"] },
+    { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"] },
+    { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
+    { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
+    { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"] },
+    { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
+    { label: "Ma trận phân quyền", href: "permissions.html", permissions: ["RBAC_READ"] },
   ];
   function render(session) {
     const role = session.user?.role;
     if (!["ADMIN", "HR", "MENTOR", "INTERN"].includes(role)) return;
+    document.body.dataset.userRole = role;
+    document.dispatchEvent(new CustomEvent('session-permissions-updated', { detail: session }));
     const nav = document.querySelector(".role-menu");
     if (session.user.mustChangePassword) nav?.remove();
     if (nav && !session.user.mustChangePassword) {
@@ -28,9 +30,9 @@ window.AppNavigation = (() => {
       nav.setAttribute("aria-label", "Điều hướng chính");
       const page = location.pathname.split("/").pop();
       for (const item of items) {
-        if (item.role && item.role !== role) continue;
         if (item.permissions && !item.permissions.some(permission => Session.hasPermission(session, permission))) continue;
         const link = document.createElement("a"); link.href = item.href; link.textContent = item.label;
+        if (window.AppVisual) link.prepend(AppVisual.icon(AppVisual.moduleIcon(item.href)));
         if (page === item.href || (page === "user-create.html" && item.href === "user-manage.html")
             || (page === "change-password.html" && item.href === "profile.html")) link.setAttribute("aria-current", "page");
         nav.append(link);
@@ -41,6 +43,10 @@ window.AppNavigation = (() => {
     let badge = document.getElementById("roleBadge");
     if (!badge) { badge = document.createElement("span"); badge.id = "roleBadge"; actions.prepend(badge); }
     badge.textContent = role; badge.className = `badge ${role.toLowerCase()}`;
+    let avatar = actions.querySelector('.session-avatar');
+    if (!avatar) { avatar = document.createElement('span'); avatar.className = 'session-avatar'; actions.prepend(avatar); }
+    avatar.textContent = (session.user.fullName || role).trim().split(/\s+/).slice(-2).map(part => part[0]).join('').toUpperCase();
+    avatar.setAttribute('aria-label', session.user.fullName || role);
     const dashboardLinks = [...actions.querySelectorAll('a[href="dashboard.html"]')];
     dashboardLinks.slice(1).forEach(link => link.remove());
     if (!dashboardLinks.length) {
@@ -63,5 +69,15 @@ window.AppNavigation = (() => {
       if (nav && error.code !== "PASSWORD_CHANGE_REQUIRED") nav.textContent = "Chưa thể tải điều hướng. Vui lòng tải lại trang.";
     });
   } else Session.logout();
+  let refreshing = false;
+  async function refresh() {
+    if (refreshing || !localStorage.getItem('token') || document.hidden) return;
+    refreshing = true;
+    try { await API.getCurrentUser(); }
+    catch (error) { Session.redirectIfExpired(error); }
+    finally { refreshing = false; }
+  }
+  window.addEventListener('focus', refresh);
+  document.addEventListener('visibilitychange', refresh);
   return { render };
 })();

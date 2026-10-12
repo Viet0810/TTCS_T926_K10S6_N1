@@ -5,7 +5,7 @@
 
 const AttendanceService = {
   async getInterns() {
-    const live = await API.getInterns();
+    const live = await requestApi('/attendance/report/interns',{headers:getAuthHeader()});
     return live.map(item => ({
       id: item.id, mssv: item.studentCode || "", name: item.fullName,
       email: item.email, department: item.department || item.major || "", school: item.school,
@@ -15,6 +15,7 @@ const AttendanceService = {
   async getAttendanceReport(filters = {}) {
     const params = new URLSearchParams();
     if (filters.internId) params.set("internId", filters.internId);
+    if (filters.programId) params.set("programId", filters.programId);
     if (filters.keyword) params.set("search", filters.keyword);
     if (filters.startDate) params.set("startDate", filters.startDate);
     if (filters.endDate) params.set("endDate", filters.endDate);
@@ -22,9 +23,10 @@ const AttendanceService = {
     return requestApi(`/attendance/report?${params}`, { headers: getAuthHeader() });
   },
 
+  getRuleLabel(status){return {ON_TIME:{label:"Đúng giờ",className:"status-ontime"},LATE:{label:"Đi muộn",className:"status-late"},COMPLETED:{label:"Đủ giờ",className:"status-ontime"},EARLY:{label:"Về sớm",className:"status-late"}}[status]||{label:"—",className:""};},
   getStatusLabel(status) {
     const map = {
-      ON_TIME: { label: "Đúng giờ", className: "status-ontime" },
+      ON_TIME: { label: "Có mặt", className: "status-ontime" },
       LATE: { label: "Đi muộn", className: "status-late" },
       EARLY: { label: "Về sớm", className: "status-early" },
       LEAVE_APPROVED: { label: "Nghỉ có phép", className: "status-leave-approved" },
@@ -42,6 +44,8 @@ const AttendanceService = {
       "Đơn vị / Bộ phận",
       "Giờ vào",
       "Giờ ra",
+      "Tình trạng vào ca",
+      "Tình trạng ra ca",
       "Số giờ làm",
       "Trạng thái chuyên cần",
       "Ghi chú / Lý do",
@@ -56,6 +60,8 @@ const AttendanceService = {
       `"${r.department}"`,
       r.checkIn,
       r.checkOut,
+      this.getRuleLabel(r.checkInStatus).label,
+      this.getRuleLabel(r.checkOutStatus).label,
       r.hours,
       `"${this.getStatusLabel(r.status).label}"`,
       `"${(r.note || "").replace(/"/g, '""')}"`,

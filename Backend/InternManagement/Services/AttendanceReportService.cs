@@ -48,6 +48,11 @@ public sealed class AttendanceReportService : IAttendanceReportService
             WHERE 1 = 1
             """);
 
+        if (filter?.ProgramId.HasValue == true)
+        {
+            sql.Append(" AND i.InternshipProgramId = @programId");
+            command.Parameters.Add("@programId",SqlDbType.Int).Value=filter.ProgramId.Value;
+        }
         if (filter?.InternId.HasValue == true)
         {
             sql.Append(" AND a.InternId = @internId");
@@ -72,7 +77,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
             command.Parameters.Add("@endDate", SqlDbType.Date).Value = end.Date;
         }
 
-        if (!string.IsNullOrWhiteSpace(filter?.Status) && !filter.Status.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(filter?.Status) && !new[]{"ALL","ON_TIME","LATE","EARLY"}.Contains(filter.Status))
         {
             sql.Append(" AND a.Status = @status");
             command.Parameters.Add("@status", SqlDbType.VarChar, 30).Value = filter.Status.Trim();
@@ -85,6 +90,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
         while (await reader.ReadAsync(cancellationToken))
         {
             var status = reader.GetString(9);
+            if(status is not ("LEAVE_APPROVED" or "ABSENT") && AttendanceRules.CheckInStatus(reader.GetString(6)) is not null)status=AttendanceRules.StoredStatus(reader.GetString(6),reader.GetString(7));
             records.Add(new AttendanceRecordResponse
             {
                 Id = reader.GetInt32(0),
@@ -95,7 +101,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 Date = reader.GetString(5),
                 CheckIn = reader.IsDBNull(6) ? "—" : reader.GetString(6),
                 CheckOut = reader.IsDBNull(7) ? "—" : reader.GetString(7),
-                Hours = reader.GetDecimal(8),
+                Hours = AttendanceRules.CheckInStatus(reader.GetString(6)) is not null ? AttendanceRules.Hours(reader.GetString(6),reader.GetString(7)) : reader.GetDecimal(8),
                 Status = status,
                 StatusText = GetStatusText(status),
                 Note = reader.IsDBNull(10) ? null : reader.GetString(10),
@@ -103,11 +109,13 @@ public sealed class AttendanceReportService : IAttendanceReportService
             });
         }
 
-        // Tính toán các chỉ số thống kê KPI chuyên cần
+        if(filter?.Status is "ON_TIME" or "LATE" or "EARLY")
+            records=records.Where(r=>filter.Status=="EARLY" ? r.CheckOutStatus=="EARLY" : r.CheckInStatus==filter.Status).ToList();
+        // Compute independent arrival/departure classifications from recorded server times.
         var totalShifts = records.Count;
-        var onTimeCount = records.Count(r => r.Status == "ON_TIME");
-        var lateCount = records.Count(r => r.Status == "LATE");
-        var earlyCount = records.Count(r => r.Status == "EARLY");
+        var onTimeCount = records.Count(r => r.CheckInStatus == "ON_TIME");
+        var lateCount = records.Count(r => r.CheckInStatus == "LATE");
+        var earlyCount = records.Count(r => r.CheckOutStatus == "EARLY");
         var approvedLeaveCount = records.Count(r => r.Status == "LEAVE_APPROVED");
         var absentCount = records.Count(r => r.Status == "ABSENT");
 
@@ -121,8 +129,10 @@ public sealed class AttendanceReportService : IAttendanceReportService
             Stats = new AttendanceStatsResponse
             {
                 TotalShifts = totalShifts,
+                CompletedCount = records.Count(r=>r.CheckIn!="—"&&r.CheckOut!="—"),
+                CheckedInCount = records.Count(r=>r.CheckIn!="—"&&r.CheckOut=="—"),
                 OnTimeCount = onTimeCount,
-                LateOrEarlyCount = lateCount + earlyCount,
+                LateOrEarlyCount = records.Count(r=>r.CheckInStatus=="LATE"||r.CheckOutStatus=="EARLY"),
                 ApprovedLeaveCount = approvedLeaveCount,
                 AbsentCount = absentCount,
                 AttendanceRate = attendanceRate,
@@ -141,14 +151,13 @@ public sealed class AttendanceReportService : IAttendanceReportService
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
 
-        command.CommandText = "SELECT COUNT(*) FROM dbo.Interns WHERE Id=@internId";
+        command.CommandText = "SELECT COUNT(*) FROM dbo.Interns WITH(UPDLOCK,HOLDLOCK) WHERE Id=@internId";
         command.Parameters.Add("@internId", SqlDbType.Int).Value = request.InternId;
         if (Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 0)
             throw new ArgumentException("Không tìm thấy thực tập sinh.");
         command.CommandText = """
             SELECT COUNT(*) FROM dbo.AttendanceRecords WITH (UPDLOCK,HOLDLOCK)
             WHERE InternId=@internId AND Date=@date
-                AND ISNULL(CheckIn,N'')=ISNULL(@checkIn,N'') AND ISNULL(CheckOut,N'')=ISNULL(@checkOut,N'')
             """;
         command.Parameters.Add("@date", SqlDbType.Date).Value = DateTime.Parse(request.Date).Date;
         command.Parameters.Add("@checkIn", SqlDbType.NVarChar, 10).Value = (object?)request.CheckIn ?? DBNull.Value;

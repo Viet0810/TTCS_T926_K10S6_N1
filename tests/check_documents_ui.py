@@ -7,10 +7,10 @@ root = Path(__file__).resolve().parents[1] / 'Frontend'
 chrome = Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe'
 setup = '''<script>
 localStorage.clear();localStorage.setItem('token','isolated-document-test');
-let stored=[],uploads=0,fail=false,downloaded=false,offline=false,serverError=false,hold=false,releaseUpload;
+let stored=[],uploads=0,fail=false,downloaded=false,offline=false,serverError=false,hold=false,releaseUpload,readOnly=false;
 window.fetch=async(url,options={})=>{
 let data;
-if(url.endsWith('/auth/me'))data={user:{role:'INTERN'},permissions:['UPLOAD_DOCUMENTS']};
+if(url.endsWith('/auth/me'))data={user:{role:'INTERN'},permissions:readOnly?['VIEW_DOCUMENTS']:['UPLOAD_DOCUMENTS','VIEW_DOCUMENTS']};
 else if(url.endsWith('/interns/me'))data={fullName:'Document UI test',email:'test@example.invalid'};
 else if(options.method==='PUT'){
 uploads++; if(fail)return{ok:false,status:400,json:async()=>({message:'Rejected upload'})};
@@ -57,12 +57,15 @@ assert(stored.length===2,'both document kinds saved');
 select('cv','cv.pdf','%PDF-1.7');submit('cv');await tick();await tick();assert(stored.length===2&&stored.find(item=>item.kind==='application').fileName==='application.pdf','same filename replaces only the selected kind');
 select('cv','replacement.pdf','%PDF-1.7');submit('cv');await tick();await tick();assert(stored.length===2&&document.getElementById('cvInfo').textContent.includes('replacement.pdf'),'replacement updates metadata');
 fail=true;select('cv','error.pdf','%PDF-1.4');submit('cv');await tick();await tick();
-assert(document.getElementById('cvMessage').textContent==='Rejected upload','server failure displayed');
+assert(document.querySelector('#toastRegion .ui-toast-text').textContent==='Rejected upload'&&document.getElementById('cvMessage').textContent==='','server failure displayed');
 assert(!document.querySelector('#cvForm button[type=submit]').disabled,'submit restored after error');
-fail=false;offline=true;submit('cv');await tick();await tick();assert(document.getElementById('cvMessage').textContent.includes('Không thể kết nối máy chủ'),'connection failure translated');
+fail=false;offline=true;submit('cv');await tick();await tick();assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes('Không thể kết nối máy chủ'),'connection failure translated');
 assert(!document.getElementById('cvFile').disabled,'file selection restored after network error');
-offline=false;serverError=true;submit('cv');await tick();await tick();assert(document.getElementById('cvMessage').textContent.includes('Máy chủ chưa thể xử lý'),'HTTP 500 fallback feedback');
+offline=false;serverError=true;submit('cv');await tick();await tick();assert(document.querySelector('#toastRegion .ui-toast-text').textContent.includes('Máy chủ chưa thể xử lý'),'HTTP 500 fallback feedback');
 assert(document.documentElement.scrollWidth<=innerWidth,'responsive layout');
+serverError=false;readOnly=true;const before=uploads;await loadProfile();
+assert(!document.getElementById('uploadArea').hidden&&document.querySelector('#cvForm button[type=submit]').hidden&&document.getElementById('cvFile').disabled,'read-only documents retain metadata and hide upload');
+submit('cv');await tick();assert(uploads===before,'forged read-only upload never reaches API');
 document.getElementById('result').textContent='PASS: CV/application upload, missing/empty/invalid/MIME/oversized files, selected filename, repeat-request guard, same-name replacement, download, server and network failure feedback';
 }catch(error){document.getElementById('result').textContent='FAIL: '+error.message}})();</script>'''
 with TemporaryDirectory(prefix='intern-document-ui-') as temporary:

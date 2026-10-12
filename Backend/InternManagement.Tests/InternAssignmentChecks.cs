@@ -61,6 +61,7 @@ internal static class InternAssignmentChecks
         lookup.CommandText = "UPDATE dbo.Interns SET Department = 'IT', StartDate = '2020-01-01', EndDate = '2020-01-02' WHERE Email = 'schedule-a@ictu.edu.vn'";
         await lookup.ExecuteNonQueryAsync();
 
+        await Sprint2Fixtures.ApprovedAsync(connectionString,internIds[0],true);
         await Login("permission-hr");
         var session = await Get("/api/auth/me");
         check(session.GetProperty("permissions").EnumerateArray().Any(p => p.GetString() == "ASSIGN_MENTOR"), "HR has real ASSIGN_MENTOR permission");
@@ -89,7 +90,7 @@ internal static class InternAssignmentChecks
         }
         foreach (var eligibleStatus in new string?[] { null, "Chờ tiếp nhận", "Đang thực tập" })
         {
-            lookup.CommandText = "UPDATE dbo.Interns SET Status = @Status WHERE Id = @Id";
+            lookup.CommandText = "UPDATE dbo.Interns SET Status = @Status, MentorUserId=NULL WHERE Id = @Id";
             lookup.Parameters.AddWithValue("@Status", (object?)eligibleStatus ?? DBNull.Value);
             lookup.Parameters.AddWithValue("@Id", internIds[0]);
             await lookup.ExecuteNonQueryAsync();
@@ -123,11 +124,12 @@ internal static class InternAssignmentChecks
         check(unchanged.EnumerateArray().Single(a => a.GetProperty("internId").GetInt32() == internIds[0]).GetProperty("mentorUserId").GetInt32() == mentorId
             && unchanged.EnumerateArray().Single(a => a.GetProperty("internId").GetInt32() == internIds[0]).GetProperty("status").GetString() == "Đang thực tập",
             "invalid saves preserve existing assignment");
-        using var reassign = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId, internshipProgramId = programId });
+        using var reassign = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId });
         check(reassign.StatusCode == HttpStatusCode.OK, "HR reassigns to another real mentor");
         var refreshed = await Get("/api/intern-assignments");
         var replaced = refreshed.EnumerateArray().Where(a => a.GetProperty("internId").GetInt32() == internIds[0]).ToArray();
         check(replaced.Length == 1 && replaced[0].GetProperty("mentorUserId").GetInt32() == replacementMentorId
+            && replaced[0].GetProperty("internshipProgramId").GetInt32()==programId
             && replaced[0].GetProperty("status").GetString() == "Đang thực tập", "reassignment preserves status without duplicate");
 
         await Login("schedule-a@ictu.edu.vn", "Schedule-test-9");

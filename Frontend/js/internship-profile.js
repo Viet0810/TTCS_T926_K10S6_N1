@@ -6,8 +6,8 @@
     retry.disabled = true; retry.hidden = true; message.textContent = "Đang tải hồ sơ…";
     try {
       const session = await API.getCurrentUser();
-      if (session.user.role !== "INTERN" || !Session.hasPermission(session, "VIEW_PROFILE")) {
-        message.textContent = "Chức năng xem hồ sơ thực tập dành cho tài khoản thực tập sinh."; return;
+      if (!Session.hasPermission(session, "VIEW_OWN_PROFILE")) {
+        message.textContent = "Bạn không có quyền xem hồ sơ thực tập cá nhân."; return;
       }
       const profile = await API.getMyInternProfile();
       if (!profile) { message.textContent = "Chưa có hồ sơ thực tập."; return; }

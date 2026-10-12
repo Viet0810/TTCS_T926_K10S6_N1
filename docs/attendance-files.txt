@@ -1,0 +1,15 @@
+Backend/InternManagement/Services/AttendanceRules.cs
+Backend/InternManagement/Services/OwnAttendanceService.cs
+Backend/InternManagement/Services/AttendanceReportService.cs
+Backend/InternManagement/DTOs/AttendanceRecordResponse.cs
+Frontend/pages/intern-attendance.html
+Frontend/pages/attendance-report.html
+Frontend/js/intern-attendance.js
+Frontend/js/attendance-report.js
+Frontend/js/attendance-report-service.js
+Backend/InternManagement.Tests/AttendanceRuleChecks.cs
+Backend/InternManagement.Tests/AttendanceReportChecks.cs
+Backend/InternManagement.Tests/Sprint2CompletionChecks.cs
+Backend/InternManagement.Tests/Program.cs
+tests/check_sprint2_completion_ui.py
+tests/check_sprint2_ui.py
