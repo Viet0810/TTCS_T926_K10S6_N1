@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/style.css" />
     <link rel="stylesheet" href="../css/permissions.css" />
-  </head>
+      <link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/visuals.css">
+</head>
   <body>
     <div class="dashboard">
       <header class="dashboard-header">
@@ -19,36 +21,56 @@
           </div>
         </div>
         <div class="dashboard-session">
-          <a class="btn-primary" href="dashboard.html">Bảng điều khiển</a>
-          <button type="button" id="logoutBtn" class="btn-danger">
+          <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">
             Đăng xuất
           </button>
         </div>
       </header>
-      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html">Hồ sơ cá nhân</a><a href="permissions.html" aria-current="page">Phân quyền</a></nav>
+      <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
       <main class="dashboard-main">
-        <section class="card">
+        <section class="card permission-role-island">
           <div class="section-heading">
             <div>
               <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
-              <h2>Quyền được cấp theo role</h2>
+              <h2>Phân quyền hệ thống</h2>
               <p>
-                Ma trận này do backend quy định; quyền không được gán riêng cho
-                từng tài khoản.
+                Mỗi vai trò chỉ được truy cập các chức năng được cấp quyền.
               </p>
             </div>
           </div>
-          <div id="rolePermissionCards" class="permission-card-grid" aria-label="Quyền theo vai trò"></div>
+          <div class="permission-toolbar">
+            <div class="permission-tabs" aria-label="Chọn vai trò">
+              <button type="button" class="btn-secondary" data-role="ADMIN">Admin</button>
+              <button type="button" class="btn-secondary" data-role="HR">HR</button>
+              <button type="button" class="btn-secondary" data-role="MENTOR">Mentor</button>
+              <button type="button" class="btn-secondary" data-role="INTERN">Intern</button>
+            </div>
+            <label class="permission-role-select">Vai trò<select id="roleSelect"><option>ADMIN</option><option>HR</option><option>MENTOR</option><option>INTERN</option></select></label>
+          </div>
+        </section>
+        <section class="card permission-matrix-island">
+          <div class="permission-matrix-header">
+            <div class="permission-filter"><label for="permissionSearch">Tìm chức năng</label><input type="search" id="permissionSearch" placeholder="Tìm chức năng…" maxlength="200"></div>
+            <p class="permission-selection">Đang cấu hình: <strong id="selectedRoleLabel">ADMIN</strong> <span id="permissionCount" class="badge">Đang tải…</span></p>
+          </div>
+          <p class="permission-help">— Không áp dụng · Bảo vệ: quyền quản trị thiết yếu. Khi cấp quyền thao tác, quyền xem cần thiết sẽ được chọn cùng. Quyền “của tôi” chỉ áp dụng cho dữ liệu của người đăng nhập.</p>
+          <div id="permissionMatrix" aria-label="Ma trận quyền"></div>
+          <div class="permission-footer">
+            <span id="permissionDirtyStatus" role="status">Chưa có thay đổi</span>
+            <div class="permission-actions"><button type="button" class="btn-secondary" id="resetPermissionsBtn" disabled>Khôi phục mặc định</button><button type="button" class="btn-secondary" id="cancelPermissionsBtn" disabled>Hủy</button><button type="button" class="btn-primary" id="savePermissionsBtn" disabled>Lưu quyền</button></div>
+          </div>
           <p
             id="permissionsMessage"
             class="dashboard-message"
             role="status"
           ></p>
+          <button type="button" class="btn-secondary" id="retryPermissionsBtn" hidden>Tải lại cấu hình</button>
         </section>
       </main>
       <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
     </div>
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script>
     <script src="../js/permissions.js"></script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 
 :root {
-  --page: #f5f7fb;
+  --page: #f4f7fb;
   --surface: #fff;
   --ink: #10213f;
   --muted: #596b85;
@@ -23,13 +23,7 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(
-      circle at 100% 0,
-      rgba(91, 139, 242, 0.12),
-      transparent 31%
-    ),
-    var(--page);
+  background: var(--page);
   font-family: "Segoe UI", Arial, sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;

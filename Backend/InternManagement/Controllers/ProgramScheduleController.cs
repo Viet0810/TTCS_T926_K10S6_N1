@@ -1,4 +1,5 @@
 using InternManagement.DTOs;
+using InternManagement.Infrastructure;
 using InternManagement.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,18 +10,30 @@ namespace InternManagement.Controllers;
 public class ProgramScheduleController : ControllerBase
 {
     private readonly ProgramScheduleService _service;
+    private readonly RequestAuthorizationService authorization;
 
     public ProgramScheduleController(
-        ProgramScheduleService service
+        ProgramScheduleService service,
+        RequestAuthorizationService authorization
     )
     {
         _service = service;
+        this.authorization = authorization;
+    }
+
+    private IActionResult? CheckAccess(string permission = PermissionNames.ManagePrograms)
+    {
+        var decision = authorization.Evaluate(Request, permission);
+        if (decision.Status != AuthorizationStatus.Authorized)
+            return AuthorizationResponses.Denied(decision.Status);
+        return null;
     }
 
     // GET api/program-schedule
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+        if (CheckAccess() is { } denied) return denied;
         try
         {
             var data =
@@ -36,7 +49,7 @@ public class ProgramScheduleController : ControllerBase
                 }
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(
                 500,
@@ -44,8 +57,7 @@ public class ProgramScheduleController : ControllerBase
                 {
                     status = "error",
                     message =
-                        "Không thể lấy danh sách chương trình.",
-                    error = ex.Message
+                        "Không thể lấy danh sách chương trình."
                 }
             );
         }
@@ -57,6 +69,7 @@ public class ProgramScheduleController : ControllerBase
         [FromBody] ProgramScheduleRequest request
     )
     {
+        if (CheckAccess(PermissionNames.CreateProgram) is { } denied) return denied;
         try
         {
             var data =
@@ -83,7 +96,7 @@ public class ProgramScheduleController : ControllerBase
                 }
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(
                 500,
@@ -91,8 +104,7 @@ public class ProgramScheduleController : ControllerBase
                 {
                     status = "error",
                     message =
-                        "Không thể lưu thời gian chương trình.",
-                    error = ex.Message
+                        "Không thể lưu thời gian chương trình."
                 }
             );
         }
@@ -102,6 +114,7 @@ public class ProgramScheduleController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (CheckAccess(PermissionNames.DeleteProgram) is { } denied) return denied;
         try
         {
             var deleted =
@@ -128,7 +141,7 @@ public class ProgramScheduleController : ControllerBase
                 }
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(
                 500,
@@ -136,10 +149,21 @@ public class ProgramScheduleController : ControllerBase
                 {
                     status = "error",
                     message =
-                        "Không thể xóa chương trình.",
-                    error = ex.Message
+                        "Không thể xóa chương trình."
                 }
             );
         }
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, ProgramScheduleRequest request)
+    {
+        if (CheckAccess(PermissionNames.UpdateProgram) is {} denied) return denied;
+        try
+        {
+            if (!await _service.UpdateAsync(id,request)) return NotFound(new{message="Không tìm thấy chương trình."});
+            return Ok(new{status="success",message="Đã cập nhật chương trình.",data=(await _service.GetAllAsync()).FirstOrDefault(p=>p.Id==id)});
+        }
+        catch(ArgumentException error) { return BadRequest(new{message=error.Message}); }
     }
 }

@@ -34,7 +34,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 a.InternId,
                 COALESCE(i.StudentCode, N'') AS StudentCode,
                 COALESCE(i.FullName, N'Thực tập sinh') AS FullName,
-                COALESCE(i.Department, COALESCE(i.Major, N'Thực tập')) AS Department,
+                COALESCE(p.Department, i.Department, i.Major, N'Thực tập') AS Department,
                 CONVERT(VARCHAR(10), a.Date, 23) AS [Date],
                 COALESCE(a.CheckIn, N'—') AS CheckIn,
                 COALESCE(a.CheckOut, N'—') AS CheckOut,
@@ -44,9 +44,15 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 a.Approver
             FROM dbo.AttendanceRecords a
             JOIN dbo.Interns i ON a.InternId = i.Id
+            LEFT JOIN dbo.InternshipPrograms p ON p.Id = i.InternshipProgramId
             WHERE 1 = 1
             """);
 
+        if (filter?.ProgramId.HasValue == true)
+        {
+            sql.Append(" AND i.InternshipProgramId = @programId");
+            command.Parameters.Add("@programId",SqlDbType.Int).Value=filter.ProgramId.Value;
+        }
         if (filter?.InternId.HasValue == true)
         {
             sql.Append(" AND a.InternId = @internId");
@@ -55,7 +61,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
 
         if (!string.IsNullOrWhiteSpace(filter?.Search))
         {
-            sql.Append(" AND (i.FullName LIKE @search OR i.StudentCode LIKE @search OR i.Department LIKE @search OR i.Major LIKE @search)");
+            sql.Append(" AND (i.FullName LIKE @search OR i.StudentCode LIKE @search OR i.Department LIKE @search OR i.Major LIKE @search OR p.Department LIKE @search OR p.Name LIKE @search)");
             command.Parameters.Add("@search", SqlDbType.NVarChar, 256).Value = $"%{filter.Search.Trim()}%";
         }
 
@@ -71,7 +77,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
             command.Parameters.Add("@endDate", SqlDbType.Date).Value = end.Date;
         }
 
-        if (!string.IsNullOrWhiteSpace(filter?.Status) && !filter.Status.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(filter?.Status) && !new[]{"ALL","ON_TIME","LATE","EARLY"}.Contains(filter.Status))
         {
             sql.Append(" AND a.Status = @status");
             command.Parameters.Add("@status", SqlDbType.VarChar, 30).Value = filter.Status.Trim();
@@ -84,6 +90,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
         while (await reader.ReadAsync(cancellationToken))
         {
             var status = reader.GetString(9);
+            if(status is not ("LEAVE_APPROVED" or "ABSENT") && AttendanceRules.CheckInStatus(reader.GetString(6)) is not null)status=AttendanceRules.StoredStatus(reader.GetString(6),reader.GetString(7));
             records.Add(new AttendanceRecordResponse
             {
                 Id = reader.GetInt32(0),
@@ -94,7 +101,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 Date = reader.GetString(5),
                 CheckIn = reader.IsDBNull(6) ? "—" : reader.GetString(6),
                 CheckOut = reader.IsDBNull(7) ? "—" : reader.GetString(7),
-                Hours = reader.GetDecimal(8),
+                Hours = AttendanceRules.CheckInStatus(reader.GetString(6)) is not null ? AttendanceRules.Hours(reader.GetString(6),reader.GetString(7)) : reader.GetDecimal(8),
                 Status = status,
                 StatusText = GetStatusText(status),
                 Note = reader.IsDBNull(10) ? null : reader.GetString(10),
@@ -102,11 +109,13 @@ public sealed class AttendanceReportService : IAttendanceReportService
             });
         }
 
-        // Tính toán các chỉ số thống kê KPI chuyên cần
+        if(filter?.Status is "ON_TIME" or "LATE" or "EARLY")
+            records=records.Where(r=>filter.Status=="EARLY" ? r.CheckOutStatus=="EARLY" : r.CheckInStatus==filter.Status).ToList();
+        // Compute independent arrival/departure classifications from recorded server times.
         var totalShifts = records.Count;
-        var onTimeCount = records.Count(r => r.Status == "ON_TIME");
-        var lateCount = records.Count(r => r.Status == "LATE");
-        var earlyCount = records.Count(r => r.Status == "EARLY");
+        var onTimeCount = records.Count(r => r.CheckInStatus == "ON_TIME");
+        var lateCount = records.Count(r => r.CheckInStatus == "LATE");
+        var earlyCount = records.Count(r => r.CheckOutStatus == "EARLY");
         var approvedLeaveCount = records.Count(r => r.Status == "LEAVE_APPROVED");
         var absentCount = records.Count(r => r.Status == "ABSENT");
 
@@ -120,8 +129,10 @@ public sealed class AttendanceReportService : IAttendanceReportService
             Stats = new AttendanceStatsResponse
             {
                 TotalShifts = totalShifts,
+                CompletedCount = records.Count(r=>r.CheckIn!="—"&&r.CheckOut!="—"),
+                CheckedInCount = records.Count(r=>r.CheckIn!="—"&&r.CheckOut=="—"),
                 OnTimeCount = onTimeCount,
-                LateOrEarlyCount = lateCount + earlyCount,
+                LateOrEarlyCount = records.Count(r=>r.CheckInStatus=="LATE"||r.CheckOutStatus=="EARLY"),
                 ApprovedLeaveCount = approvedLeaveCount,
                 AbsentCount = absentCount,
                 AttendanceRate = attendanceRate,
@@ -136,7 +147,23 @@ public sealed class AttendanceReportService : IAttendanceReportService
 
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+
+        command.CommandText = "SELECT COUNT(*) FROM dbo.Interns WITH(UPDLOCK,HOLDLOCK) WHERE Id=@internId";
+        command.Parameters.Add("@internId", SqlDbType.Int).Value = request.InternId;
+        if (Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) == 0)
+            throw new ArgumentException("Không tìm thấy thực tập sinh.");
+        command.CommandText = """
+            SELECT COUNT(*) FROM dbo.AttendanceRecords WITH (UPDLOCK,HOLDLOCK)
+            WHERE InternId=@internId AND Date=@date
+            """;
+        command.Parameters.Add("@date", SqlDbType.Date).Value = DateTime.Parse(request.Date).Date;
+        command.Parameters.Add("@checkIn", SqlDbType.NVarChar, 10).Value = (object?)request.CheckIn ?? DBNull.Value;
+        command.Parameters.Add("@checkOut", SqlDbType.NVarChar, 10).Value = (object?)request.CheckOut ?? DBNull.Value;
+        if (Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) > 0)
+            throw new ArgumentException("Ca điểm danh này đã tồn tại.");
 
         command.CommandText = """
             INSERT INTO dbo.AttendanceRecords (InternId, Date, CheckIn, CheckOut, WorkingHours, Status, Note, Approver)
@@ -144,16 +171,13 @@ public sealed class AttendanceReportService : IAttendanceReportService
             VALUES (@internId, @date, @checkIn, @checkOut, @hours, @status, @note, @approver)
             """;
 
-        command.Parameters.Add("@internId", SqlDbType.Int).Value = request.InternId;
-        command.Parameters.Add("@date", SqlDbType.Date).Value = DateTime.Parse(request.Date).Date;
-        command.Parameters.Add("@checkIn", SqlDbType.NVarChar, 10).Value = (object?)request.CheckIn ?? DBNull.Value;
-        command.Parameters.Add("@checkOut", SqlDbType.NVarChar, 10).Value = (object?)request.CheckOut ?? DBNull.Value;
         command.Parameters.Add("@hours", SqlDbType.Decimal).Value = request.Hours;
         command.Parameters.Add("@status", SqlDbType.VarChar, 30).Value = request.Status;
         command.Parameters.Add("@note", SqlDbType.NVarChar, 500).Value = (object?)request.Note ?? DBNull.Value;
         command.Parameters.Add("@approver", SqlDbType.NVarChar, 200).Value = (object?)request.Approver ?? DBNull.Value;
 
         var result = await command.ExecuteScalarAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return Convert.ToInt32(result);
     }
 

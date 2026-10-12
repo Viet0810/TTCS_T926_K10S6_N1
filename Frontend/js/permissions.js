@@ -1,93 +1,101 @@
-const permissionLabels = {
-  MANAGE_USERS: "Quản lý tài khoản",
-  CREATE_USER: "Tạo tài khoản",
-  DELETE_USER: "Xóa tài khoản",
-  VIEW_INTERNS: "Xem thực tập sinh",
-  MANAGE_INTERNS: "Tạo hồ sơ thực tập sinh",
-  SEARCH_INTERNS: "Tìm kiếm và lọc hồ sơ thực tập sinh",
-  EDIT_INTERNS: "Chỉnh sửa hồ sơ thực tập sinh",
-  VIEW_PROFILE: "Xem hồ sơ cá nhân",
-  UPLOAD_DOCUMENTS: "Nộp CV và đơn xin thực tập",
-  VIEW_DOCUMENTS: "Xem tài liệu",
-  APPROVE_DOCUMENTS: "Duyệt tài liệu",
-  MANAGE_PERMISSIONS: "Quản lý phân quyền",
-};
-
-const permissionGroups = [
-  { label: "Quản lý tài khoản", keys: ["MANAGE_USERS", "CREATE_USER", "DELETE_USER"] },
-  { label: "Hồ sơ thực tập sinh", keys: ["VIEW_INTERNS", "MANAGE_INTERNS", "SEARCH_INTERNS", "EDIT_INTERNS"] },
-  { label: "Tài liệu", keys: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS", "APPROVE_DOCUMENTS"] },
-  { label: "Hồ sơ cá nhân", keys: ["VIEW_PROFILE"] },
-  { label: "Phân quyền hệ thống", keys: ["MANAGE_PERMISSIONS"] },
-];
-
-async function loadRolePermissions() {
-  if (!localStorage.getItem("token")) {
-    window.location.href = "../index.html";
-    return;
-  }
-
-  try {
-    const roles = await API.getRolePermissions();
-    const body = document.getElementById("rolePermissionCards");
-    body.replaceChildren();
-
-    Object.entries(roles).forEach(([role, permissions]) => {
-      const card = document.createElement("article");
-      card.className = "permission-role-card";
-      const header = document.createElement("header");
-      header.className = "permission-role-header";
-      const title = document.createElement("h3");
-      title.className = "permission-role-badge";
-      if (["ADMIN", "HR", "MENTOR", "INTERN"].includes(role)) title.classList.add(role.toLowerCase());
-      title.textContent = role;
-      const count = document.createElement("span");
-      count.className = "permission-count";
-      count.textContent = `${permissions.length} quyền`;
-      header.append(title, count);
-      card.appendChild(header);
-      const groups = new Map();
-      for (const permission of permissions) {
-        const label = permissionGroups.find((group) => group.keys.includes(permission))?.label || "Quyền khác";
-        if (!groups.has(label)) groups.set(label, []);
-        groups.get(label).push(permission);
-      }
-      for (const [label, entries] of groups) {
-        const section = document.createElement("section");
-        section.className = "permission-group";
-        const heading = document.createElement("h4");
-        heading.textContent = label;
-        const list = document.createElement("ul");
-        for (const permission of entries) {
-          const item = document.createElement("li");
-          const check = document.createElement("span");
-          check.className = "permission-check";
-          check.setAttribute("aria-hidden", "true");
-          check.textContent = "✓";
-          const text = document.createElement("span");
-          text.textContent = permissionLabels[permission] || permission;
-          item.append(check, text);
-          list.appendChild(item);
-        }
-        section.append(heading, list);
-        card.appendChild(section);
-      }
-      if (!permissions.length) {
-        const empty = document.createElement("p");
-        empty.className = "permission-count";
-        empty.textContent = "Chưa được cấp quyền.";
-        card.appendChild(empty);
-      }
-      body.appendChild(card);
-    });
-  } catch (error) {
-    document.getElementById("permissionsMessage").textContent = error.message;
-    if (error.status === 403) {
-      window.location.href = "dashboard.html";
-    } else Session.redirectIfExpired(error);
-  }
+let matrix, selectedRole = "ADMIN", draft = new Set(), busy = false, canSave = false;
+const actions = { READ: "Xem", CREATE: "Tạo / nộp", UPDATE: "Sửa", APPROVE: "Duyệt", REJECT: "Từ chối", DELETE: "Xóa", CHECK_IN: "Check-in", CHECK_OUT: "Check-out", FEATURE: "Chức năng" };
+const message = document.getElementById("permissionsMessage");
+const save = document.getElementById("savePermissionsBtn"), reset = document.getElementById("resetPermissionsBtn");
+const cancel = document.getElementById("cancelPermissionsBtn"), retry = document.getElementById("retryPermissionsBtn");
+function changeCount() { const stored = new Set(matrix?.roles[selectedRole] || []); return [...new Set([...draft, ...stored])].filter(code => draft.has(code) !== stored.has(code)).length; }
+function dirty() { return JSON.stringify([...draft].sort()) !== JSON.stringify([...(matrix?.roles[selectedRole] || [])].sort()); }
+function setBusy(value) {
+  busy = value; save.disabled = value || !canSave || !dirty(); reset.disabled = value || !canSave;
+  cancel.disabled = value || !dirty(); retry.disabled = value;
+  save.textContent = value ? "Đang xử lý…" : "Lưu thay đổi";
+  document.getElementById("permissionMatrix").setAttribute("aria-busy", String(value));
+  document.querySelectorAll("[data-role], #roleSelect").forEach(el => el.disabled = value);
+  if (value) document.querySelectorAll("[data-permission]").forEach(el => el.disabled = true);
 }
-
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
-
+function render() {
+  document.querySelector('.dashboard-main').dataset.selectedRole = selectedRole;
+  const target = document.getElementById("permissionMatrix"); target.replaceChildren();
+  document.querySelectorAll("[data-role]").forEach(el => el.setAttribute("aria-pressed", String(el.dataset.role === selectedRole)));
+  document.getElementById("roleSelect").value = selectedRole;
+  document.getElementById("selectedRoleLabel").textContent = selectedRole;
+  if (window.AppVisual) document.getElementById('selectedRoleLabel').prepend(AppVisual.icon(AppVisual.roleIcons[selectedRole]));
+  document.getElementById("permissionCount").textContent = `${draft.size} quyền đang bật`;
+  document.getElementById("permissionDirtyStatus").textContent = changeCount() ? `${changeCount()} thay đổi chưa lưu` : "Chưa có thay đổi";
+  const table = document.createElement("table"); table.className = "permission-matrix-table";
+  const head = table.createTHead().insertRow();
+  for (const title of ["Chức năng", ...Object.values(actions)]) { const cell = document.createElement("th"); cell.scope = "col"; cell.textContent = title; head.append(cell); }
+  const body = table.createTBody();
+  const keyword = document.getElementById("permissionSearch").value.trim().toLocaleLowerCase("vi");
+  for (const module of [...new Set(matrix.catalog.filter(item => item.label.toLocaleLowerCase("vi").includes(keyword)).map(item => item.module))]) {
+    const entries = matrix.catalog.filter(item => item.module === module), row = body.insertRow();
+    const title = document.createElement("th"); title.scope = "row"; title.textContent = entries[0].label; row.append(title);
+    for (const [action, label] of Object.entries(actions)) {
+      const cell = row.insertCell(); cell.dataset.label = label;
+      const entry = entries.find(item => item.action === action && item.roles.includes(selectedRole));
+      if (!entry) { cell.textContent = "—"; cell.setAttribute("aria-label", label + ": không áp dụng"); continue; }
+      const field = document.createElement("label"), checkbox = document.createElement("input"); checkbox.type = "checkbox";
+      checkbox.dataset.permission = entry.code; checkbox.checked = draft.has(entry.code);
+      const protectedAdmin = selectedRole === "ADMIN" && matrix.essentialAdminPermissions.includes(entry.code);
+      checkbox.disabled = busy || !canSave || !entry.editable || protectedAdmin;
+      checkbox.setAttribute("aria-label", entry.label + ": " + label);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) draft.add(entry.code); else draft.delete(entry.code);
+        if (checkbox.checked) (entry.requires || []).forEach(code => draft.add(code));
+        if (!checkbox.checked) matrix.catalog.filter(child => child.requires?.includes(entry.code)).forEach(child => draft.delete(child.code));
+        message.hidden = false; message.textContent = "Có thay đổi chưa lưu."; render();
+      });
+      field.append(checkbox);
+      if (protectedAdmin || !entry.editable) { const hint = document.createElement("span"); hint.className = "permission-lock"; hint.textContent = protectedAdmin ? "Bảo vệ" : "Cố định"; field.append(hint); }
+      cell.append(field);
+    }
+  }
+  if (!body.rows.length) { const cell = body.insertRow().insertCell(); cell.colSpan = Object.keys(actions).length + 1; cell.className = "permission-empty"; if (window.AppVisual) cell.append(AppVisual.illustration(keyword ? 'search' : 'shield')); cell.append(keyword ? "Không có chức năng phù hợp." : "Chưa có quyền được cấu hình."); }
+  target.append(table); setBusy(busy);
+}
+async function switchRole(role) {
+  if (busy || !matrix) return;
+  if (role === selectedRole) return;
+  if (dirty() && !await AppUI.confirm("Bạn có thay đổi chưa lưu. Bạn có muốn bỏ thay đổi?", "Thay đổi chưa lưu", "Bỏ thay đổi", "Ở lại")) { document.getElementById("roleSelect").value = selectedRole; return; }
+  selectedRole = role; draft = new Set(matrix.roles[role]); message.textContent = ""; render();
+}
+document.querySelectorAll("[data-role]").forEach(el => el.onclick = () => switchRole(el.dataset.role));
+document.getElementById("roleSelect").onchange = event => switchRole(event.target.value);
+reset.onclick = async () => {
+  if (busy || !canSave || !await AppUI.confirm("Khôi phục quyền mặc định của " + selectedRole + "? Bạn cần bấm Lưu quyền để áp dụng.", "Khôi phục mặc định", "Xem quyền mặc định")) return;
+  setBusy(true);
+  try { const defaults = await API.getPermissionDefaults(selectedRole); draft = new Set(defaults.permissions); AppUI.feedback(message, "Đã chọn quyền mặc định. Bấm Lưu quyền để áp dụng.", "info"); }
+  catch (error) { AppUI.feedback(message, error.message, "error"); Session.redirectIfExpired(error); }
+  finally { setBusy(false); render(); }
+};
+save.onclick = async () => {
+  if (busy || !canSave || !dirty()) return;
+  setBusy(true);
+  let persisted = false;
+  try {
+    const result = await API.savePermissions(selectedRole, [...draft]);
+    persisted = true;
+    matrix.roles[selectedRole] = result.permissions; draft = new Set(result.permissions);
+    matrix = await API.getPermissionMatrix(); draft = new Set(matrix.roles[selectedRole]);
+    await API.getCurrentUser();
+    AppUI.feedback(message, "Lưu phân quyền thành công"); retry.hidden = true;
+  } catch (error) { AppUI.feedback(message, persisted ? `Đã lưu quyền nhưng chưa tải lại đầy đủ cấu hình: ${error.message}` : error.message, "error"); retry.hidden = false; Session.redirectIfExpired(error); }
+  finally { setBusy(false); render(); }
+};
+cancel.onclick = () => { if (busy || !matrix) return; draft = new Set(matrix.roles[selectedRole]); AppUI.feedback(message, "Đã hủy các thay đổi chưa lưu.", "info"); render(); };
+document.getElementById("permissionSearch").addEventListener("input", () => { if (matrix) render(); });
+retry.onclick = async () => { if (dirty() && !await AppUI.confirm("Bỏ thay đổi chưa lưu để tải lại cấu hình?")) return; await loadRolePermissions(); };
+window.addEventListener("beforeunload", event => { if (matrix && dirty()) { event.preventDefault(); event.returnValue = ""; } });
+async function loadRolePermissions() {
+  if (busy) return;
+  setBusy(true); message.textContent = "Đang tải cấu hình quyền…";
+  const stopLoading = AppUI.loading(document.getElementById("permissionMatrix"));
+  try {
+    const session = await API.getCurrentUser();
+    if (session.user?.role !== "ADMIN" || !Session.hasPermission(session, "RBAC_READ")) { location.href = "dashboard.html"; return; }
+    canSave = Session.hasPermission(session, "MANAGE_PERMISSIONS");
+    matrix = await API.getPermissionMatrix(); draft = new Set(matrix.roles[selectedRole]); message.textContent = ""; retry.hidden = true;
+  } catch (error) { message.textContent = error.message; retry.hidden = false; document.getElementById("permissionMatrix").textContent = "Chưa thể tải cấu hình quyền."; Session.redirectIfExpired(error); }
+  finally { stopLoading(); setBusy(false); if (matrix) render(); }
+}
 loadRolePermissions();

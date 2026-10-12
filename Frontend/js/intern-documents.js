@@ -1,7 +1,12 @@
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
 const documentKinds = ["cv", "application"];
 let documents = [];
 let ready = false;
+let canUpload = false;
+document.addEventListener('session-permissions-updated',event=>{
+  canUpload=Session.hasPermission(event.detail,'UPLOAD_DOCUMENTS');
+  for(const kind of documentKinds){const input=document.getElementById(kind+'File');input.disabled=!ready||!canUpload;input.closest('.file-picker').hidden=!canUpload;document.getElementById(kind+'Form').querySelector('[type=submit]').hidden=!canUpload;}
+  if(!Session.hasPermission(event.detail,'VIEW_DOCUMENTS')){ready=false;document.getElementById('uploadArea').hidden=true;}
+});
 const sizeText = (size) => `${(size / 1024 / 1024).toFixed(2)} MB`;
 function documentValidation(file) {
   if (!file) return "Vui lòng chọn tài liệu trước khi tải lên.";
@@ -13,13 +18,26 @@ function documentValidation(file) {
   return "";
 }
 async function refreshDocuments() {
-  documents = await API.getMyDocuments();
+  document.getElementById("uploadArea").setAttribute("aria-busy", "true");
+  try { documents = await API.getMyDocuments(); }
+  finally { document.getElementById("uploadArea").setAttribute("aria-busy", "false"); }
   for (const kind of documentKinds) {
     const item = documents.find((entry) => entry.kind === kind);
-    document.getElementById(`${kind}Info`).textContent = item
-      ? `${item.fileName} · ${sizeText(item.size)} · ${new Date(item.uploadedAt + (/[Z+]/.test(item.uploadedAt) ? "" : "Z")).toLocaleString("vi-VN")}`
-      : "Chưa nộp tài liệu";
-    if (item) document.getElementById(`${kind}Info`).textContent += ` · ${{pending:"Chờ duyệt",approved:"Đã duyệt",rejected:"Cần bổ sung"}[item.status] || "Chờ duyệt"}${item.comment ? ` · ${item.comment}` : ""}`;
+    const info = document.getElementById(`${kind}Info`); info.replaceChildren();
+    if (!item) { if (window.AppVisual) info.append(AppVisual.illustration('file')); info.append("Chưa nộp tài liệu"); }
+    else {
+      const name = document.createElement("strong"); name.className = "document-filename";
+      name.textContent = name.title = item.fileName; info.append(name);
+      for (const text of [`Dung lượng: ${sizeText(item.size)}`, `Ngày nộp: ${new Date(item.uploadedAt + (/[Z+]/.test(item.uploadedAt) ? "" : "Z")).toLocaleString("vi-VN")}`]) {
+        const line = document.createElement("span"); line.className = "document-meta"; line.textContent = text; info.append(line);
+      }
+      const line = document.createElement("span"); line.className = "document-meta"; line.append("Trạng thái: ");
+      const badge = document.createElement("span");
+      const statuses = {pending:"Chờ duyệt",approved:"Đã duyệt",rejected:"Cần bổ sung"};
+      badge.className = `status-badge ${statuses[item.status] ? item.status : ""}`;
+      badge.textContent = statuses[item.status] || "Chưa xác định"; line.append(badge); info.append(line);
+      if (item.comment) { const comment = document.createElement("span"); comment.className = "document-meta"; comment.textContent = `Nhận xét: ${item.comment}`; info.append(comment); }
+    }
     document.getElementById(`${kind}Download`).disabled = !item;
   }
 }
@@ -30,24 +48,35 @@ function bindDocumentForm(kind) {
   form.noValidate = true;
   input.addEventListener("change", () => {
     const file = input.files[0];
-    document.getElementById(`${kind}Selected`).textContent = file ? `${file.name} · ${sizeText(file.size)}` : "";
-    message.textContent = file ? documentValidation(file) : "";
+    const selected = document.getElementById(`${kind}Selected`);
+    selected.textContent = file ? `${file.name} · ${sizeText(file.size)}` : "";
+    selected.title = file?.name || "";
+    message.hidden = false; message.textContent = file ? documentValidation(file) : "";
+  });
+  const picker = input.closest(".file-picker");
+  picker.addEventListener("dragover", event => { event.preventDefault(); if (!input.disabled) picker.classList.add("is-dragging"); });
+  picker.addEventListener("dragleave", () => picker.classList.remove("is-dragging"));
+  picker.addEventListener("drop", event => {
+    event.preventDefault(); picker.classList.remove("is-dragging");
+    if (input.disabled || !event.dataTransfer?.files.length) return;
+    if (event.dataTransfer.files.length !== 1) { message.hidden = false; message.textContent = "Vui lòng chọn một tệp PDF cho mỗi tài liệu."; return; }
+    input.files = event.dataTransfer.files; input.dispatchEvent(new Event("change"));
   });
   form.addEventListener("submit", async (event) => {
-    event.preventDefault(); if (!ready || busy) return;
+    event.preventDefault(); if (!ready || !canUpload || busy) return;
     const file = input.files[0];
     const validation = documentValidation(file);
-    if (validation) { message.textContent = validation; input.focus(); return; }
+    if (validation) { message.hidden = false; message.textContent = validation; input.focus(); return; }
     busy = true;
     const button = form.querySelector('[type="submit"]'), original = button.textContent;
     button.disabled = input.disabled = true; button.textContent = "Đang tải lên…"; message.textContent = "Đang gửi tài liệu…";
     try {
       await API.uploadMyDocument(kind, file);
       input.value = ""; document.getElementById(`${kind}Selected`).textContent = "";
-      message.textContent = "Đã lưu tài liệu thành công. Tài liệu đang chờ HR xem và duyệt.";
+      AppUI.feedback(message, "Đã lưu tài liệu thành công. Tài liệu đang chờ HR xem và duyệt.");
       try { await refreshDocuments(); }
-      catch (error) { message.textContent = `Đã lưu, nhưng chưa tải lại được danh sách: ${error.message}`; }
-    } catch (error) { message.textContent = error.message; }
+      catch (error) { AppUI.feedback(message, `Đã lưu, nhưng chưa tải lại được danh sách: ${error.message}`, "warning"); }
+    } catch (error) { AppUI.feedback(message, error.message, "error"); }
     finally { busy = false; button.disabled = input.disabled = false; button.textContent = original; }
   });
   document.getElementById(`${kind}Download`).addEventListener("click", async () => {
@@ -55,7 +84,7 @@ function bindDocumentForm(kind) {
     try {
       const blob = await API.downloadMyDocument(kind);
       saveDownload(blob, documents.find((entry) => entry.kind === kind)?.fileName || `${kind}.pdf`);
-    } catch (error) { message.textContent = error.message; }
+    } catch (error) { AppUI.feedback(message, error.message, "error"); }
     finally { button.disabled = !documents.some((entry) => entry.kind === kind); }
   });
 }
@@ -68,23 +97,26 @@ async function loadProfile() {
   retry.disabled = true;
   retry.hidden = true;
   status.textContent = "Đang kiểm tra hồ sơ và tải tài liệu…";
+  const stopLoading = window.AppUI?.loading(status);
   try {
     const session = await API.getCurrentUser();
-    if (!Session.hasPermission(session, "UPLOAD_DOCUMENTS")) {
-      document.getElementById("internName").textContent = "Tài liệu thực tập";
-      status.textContent = "Chức năng nộp tài liệu dành cho tài khoản thực tập sinh."; return;
+    canUpload = Session.hasPermission(session, "UPLOAD_DOCUMENTS");
+    if (!Session.hasPermission(session, "VIEW_DOCUMENTS")) {
+      status.textContent = "Bạn không có quyền xem tài liệu cá nhân."; return;
     }
-    const profile = await API.getMyInternProfile();
-    document.getElementById("internName").textContent = profile.fullName;
-    document.getElementById("internEmail").textContent = profile.email;
-    InternProfile.details(document.getElementById("internDetails"), profile);
+    // The document API checks the signed-in owner's linked profile itself.
     await refreshDocuments(); ready = true;
+    for (const kind of documentKinds) {
+      document.getElementById(`${kind}File`).disabled = !canUpload;
+      document.getElementById(`${kind}Form`).querySelector('[type="submit"]').hidden = !canUpload;
+      document.getElementById(`${kind}File`).closest(".file-picker").hidden = !canUpload;
+    }
     document.getElementById("uploadArea").hidden = false; status.textContent = "";
   } catch (error) {
-    document.getElementById("internName").textContent = "Hồ sơ thực tập"; status.textContent = error.message;
+    status.textContent = error.message;
     retry.hidden = false;
   }
-  finally { retry.disabled = false; }
+  finally { retry.disabled = false; stopLoading?.(); }
 }
 document.getElementById("retryProfileBtn").addEventListener("click", loadProfile);
 loadProfile();

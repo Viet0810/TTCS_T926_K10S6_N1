@@ -7,6 +7,8 @@ namespace InternManagement.DTOs;
 public sealed record AttendanceStatsResponse
 {
     public int TotalShifts { get; init; }
+    public int CompletedCount { get; init; }
+    public int CheckedInCount { get; init; }
     public int OnTimeCount { get; init; }
     public int LateOrEarlyCount { get; init; }
     public int ApprovedLeaveCount { get; init; }

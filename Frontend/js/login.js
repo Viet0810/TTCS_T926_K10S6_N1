@@ -2,7 +2,9 @@ const loginForm = document.getElementById("loginForm");
 const forgotForm = document.getElementById("forgotForm");
 const loginFields = [document.getElementById("username"), document.getElementById("password")];
 function validateLoginField(input) {
-  const message = input.id === "username" ? Validation.validateEmail(input.value) : Validation.validatePassword(input.value);
+  const message = input.id === "username"
+    ? (!input.value.trim() ? "Vui lòng nhập email." : input.validity.typeMismatch ? "Địa chỉ email không hợp lệ." : "")
+    : Validation.validatePassword(input.value);
   Validation.showFieldError(input, message);
   return !message;
 }
@@ -46,7 +48,7 @@ loginForm.addEventListener("submit", async (event) => {
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", role);
     localStorage.setItem("user", JSON.stringify(data.user));
-    location.href = "pages/dashboard.html";
+    location.href = data.user.mustChangePassword ? "pages/change-password.html" : "pages/dashboard.html";
   } catch (error) {
     AuthUI.clearSession();
     const code = error.code || error.message;

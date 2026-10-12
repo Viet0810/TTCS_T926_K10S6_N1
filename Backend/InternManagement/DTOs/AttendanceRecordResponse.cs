@@ -14,6 +14,8 @@ public sealed record AttendanceRecordResponse
     public string Date { get; init; } = string.Empty;
     public string CheckIn { get; init; } = "—";
     public string CheckOut { get; init; } = "—";
+    public string? CheckInStatus => Services.AttendanceRules.CheckInStatus(CheckIn);
+    public string? CheckOutStatus => Services.AttendanceRules.CheckOutStatus(CheckOut);
     public decimal Hours { get; init; }
     public string Status { get; init; } = string.Empty;
     public string StatusText { get; init; } = string.Empty;

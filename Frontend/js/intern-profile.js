@@ -190,6 +190,11 @@ const InternProfile = {
     }
   ],
   statuses: ["Chờ tiếp nhận", "Đang thực tập", "Đã hoàn thành", "Đã dừng"],
+  statusBadge(status) {
+    const tones = {"Chờ tiếp nhận":"pending", "Đang thực tập":"active", "Đã hoàn thành":"approved", "Đã dừng":"rejected"};
+    const badge = document.createElement("span"); badge.className = `status-badge ${tones[status] || ""}`;
+    badge.textContent = status || "Chưa xác định"; return badge;
+  },
   format(value, key) {
     if (!value) return "Chưa bổ sung";
     if (["dateOfBirth", "startDate", "endDate"].includes(key)) return value.split("-").reverse().join("/");
@@ -204,7 +209,10 @@ const InternProfile = {
       for (const key of group.keys) {
         const field = this.fields.find((field) => field.key === key);
         const item = document.createElement("div"), label = document.createElement("dt"), value = document.createElement("dd");
-        label.textContent = field.label; value.textContent = this.format(profile[key], key); item.append(label, value); list.appendChild(item);
+        label.textContent = field.label;
+        if (key === "status") value.append(this.statusBadge(profile[key]));
+        else value.textContent = this.format(profile[key], key);
+        item.append(label, value); list.appendChild(item);
       }
       section.append(title, list); container.appendChild(section);
     }

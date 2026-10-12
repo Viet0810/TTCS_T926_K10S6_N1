@@ -36,12 +36,25 @@ public sealed class AttendanceReportController : ControllerBase
         [FromQuery] AttendanceReportRequest? filter,
         CancellationToken cancellationToken)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ViewInterns);
+        var decision = authorization.Evaluate(Request, PermissionNames.ViewAttendanceReport);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
         var report = await reportService.GetReportAsync(filter, cancellationToken);
         return Ok(report);
+    }
+
+    [HttpGet("programs")]
+    public async Task<IActionResult> Programs([FromServices] ProgramScheduleService programs,CancellationToken ct)
+    {
+        var access=authorization.Evaluate(Request,PermissionNames.ViewAttendanceReport);
+        return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await programs.GetAllAsync());
+    }
+    [HttpGet("interns")]
+    public async Task<IActionResult> Interns([FromServices] ContractService contracts,CancellationToken ct)
+    {
+        var access=authorization.Evaluate(Request,PermissionNames.ViewAttendanceReport);
+        return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await contracts.GetCandidatesAsync(ct));
     }
 
     /// <summary>
@@ -63,8 +76,12 @@ public sealed class AttendanceReportController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var id = await reportService.RecordAttendanceAsync(request, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, new { id, message = "Ghi nhận ca làm việc thành công." });
+        try
+        {
+            var id = await reportService.RecordAttendanceAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new { id, message = "Ghi nhận ca làm việc thành công." });
+        }
+        catch (ArgumentException error) { return BadRequest(new { message = error.Message }); }
     }
 
     /// <summary>

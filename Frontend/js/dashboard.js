@@ -1,84 +1,83 @@
-const menu = document.getElementById("roleMenu");
-const featureLabels = {
-  MANAGE_USERS: { label: "Quản lý tài khoản", href: "user-manage.html" },
-  CREATE_USER: { label: "Tạo tài khoản thành viên" },
-  DELETE_USER: { label: "Xóa tài khoản thành viên" },
-  VIEW_INTERNS: {
-    label: "Xem danh sách thực tập sinh",
-    href: "intern-manage.html",
-  },
-  MANAGE_INTERNS: {
-    label: "Tạo hồ sơ thực tập sinh",
-    href: "intern-manage.html",
-  },
-  SEARCH_INTERNS: {
-    label: "Tìm kiếm & Lọc thực tập sinh",
-    href: "hr-search-filter.html",
-  },
-  EDIT_INTERNS: {
-    label: "Chỉnh sửa hồ sơ thực tập sinh",
-    href: "intern-manage.html",
-  },
-  VIEW_PROFILE: { label: "Hồ sơ cá nhân", href: "profile.html" },
-  UPLOAD_DOCUMENTS: { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html" },
-  VIEW_DOCUMENTS: { label: "Hồ sơ và tài liệu", href: "intern-upload-cv.html" },
-  APPROVE_DOCUMENTS: {
-    label: "Xem và duyệt tài liệu", href: "document-reviews.html",
-  },
-  MANAGE_PERMISSIONS: { label: "Ma trận phân quyền", href: "permissions.html" },
-};
-
-function addMenuItem(label, href) {
-  const item = href
-    ? document.createElement("a")
-    : document.createElement("span");
-  item.textContent = label;
-  if (href) item.href = href;
-  else item.className = "role-menu-unavailable";
-  menu.appendChild(item);
-}
-
-function renderMenu(permissions) {
-  const menuPermissions = permissions.filter(
-    (permission) =>
-      !["CREATE_USER", "DELETE_USER"].includes(permission),
-  );
-  const items = [
-    { label: "Bảng điều khiển", href: "dashboard.html" },
-    ...menuPermissions
-      .map((permission) => featureLabels[permission])
-      .filter(Boolean),
-  ];
-
-  menu.replaceChildren();
-  const linkedPages = new Set();
-  items.forEach((item) => {
-    if (item.href && linkedPages.has(item.href)) return;
-    if (item.href) linkedPages.add(item.href);
-    addMenuItem(item.label, item.href);
-  });
-}
-
 async function initializeDashboard() {
   if (!localStorage.getItem("token")) {
     window.location.href = "../index.html";
     return;
   }
 
+  const welcome = document.getElementById("welcomeTitle");
+  const stopLoading = window.AppUI?.loading(welcome);
   try {
     const session = await API.getCurrentUser();
     const user = session.user;
     document.getElementById("roleBadge").textContent = user.role;
-    document.getElementById("welcomeTitle").textContent =
-      `Xin chào, ${user.fullName}`;
-    renderMenu(session.permissions.filter(permission => permission !== "APPROVE_DOCUMENTS" || user.role === "HR"));
+    if (welcome) welcome.textContent = `Xin chào, ${user.fullName}`;
+    await loadDashboardMetrics(session);
   } catch (error) {
-    document.getElementById("dashboardMessage").textContent = error.message;
-    document.getElementById("dashboardMessage").hidden = false;
+    if (welcome) welcome.textContent = "Chưa thể tải lời chào.";
+    const message = document.getElementById("dashboardMessage") || document.getElementById("programDateMessage");
+    if (message) {
+      message.textContent = error.message;
+      message.hidden = false;
+    }
     Session.redirectIfExpired(error);
   }
+  finally { stopLoading?.(); }
 }
 
-document.getElementById("logoutBtn").addEventListener("click", Session.logout);
+async function loadDashboardMetrics(session) {
+  const target = document.getElementById('dashboardKpis');
+  if (!target) return;
+  const has = code => Session.hasPermission(session, code);
+  const stopLoading = window.AppUI?.loading(target);
+  let firstResult = true;
+  const add = (label, value, icon, tone = '', role = '') => {
+    if (firstResult) { target.replaceChildren(); firstResult = false; }
+    const card = document.createElement('article'); card.className = 'kpi-card'; card.dataset.tone = tone;
+    const badge = document.createElement('span'); badge.className = 'kpi-icon';
+    if (role) { badge.style.color = `var(--role-${role.toLowerCase()})`; }
+    if (window.AppVisual) badge.append(AppVisual.icon(icon));
+    const count = document.createElement('strong'); count.textContent = String(value);
+    const title = document.createElement('p'); title.textContent = label;
+    card.append(badge, count, title); target.append(card);
+  };
+  // Each group is requested only with the same permission enforced by its API.
+  const groups = [];
+  if (session.user.role === 'ADMIN' && has('MANAGE_USERS')) groups.push(async () => {
+    const users = await API.getUsers();
+    add('Tổng tài khoản', users.length, 'users');
+    for (const role of ['HR', 'MENTOR', 'INTERN']) add(role, users.filter(user => user.role === role).length, AppVisual.roleIcons[role], '', role);
+  });
+  if (session.user.role === 'HR') {
+    if (has('VIEW_INTERNS')) groups.push(async () => { const interns = await API.getInterns(); add('Tổng thực tập sinh', interns.length, 'profile'); });
+    if (has('DOCUMENT_REVIEW_READ')) groups.push(async () => {
+      const documents = await API.getDocumentReviews();
+      for (const [status, label] of [['pending', 'Tài liệu chờ duyệt'], ['approved', 'Tài liệu đã duyệt'], ['rejected', 'Tài liệu bị từ chối']]) add(label, documents.filter(document => document.status === status).length, 'review', status);
+    });
+  }
+  if (session.user.role === 'INTERN') {
+    if (has('VIEW_OWN_PROFILE')) groups.push(async () => { const profile = await API.getMyInternProfile(); add('Hồ sơ cá nhân', profile.fullName || session.user.fullName, 'profile'); });
+    if (has('VIEW_DOCUMENTS')) groups.push(async () => {
+      const documents = await API.getMyDocuments();
+      add('Tài liệu đã nộp', documents.length, 'file');
+      add('Tài liệu chờ duyệt', documents.filter(document => document.status === 'pending').length, 'review', 'pending');
+      add('Tài liệu đã duyệt', documents.filter(document => document.status === 'approved').length, 'review', 'approved');
+    });
+  }
+  const results = await Promise.allSettled(groups.map(group => group()));
+  if (firstResult) target.replaceChildren();
+  stopLoading?.();
+  const failed = results.filter(result => result.status === 'rejected');
+  if (failed.length) {
+    const message = document.getElementById('dashboardMessage');
+    message.textContent = 'Một số dữ liệu tổng quan chưa tải được. Vui lòng tải lại trang.'; message.hidden = false;
+    failed.forEach(result => Session.redirectIfExpired(result.reason));
+  }
+  if (!target.children.length && !failed.length) {
+    const empty = document.createElement('section'); empty.className = 'card';
+    if (window.AppVisual) empty.append(AppVisual.illustration('dashboard'));
+    const text = document.createElement('p'); text.textContent = session.user.role === 'MENTOR' ? 'Sử dụng các chức năng trong menu để theo dõi hồ sơ thực tập sinh.' : 'Chưa có dữ liệu tổng quan khả dụng cho quyền hiện tại.';
+    empty.append(text); target.append(empty);
+  }
+}
 
 initializeDashboard();

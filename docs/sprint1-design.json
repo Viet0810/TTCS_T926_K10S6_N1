@@ -1,0 +1,83 @@
+{
+  "fileKey": "HqJ8BZunjX5lY6MxpyPMkD",
+  "url": "https://www.figma.com/design/HqJ8BZunjX5lY6MxpyPMkD",
+  "page": "0:1",
+  "font": "Noto Sans (Figma fallback); Segoe UI/Arial in code",
+  "components": {
+    "island": "3:24",
+    "field": "3:27",
+    "button": "3:29",
+    "upload": "3:31"
+  },
+  "frames": [
+    {
+      "name": "HR Intern List",
+      "id": "5:2",
+      "width": 1440,
+      "height": 720
+    },
+    {
+      "name": "HR Intern Create/Edit",
+      "id": "5:23",
+      "width": 1440,
+      "height": 869
+    },
+    {
+      "name": "Intern Documents",
+      "id": "5:47",
+      "width": 1440,
+      "height": 764
+    },
+    {
+      "name": "HR Document Review",
+      "id": "5:68",
+      "width": 1440,
+      "height": 628
+    },
+    {
+      "name": "Admin User Management",
+      "id": "5:87",
+      "width": 1440,
+      "height": 536
+    },
+    {
+      "name": "Admin Create Account",
+      "id": "5:104",
+      "width": 1440,
+      "height": 685
+    },
+    {
+      "name": "RBAC Matrix",
+      "id": "5:124",
+      "width": 1440,
+      "height": 711
+    },
+    {
+      "name": "RBAC Matrix — Mobile",
+      "id": "5:146",
+      "width": 390,
+      "height": 648
+    }
+  ],
+  "limitation": "Starter MCP tool limit blocked final polishing after existing frames and screenshots were saved.",
+  "pendingCodeSync": {
+    "roleColors": {
+      "ADMIN": "#7C3AED",
+      "HR": "#9333EA",
+      "MENTOR": "#2563EB",
+      "INTERN": "#16A34A"
+    },
+    "screens": [
+      "Role dashboard",
+      "RBAC colorful matrix"
+    ],
+    "status": "Figma Starter MCP tool limit; code implemented, Figma synchronization pending"
+  },
+  "dynamicRbac": {
+    "date": "2026-10-11",
+    "definitions": 32,
+    "roleAssignment": "SQL RolePermissions",
+    "pendingFigmaSync": true,
+    "reason": "Starter MCP tool call limit"
+  }
+}

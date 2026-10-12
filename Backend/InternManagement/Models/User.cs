@@ -8,4 +8,5 @@ public sealed class User
     public string Email { get; init; } = "";
     public string PasswordHash { get; init; } = "";
     public string Role { get; init; } = "";
+    public bool MustChangePassword { get; init; }
 }

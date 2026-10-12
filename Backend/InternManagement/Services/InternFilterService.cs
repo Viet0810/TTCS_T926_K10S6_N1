@@ -46,6 +46,11 @@ public sealed class InternFilterService : IInternFilterService
             command.Parameters.Add("@major", SqlDbType.NVarChar, 200).Value = filter.Major.Trim();
         }
 
+        if (!string.IsNullOrWhiteSpace(filter?.Status))
+        {
+            sql.Append(" AND Status = @status");
+            command.Parameters.Add("@status", SqlDbType.NVarChar, 50).Value = filter.Status.Trim();
+        }
         sql.Append(" ORDER BY Id DESC");
         command.CommandText = sql.ToString();
 

@@ -1,3 +1,5 @@
+Updated permissions and runtime behavior: [Dynamic RBAC, 2026-10-11](dynamic-rbac-2026-10-11.md). Role restrictions in this earlier report describe historical/default behavior.
+
 # Backend và frontend: hồ sơ thực tập sinh
 
 ## Cấu trúc backend

@@ -143,35 +143,7 @@
   margin-top: 24px;
 }
 
-.btn-program-primary,
-.btn-program-secondary {
-  min-width: 130px;
-  padding: 11px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-program-primary {
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #ffffff;
-}
-
-.btn-program-primary:hover {
-  background: #1d4ed8;
-}
-
-.btn-program-secondary {
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-}
-
-.btn-program-secondary:hover {
-  background: #f8fafc;
-}
+.btn-program-primary, .btn-program-secondary { min-width: 130px; }
 
 .program-toolbar {
   margin-bottom: 18px;

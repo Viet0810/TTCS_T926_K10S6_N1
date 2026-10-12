@@ -1,9 +1,7 @@
 const AuthUI = {
   message(id, text, success = false) {
     const element = document.getElementById(id);
-    element.textContent = text;
-    element.classList.toggle("is-success", success);
-    element.hidden = !text;
+    AppUI.feedback(element, text, success ? "success" : "error");
   },
   busy(form, busy, label) {
     form.setAttribute("aria-busy", String(busy));

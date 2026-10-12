@@ -7,7 +7,7 @@ using InternManagement.Models;
 
 namespace InternManagement.Services;
 
-public sealed record AuthenticatedUser(int Id, string Username, string Role);
+public sealed record AuthenticatedUser(int Id, string Username, string Role, bool MustChangePassword = false);
 
 public sealed class AuthTokenService
 {
@@ -41,13 +41,13 @@ public sealed class AuthTokenService
             using var connection = new SqlConnection(connectionString);
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT Username, Role, PasswordHash FROM dbo.Users WHERE Id = @id";
+            command.CommandText = "SELECT Username, Role, PasswordHash, MustChangePassword FROM dbo.Users WHERE Id = @id";
             command.Parameters.Add("@id", System.Data.SqlDbType.Int).Value = payload.Id;
             using var reader = command.ExecuteReader();
             if (!reader.Read() || payload.PasswordVersion != PasswordVersion(reader.GetString(2)))
                 return false;
 
-            user = new AuthenticatedUser(payload.Id, reader.GetString(0), reader.GetString(1));
+            user = new AuthenticatedUser(payload.Id, reader.GetString(0), reader.GetString(1), reader.GetBoolean(3));
             return true;
         }
         catch (Exception error) when (error is CryptographicException or JsonException or ArgumentException)

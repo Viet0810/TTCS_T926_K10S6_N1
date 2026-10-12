@@ -101,8 +101,8 @@ internal static class AttendanceReportChecks
         var records = reportData.RootElement.GetProperty("records");
 
         check(stats.GetProperty("totalShifts").GetInt32() >= 3, "report aggregates total shifts correctly");
-        check(stats.GetProperty("onTimeCount").GetInt32() >= 1, "report counts on-time shifts correctly");
-        check(stats.GetProperty("lateOrEarlyCount").GetInt32() >= 1, "report counts late/early shifts correctly");
+        check(stats.GetProperty("onTimeCount").GetInt32() == 0, "08:15 and 08:50 are late even when legacy stored status says ON_TIME");
+        check(stats.GetProperty("lateOrEarlyCount").GetInt32() == 2, "report counts late/early shifts correctly");
         check(stats.GetProperty("approvedLeaveCount").GetInt32() >= 1, "report counts approved leaves correctly");
         check(records.GetArrayLength() >= 3, "report returns individual attendance records");
 
@@ -116,7 +116,7 @@ internal static class AttendanceReportChecks
         using var statusFiltered = await http.GetAsync($"/api/attendance/report?internId={internId}&status=LATE");
         using var statusData = JsonDocument.Parse(await statusFiltered.Content.ReadAsStringAsync());
         var statusRecords = statusData.RootElement.GetProperty("records");
-        check(statusRecords.GetArrayLength() == 1
+        check(statusRecords.GetArrayLength() == 2
             && statusRecords[0].GetProperty("status").GetString() == "LATE"
             && statusRecords[0].GetProperty("statusText").GetString() == "Đi muộn",
             "report filters correctly by status and provides Vietnamese status text");

@@ -1,23 +1,22 @@
 using InternManagement.DTOs;
 using InternManagement.Services;
 using Microsoft.AspNetCore.Mvc;
+using InternManagement.Infrastructure;
 
 namespace InternManagement.Controllers;
 
 [ApiController]
 [Route("api/document-reviews")]
-public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization) : ControllerBase
+public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization,
+    IInternService interns, PasswordResetService email, ILogger<DocumentReviewsController> logger) : ControllerBase
 {
-    private AuthorizationDecision Access()
+    private AuthorizationDecision Access(bool review = false)
     {
-        var decision = authorization.Evaluate(Request, PermissionNames.ApproveDocuments);
-        return decision.Status == AuthorizationStatus.Authorized && decision.User!.Role != "HR"
-            ? new AuthorizationDecision(AuthorizationStatus.Forbidden, decision.User) : decision;
+        var decision = authorization.Evaluate(Request, review ? PermissionNames.ApproveDocuments : PermissionNames.ReadDocumentReviews);
+        return decision;
     }
 
-    private IActionResult Denied(AuthorizationDecision decision) => StatusCode(
-        decision.Status == AuthorizationStatus.Unauthenticated ? 401 : 403,
-        new { message = "Bạn cần quyền duyệt tài liệu để truy cập." });
+    private IActionResult Denied(AuthorizationDecision decision) => AuthorizationResponses.Denied(decision.Status);
 
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken cancellationToken)
@@ -43,7 +42,7 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
     [HttpPut("{id:int}/{kind}")]
     public async Task<IActionResult> Review(int id, string kind, ReviewDocumentRequest request, CancellationToken cancellationToken)
     {
-        var decision = Access();
+        var decision = authorization.Evaluate(Request, request.Status == "rejected" ? PermissionNames.RejectDocuments : PermissionNames.ApproveDocuments);
         if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
         if (!InternDocumentService.ValidKind(kind)) return BadRequest(new { message = "Loại tài liệu không hợp lệ." });
         if (request.Status == "rejected" && string.IsNullOrWhiteSpace(request.Comment))
@@ -52,9 +51,27 @@ public sealed class DocumentReviewsController(InternDocumentService documents, R
             return BadRequest(new { message = "Phiên bản tài liệu không hợp lệ." });
 
         var result = await documents.ReviewAsync(id, kind, decision.User!.Id, request, version, cancellationToken);
+        if (result == DocumentReviewResult.Updated)
+        {
+            var emailSent = false;
+            try
+            {
+                var owner = await interns.GetByIdAsync(id, cancellationToken);
+                if (owner is not null)
+                {
+                    await email.SendReviewResultAsync(owner.Email, owner.FullName, kind, request.Status, request.Comment, cancellationToken);
+                    emailSent = true;
+                }
+            }
+            catch (Exception error)
+            {
+                logger.LogWarning("Review result email failed for intern {InternId}, type {FailureType}.", id, error.GetType().Name);
+            }
+            return Ok(new { emailSent, message = emailSent ? "Đã lưu kết quả duyệt và gửi email thông báo."
+                : "Đã lưu kết quả duyệt nhưng chưa gửi được email thông báo." });
+        }
         return result switch
         {
-            DocumentReviewResult.Updated => Ok(new { message = "Đã lưu kết quả duyệt." }),
             DocumentReviewResult.NotFound => NotFound(new { message = "Không tìm thấy tài liệu. Vui lòng tải lại danh sách." }),
             DocumentReviewResult.AlreadyReviewed => Conflict(new { message = "Tài liệu đã được xử lý, không thể xét duyệt lại." }),
             _ => Conflict(new { message = "Tài liệu đã thay đổi. Vui lòng tải lại trước khi duyệt." })

@@ -7,22 +7,27 @@
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/attendance-report.css">
+<link rel="stylesheet" href="../css/visuals.css">
+<link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/tables.css">
 </head>
 <body>
 <div class="dashboard">
   <header class="dashboard-header">
     <div class="dashboard-brand">
-      <div class="dashboard-logo">IM</div>
+      <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
       <div class="dashboard-title">
-        <span>INTERN MANAGEMENT SYSTEM</span>
+        <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
         <h1>Báo cáo chuyên cần &amp; Nghỉ phép</h1>
       </div>
     </div>
     <div class="dashboard-session">
       <span id="roleBadge" class="badge hr">HR</span>
-      <button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button>
+      <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button>
     </div>
   </header>
+  <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
 
 
   <main class="dashboard-main">
@@ -32,7 +37,7 @@
         <div>
           <span class="section-label">TỔNG QUAN CHUYÊN CẦN</span>
           <h2>Chỉ số theo dõi đi làm & nghỉ phép</h2>
-          <p>Dữ liệu tổng hợp theo khoảng thời gian và tiêu chí lọc hiện tại.</p>
+          <p>Dữ liệu thực theo bộ lọc. Nghỉ phép chỉ gồm bản ghi HR đã lưu; chưa có quy trình đơn nghỉ phép.</p>
         </div>
       </div>
       <div class="attendance-summary">
@@ -42,14 +47,14 @@
           <small>Số lượt điểm danh</small>
         </div>
         <div>
-          <span>Tỷ lệ chuyên cần</span>
+          <span>Đã hoàn thành</span>
           <strong id="attendanceRate">—</strong>
-          <small>Ca đi làm đúng giờ</small>
+          <small>Có giờ vào và giờ ra</small>
         </div>
         <div>
-          <span>Đi muộn / Về sớm</span>
+          <span>Đang làm việc</span>
           <strong id="lateEarlyCount">—</strong>
-          <small>Cần theo dõi sát</small>
+          <small>Đã check-in, chưa check-out</small>
         </div>
         <div>
           <span>Nghỉ phép</span>
@@ -60,7 +65,7 @@
 
       <!-- Bộ lọc Báo cáo theo Thực tập sinh & Thời gian (K10S6N1-92) -->
       <form id="filterForm" class="filter-card">
-        <div class="attendance-filters">
+        <div class="attendance-filters"><div class="form-group"><label for="programFilter">Chương trình</label><select id="programFilter"><option value="">Tất cả chương trình</option></select></div>
           <div class="form-group">
             <label for="internFilter">Thực tập sinh</label>
             <select id="internFilter">
@@ -106,7 +111,7 @@
 
           <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
             <label for="keywordInput" class="filter-presets-label" style="margin: 0;">Tìm nhanh:</label>
-            <input type="search" id="keywordInput" placeholder="Tên, MSSV, bộ phận…" style="padding: 4px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 6px; width: 170px;">
+            <input type="search" id="keywordInput" placeholder="Tên, MSSV, bộ phận…" class="quick-search-input">
           </div>
         </div>
       </form>
@@ -134,7 +139,7 @@
               <th>Họ và tên &amp; Vị trí</th>
               <th>Giờ vào</th>
               <th>Giờ ra</th>
-              <th>Thời lượng</th>
+              <th>Vào ca</th><th>Ra ca</th><th>Thời lượng</th>
               <th>Trạng thái</th>
               <th>Ghi chú / Lý do</th>
               <th>Thao tác</th>
@@ -142,7 +147,7 @@
           </thead>
           <tbody id="reportTableBody">
             <tr>
-              <td colspan="9" class="empty-state">Đang tải báo cáo…</td>
+              <td colspan="11" class="empty-state">Đang tải báo cáo…</td>
             </tr>
           </tbody>
         </table>
@@ -182,11 +187,11 @@
     </div>
     <div>
       <span class="dialog-label">Giờ vào</span>
-      <div class="dialog-value" id="modalCheckIn">—</div>
+      <div class="dialog-value" id="modalCheckIn">—</div><span id="modalCheckInStatus"></span>
     </div>
     <div>
       <span class="dialog-label">Giờ ra</span>
-      <div class="dialog-value" id="modalCheckOut">—</div>
+      <div class="dialog-value" id="modalCheckOut">—</div><span id="modalCheckOutStatus"></span>
     </div>
     <div>
       <span class="dialog-label">Tổng giờ làm việc</span>
@@ -213,7 +218,7 @@
   </div>
 </dialog>
 
-<script src="../js/api.js"></script>
+<script src="../js/ui.js"></script><script src="../js/tables.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script>
 <script src="../js/attendance-report-service.js"></script>
 <script src="../js/attendance-report.js"></script>
 </body>

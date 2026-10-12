@@ -34,8 +34,14 @@ builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 
 // THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
+builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
+builder.Services.AddScoped<InternManagement.Services.ContractService>();
+builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
+builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
+builder.Services.AddScoped<InternManagement.Services.ListPagingService>();
+builder.Services.AddScoped<InternManagement.Services.IEmailService,InternManagement.Services.EmailService>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 
 builder.Services.AddRateLimiter(options =>
@@ -89,6 +95,14 @@ builder.Services.AddScoped<
 >();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var smtpSettings = builder.Configuration.GetSection("Smtp");
+    app.Logger.LogInformation("SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
+        smtpSettings["Host"], !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["Password"]), !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"]));
+}
 
 var connectionString =
     builder.Configuration.GetConnectionString(
@@ -159,8 +173,7 @@ app.MapGet(
             await using var command =
                 connection.CreateCommand();
 
-            command.CommandText =
-                "SELECT DB_NAME() AS DatabaseName, SUSER_SNAME() AS LoginName";
+            command.CommandText = "SELECT 1";
 
             await using var reader =
                 await command.ExecuteReaderAsync();
@@ -170,11 +183,7 @@ app.MapGet(
             return Results.Ok(
                 new
                 {
-                    connected = true,
-                    database =
-                        reader.GetString(0),
-                    login =
-                        reader.GetString(1)
+                    connected = true
                 }
             );
         }

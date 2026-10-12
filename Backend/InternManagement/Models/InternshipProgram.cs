@@ -2,6 +2,8 @@ namespace InternManagement.Models;
 
 public class InternshipProgram
 {
+    public string? Name { get; set; }
+    public string? Department { get; set; }
     public int Id { get; set; }
 
     public DateTime StartDate { get; set; }
