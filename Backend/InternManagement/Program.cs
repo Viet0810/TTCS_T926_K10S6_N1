@@ -4,6 +4,10 @@ using InternManagement.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// BỔ SUNG DÒNG NÀY ĐỂ FIX LỖI CS0103 (Không tìm thấy connectionString)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+                       ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Logging.AddSimpleConsole(options =>
 {
     options.TimestampFormat = "yyyy-MM-dd HH:mm:ss 'UTC' ";
@@ -32,53 +36,26 @@ builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 
-// THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH
+// Các service hiện có của dự án
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
 builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
 builder.Services.AddScoped<InternManagement.Services.ContractService>();
 builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
-builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.ListPagingService>();
-builder.Services.AddScoped<InternManagement.Services.IEmailService,InternManagement.Services.EmailService>();
+builder.Services.AddScoped<
+    InternManagement.Services.IEmailService,
+    InternManagement.Services.EmailService
+>();
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 
-builder.Services.AddRateLimiter(options =>
-{
-    options.AddPolicy(
-        "password-recovery",
-        context =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                context.Connection.RemoteIpAddress?.ToString()
-                    ?? "unknown",
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromMinutes(15),
-                    QueueLimit = 0
-                }
-            )
-    );
+// Service quản lý lịch làm việc thực tập sinh
+builder.Services.AddSingleton<
+    InternManagement.Services.IInternWorkScheduleService,
+    InternManagement.Services.InternWorkScheduleService
+>();
 
-    options.OnRejected = async (
-        context,
-        cancellationToken
-    ) =>
-    {
-        context.HttpContext.Response.StatusCode =
-            StatusCodes.Status429TooManyRequests;
-
-        await context.HttpContext.Response.WriteAsJsonAsync(
-            new
-            {
-                message =
-                    "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút."
-            },
-            cancellationToken
-        );
-    };
-});
 builder.Services.AddScoped<
     InternManagement.Services.IInternService,
     InternManagement.Services.InternService
@@ -94,127 +71,92 @@ builder.Services.AddScoped<
     InternManagement.Services.AttendanceReportService
 >();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(
+        "password-recovery",
+        context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(15),
+                    QueueLimit = 0
+                }
+            )
+    );
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode =
+            StatusCodes.Status429TooManyRequests;
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new
+            {
+                message =
+                    "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút."
+            },
+            cancellationToken
+        );
+    };
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     var smtpSettings = builder.Configuration.GetSection("Smtp");
-    app.Logger.LogInformation("SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
-        smtpSettings["Host"], !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
-        !string.IsNullOrWhiteSpace(smtpSettings["Password"]), !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"]));
-}
 
-var connectionString =
-    builder.Configuration.GetConnectionString(
-        "InternManagement"
+    app.Logger.LogInformation(
+        "SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
+        smtpSettings["Host"],
+        !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["Password"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"])
     );
 
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    throw new InvalidOperationException(
-        "Chưa cấu hình ConnectionStrings:InternManagement."
-    );
-}
-
-await app.Services
-    .GetRequiredService<
-        InternManagement.Services.DatabaseInitializer
-    >()
-    .InitializeAsync(connectionString);
-
-
-app.UseMiddleware<ApiRequestMiddleware>();
-
-
-if (app.Environment.IsDevelopment())
-{
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ApiRequestMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
 
-
 app.UseCors();
-
 app.UseRateLimiter();
 
 app.MapControllers();
 
-
-app.MapGet(
-    "/api/database/status",
-    async () =>
-    {
-        if (
-            string.IsNullOrWhiteSpace(
-                connectionString
-            )
-        )
-        {
-            return Results.Problem(
-                "Chưa cấu hình connection string InternManagement.",
-                statusCode: 500
-            );
-        }
-
-        try
-        {
-            await using var connection =
-                new Microsoft.Data.SqlClient.SqlConnection(
-                    connectionString
-                );
-
-            await connection.OpenAsync();
-
-            await using var command =
-                connection.CreateCommand();
-
-            command.CommandText = "SELECT 1";
-
-            await using var reader =
-                await command.ExecuteReaderAsync();
-
-            await reader.ReadAsync();
-
-            return Results.Ok(
-                new
-                {
-                    connected = true
-                }
-            );
-        }
-        catch (Exception error)
-        {
-            app.Logger.LogError(
-                error,
-                "Database health check failed."
-            );
-
-            return Results.Problem(
-                "Không thể kết nối cơ sở dữ liệu. Vui lòng thử lại sau.",
-                statusCode: 503
-            );
-        }
-    }
-);
-
-// Preserve main's existing public endpoint alongside the internship APIs.
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild",
+    "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
-app.MapGet("/weatherforecast", () => Enumerable.Range(1, 5).Select(index =>
-    new WeatherForecast(DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-        Random.Shared.Next(-20, 55), summaries[Random.Shared.Next(summaries.Length)]))
-    .ToArray()).WithName("GetWeatherForecast");
+
+app.MapGet(
+    "/weatherforecast",
+    () => Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast(
+            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            Random.Shared.Next(-20, 55),
+            summaries[Random.Shared.Next(summaries.Length)]
+        )
+    ).ToArray()
+).WithName("GetWeatherForecast");
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+record WeatherForecast(
+    DateOnly Date,
+    int TemperatureC,
+    string? Summary
+)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    public int TemperatureF =>
+        32 + (int)(TemperatureC / 0.5556);
 }
