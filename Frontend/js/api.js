@@ -116,6 +116,7 @@ const API = {
   getAssignments: () => requestApi("/intern-assignments", { headers: getAuthHeader() }),
   getAssignmentInterns: () => requestApi("/intern-assignments/interns", { headers: getAuthHeader() }),
   getAssignmentMentors: () => requestApi("/intern-assignments/mentors", { headers: getAuthHeader() }),
+  getMentorLoad: () => requestApi("/intern-assignments/mentor-load", { headers: getAuthHeader() }),
   getAssignmentPrograms: () => requestApi("/intern-assignments/programs", { headers: getAuthHeader() }),
   assignMentor: (internId, assignment) => requestApi(`/intern-assignments/${encodeURIComponent(internId)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(assignment),

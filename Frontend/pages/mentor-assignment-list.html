@@ -18,6 +18,7 @@
       <section id="assignmentList" class="card">
         <div class="section-heading"><div><span class="section-label">DANH SÁCH</span><h2>Danh sách phân công</h2><p>Các thực tập sinh đã được phân công Mentor.</p></div><a href="mentor-assignment.html" class="btn-primary">Phân công Mentor</a></div>
         <div class="form-group"><label for="assignmentSearch">Tìm kiếm</label><input type="search" id="assignmentSearch" placeholder="Tên, email, chương trình…"></div><p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải dữ liệu...</p>
+        <div class="table-container"><table class="user-table"><thead><tr><th>Mentor</th><th>Email</th><th>Số Intern đang quản lý</th></tr></thead><tbody id="mentorLoadRows"></tbody></table></div>
         <div class="table-container"><table class="user-table"><thead><tr><th>Họ tên Intern</th><th>Email</th><th>Mentor</th><th>Chương trình thực tập</th><th>Trạng thái</th><th>Hành động</th></tr></thead><tbody id="assignmentRows"></tbody></table></div>
       </section>
     </main>
