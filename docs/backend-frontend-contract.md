@@ -36,6 +36,10 @@ Nút Chỉnh sửa trong trang tìm kiếm dẫn tới `intern-manage.html?edit=
 
 Backend hỗ trợ nộp và tải CV/đơn xin thực tập qua `/api/interns/me/documents`, quyền `UPLOAD_DOCUMENTS` dành cho INTERN. HR/ADMIN xem và duyệt qua `/api/document-reviews`, quyền `APPROVE_DOCUMENTS`. Chi tiết trong [hướng dẫn tài liệu](intern-documents.md).
 
+### Báo cáo tuần và phản hồi Mentor
+
+INTERN có quyền `SUBMIT_WEEKLY_REPORTS`; giao diện `weekly-report-submit.html` gọi `GET /api/weekly-reports/me` để xem lịch sử và `POST /api/weekly-reports/me` để gửi báo cáo. Request gồm `weekStart`, `weekEnd`, `summary`, `accomplishments`, `challenges`, `nextWeekPlan`; khoảng báo cáo tối đa 7 ngày. Gửi lại cùng ngày bắt đầu sẽ cập nhật báo cáo đang chờ Mentor; không thể thay nội dung sau khi Mentor đã phản hồi. Báo cáo chỉ được nhận khi hồ sơ INTERN có `mentoremail` khớp với email tài khoản MENTOR, và POST trả `notificationCreated` để frontend biết Mentor đã nhận thông báo trong ứng dụng. Mentor có quyền `VIEW_WEEKLY_REPORTS`. `GET /api/weekly-reports` trả về các báo cáo gắn với thực tập sinh có `mentoremail` trùng email tài khoản Mentor hiện đăng nhập. `PUT /api/weekly-reports/{id}/feedback` nhận `{ "feedback": "..." }`, giới hạn 1–2000 ký tự và chỉ cập nhật khi báo cáo thuộc thực tập sinh được giao cho Mentor đó; phản hồi cũng tạo thông báo cho INTERN. Báo cáo lưu trong `dbo.weeklyreports`; schema được khởi tạo tự động.
+
 SQL và nghiệp vụ tài khoản do `AccountService` xử lý; tài liệu do `InternDocumentService` xử lý. Controller giữ việc kiểm tra quyền và trả response. Middleware chung ghi lỗi theo method/path/endpoint/status/trace ID. Header `X-Request-ID` được cung cấp cho frontend để đối chiếu log; JSON thành công, validation và lỗi nghiệp vụ giữ cấu trúc cũ. Lỗi chưa xử lý trả JSON an toàn, không trả exception. `api.js` dùng `ApiError.status` thay vì suy đoán lỗi từ nội dung thông báo; `Session` chỉ xóa các khóa phiên đăng nhập, không xóa dữ liệu localStorage khác.
 
 ## Kiểm tra

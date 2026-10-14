@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gửi báo cáo tuần | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/weekly-reports.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Báo cáo thực tập tuần</h1></div></div><button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button></header>
+      <nav class="role-menu" aria-label="Điều hướng chính"><a href="dashboard.html">Bảng điều khiển</a><a href="profile.html">Hồ sơ cá nhân</a><a href="intern-upload-cv.html">Tài liệu thực tập</a><a href="weekly-report-submit.html" aria-current="page">Gửi báo cáo tuần</a></nav>
+      <main class="dashboard-main">
+        <section class="card"><div class="section-heading"><div><span class="section-label">CẬP NHẬT TIẾN ĐỘ</span><h2>Gửi báo cáo tuần cho Mentor</h2><p>Mentor được gán trong hồ sơ sẽ xem và phản hồi báo cáo của bạn. Có thể gửi lại để cập nhật nội dung nếu Mentor chưa phản hồi.</p></div></div>
+          <form id="weeklyReportForm" class="auth-form" novalidate>
+            <div class="weekly-report-filters"><label for="weekStart">Từ ngày<input id="weekStart" name="weekStart" type="date" required></label><label for="weekEnd">Đến ngày<input id="weekEnd" name="weekEnd" type="date" required></label></div>
+            <div class="form-group"><label for="summary">Tổng kết tuần <span>*</span></label><textarea id="summary" name="summary" rows="4" maxlength="4000" required placeholder="Tóm tắt công việc và tiến độ trong tuần..."></textarea></div>
+            <div class="form-group"><label for="accomplishments">Công việc đã hoàn thành</label><textarea id="accomplishments" name="accomplishments" rows="3" maxlength="4000" placeholder="Các nhiệm vụ hoặc kết quả đã hoàn thành..."></textarea></div>
+            <div class="form-group"><label for="challenges">Khó khăn / nội dung cần hỗ trợ</label><textarea id="challenges" name="challenges" rows="3" maxlength="4000" placeholder="Khó khăn gặp phải hoặc hỗ trợ cần từ Mentor..."></textarea></div>
+            <div class="form-group"><label for="nextWeekPlan">Kế hoạch tuần tới</label><textarea id="nextWeekPlan" name="nextWeekPlan" rows="3" maxlength="4000" placeholder="Các công việc dự kiến trong tuần tới..."></textarea></div>
+            <p id="submitMessage" role="status" aria-live="polite"></p>
+            <div class="feedback-actions"><button id="submitReportBtn" type="submit" class="btn-primary">Gửi / cập nhật báo cáo</button></div>
+          </form>
+        </section>
+        <section class="card"><div class="section-heading"><div><span class="section-label">LỊCH SỬ</span><h2>Báo cáo đã gửi</h2><p>Xem lại nội dung và phản hồi từ Mentor.</p></div><button id="refreshMyReports" type="button" class="btn-secondary">Tải lại</button></div><div id="myReportList" class="weekly-report-list"></div></section>
+      </main>
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+    </div>
+    <script src="../js/api.js"></script>
+    <script src="../js/weekly-report-submit.js"></script>
+    <script src="../js/notifications.js"></script>
+  </body>
+</html>

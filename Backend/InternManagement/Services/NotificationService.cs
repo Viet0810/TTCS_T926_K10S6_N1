@@ -4,7 +4,7 @@ using NpgsqlTypes;
 
 namespace InternManagement.Services;
 
-public sealed class NotificationService(IConfiguration configuration, WebPushService webPush)
+public sealed class NotificationService(IConfiguration configuration, WebPushService webPush, ILogger<NotificationService> logger)
 {
     private readonly string connectionString = configuration.GetConnectionString("InternManagement")
         ?? throw new InvalidOperationException("Chưa cấu hình kết nối cơ sở dữ liệu.");
@@ -76,6 +76,84 @@ public sealed class NotificationService(IConfiguration configuration, WebPushSer
                 recipients.Add((reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3)));
         foreach (var recipient in recipients)
             await webPush.SendToUserAsync(recipient.UserId, recipient.Title, recipient.Message, recipient.ActionUrl, cancellationToken);
+    }
+
+    public async Task<bool> NotifyMentorOfWeeklyReportAsync(long reportId, CancellationToken cancellationToken)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            WITH target AS (
+                SELECT mentor.id AS userid, i.fullname AS internname, r.weekstart
+                FROM dbo.weeklyreports r
+                JOIN dbo.interns i ON i.id = r.internid
+                JOIN dbo.users mentor ON lower(mentor.email) = lower(i.mentoremail) AND mentor.role = 'MENTOR'
+                WHERE r.id = @reportId
+            ), inserted AS (
+                INSERT INTO dbo.notifications(userid,title,message,actionurl)
+                SELECT userid, 'Báo cáo tuần mới',
+                    internname || ' đã gửi báo cáo tuần bắt đầu ngày ' || to_char(weekstart, 'DD/MM/YYYY') || '.',
+                    'weekly-reports.html'
+                FROM target
+                RETURNING userid,title,message,actionurl
+            ) SELECT userid,title,message,actionurl FROM inserted
+            """;
+        command.Parameters.Add("reportId", NpgsqlDbType.Bigint).Value = reportId;
+        var recipients = await ReadRecipientsAsync(command, cancellationToken);
+        foreach (var recipient in recipients)
+            await SendPushSafelyAsync(recipient, cancellationToken);
+        return recipients.Count > 0;
+    }
+
+    public async Task<bool> NotifyInternOfWeeklyFeedbackAsync(long reportId, int mentorId, CancellationToken cancellationToken)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            WITH target AS (
+                SELECT internuser.id AS userid, mentor.fullname AS mentorname, r.weekstart
+                FROM dbo.weeklyreports r
+                JOIN dbo.interns i ON i.id = r.internid
+                JOIN dbo.users mentor ON mentor.id = @mentorId AND lower(mentor.email) = lower(i.mentoremail)
+                JOIN dbo.users internuser ON lower(internuser.email) = lower(i.email) AND internuser.role = 'INTERN'
+                WHERE r.id = @reportId AND r.mentorfeedback IS NOT NULL
+            ), inserted AS (
+                INSERT INTO dbo.notifications(userid,title,message,actionurl)
+                SELECT userid, 'Mentor đã phản hồi báo cáo tuần',
+                    mentorname || ' đã gửi phản hồi cho báo cáo tuần bắt đầu ngày ' || to_char(weekstart, 'DD/MM/YYYY') || '.',
+                    'weekly-report-submit.html'
+                FROM target
+                RETURNING userid,title,message,actionurl
+            ) SELECT userid,title,message,actionurl FROM inserted
+            """;
+        command.Parameters.Add("reportId", NpgsqlDbType.Bigint).Value = reportId;
+        command.Parameters.Add("mentorId", NpgsqlDbType.Integer).Value = mentorId;
+        var recipients = await ReadRecipientsAsync(command, cancellationToken);
+        foreach (var recipient in recipients)
+            await SendPushSafelyAsync(recipient, cancellationToken);
+        return recipients.Count > 0;
+    }
+
+    private static async Task<List<(int UserId, string Title, string Message, string ActionUrl)>> ReadRecipientsAsync(
+        NpgsqlCommand command, CancellationToken cancellationToken)
+    {
+        var recipients = new List<(int UserId, string Title, string Message, string ActionUrl)>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+            recipients.Add((reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3)));
+        return recipients;
+    }
+
+    private async Task SendPushSafelyAsync((int UserId, string Title, string Message, string ActionUrl) recipient,
+        CancellationToken cancellationToken)
+    {
+        try { await webPush.SendToUserAsync(recipient.UserId, recipient.Title, recipient.Message, recipient.ActionUrl, cancellationToken); }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            logger.LogWarning(error, "Could not send push notification {Title} to user {UserId}.", recipient.Title, recipient.UserId);
+        }
     }
 
     public async Task<bool> NotifyInternAsync(string email, string title, string message, string actionUrl, CancellationToken cancellationToken)

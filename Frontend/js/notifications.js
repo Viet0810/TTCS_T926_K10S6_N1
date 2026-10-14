@@ -124,11 +124,14 @@
     detailTitle.textContent = notice.title;
     detailMessage.textContent = notice.message;
     detailTime.textContent = new Intl.DateTimeFormat("vi-VN", { dateStyle: "full", timeStyle: "short" }).format(new Date(notice.createdAt));
-    const destination = ["document-reviews.html", "intern-upload-cv.html"].includes(notice.actionUrl) ? notice.actionUrl : "";
+    const destination = ["document-reviews.html", "intern-upload-cv.html", "weekly-reports.html", "weekly-report-submit.html"].includes(notice.actionUrl) ? notice.actionUrl : "";
     detailAction.hidden = !destination;
     if (destination) {
       detailAction.href = destination;
-      detailAction.textContent = destination === "document-reviews.html" ? "Mở danh sách duyệt hồ sơ" : "Mở hồ sơ và tài liệu của tôi";
+      detailAction.textContent = destination === "document-reviews.html" ? "Mở danh sách duyệt hồ sơ"
+        : destination === "weekly-reports.html" ? "Mở báo cáo tuần"
+        : destination === "weekly-report-submit.html" ? "Mở báo cáo của tôi"
+        : "Mở hồ sơ và tài liệu của tôi";
     }
     detail.showModal();
     if (!notice.readAt) {

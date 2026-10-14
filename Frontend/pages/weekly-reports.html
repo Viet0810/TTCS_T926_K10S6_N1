@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Báo cáo tuần | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/weekly-reports.css" />
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Báo cáo tuần & phản hồi</h1></div></div>
+        <button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button>
+      </header>
+      <nav class="role-menu" aria-label="Điều hướng"><a href="dashboard.html">Bảng điều khiển</a><a href="weekly-reports.html" aria-current="page">Báo cáo tuần & phản hồi</a></nav>
+      <main class="dashboard-main">
+        <section class="card">
+          <div class="section-heading"><div><span class="section-label">THEO DÕI TIẾN ĐỘ</span><h2>Báo cáo thực tập sinh</h2><p>Xem nội dung từng tuần và gửi phản hồi cho thực tập sinh được phân công hướng dẫn.</p></div><button id="refreshBtn" class="btn-secondary" type="button">Tải lại</button></div>
+          <div class="weekly-report-filters"><label for="reportSearch">Thực tập sinh<input id="reportSearch" type="search" placeholder="Tên hoặc mã sinh viên"></label><label for="weekFilter">Tuần bắt đầu<select id="weekFilter"><option value="">Tất cả các tuần</option></select></label><label for="feedbackFilter">Phản hồi<select id="feedbackFilter"><option value="">Tất cả</option><option value="pending">Chưa phản hồi</option><option value="done">Đã phản hồi</option></select></label></div>
+          <p id="reportMessage" class="weekly-report-message" role="status" aria-live="polite"></p>
+          <div id="reportList" class="weekly-report-list" aria-live="polite"></div>
+        </section>
+      </main>
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+    </div>
+    <dialog id="feedbackDialog" class="profile-dialog" aria-labelledby="feedbackTitle"><h2 id="feedbackTitle">Phản hồi báo cáo</h2><p id="feedbackIntern" class="feedback-intern"></p><form id="feedbackForm" class="auth-form"><div class="form-group"><label for="feedbackText">Nhận xét của Mentor</label><textarea id="feedbackText" maxlength="2000" rows="6" required placeholder="Ghi nhận xét, góp ý hoặc hướng dẫn cho tuần tiếp theo..."></textarea></div><p id="feedbackDialogMessage" role="status" aria-live="polite"></p><div class="feedback-actions"><button id="saveFeedbackBtn" type="submit" class="btn-primary">Lưu phản hồi</button><button id="closeFeedbackBtn" type="button" class="btn-secondary">Đóng</button></div></form></dialog>
+    <script src="../js/api.js"></script>
+    <script src="../js/weekly-reports.js"></script>
+    <script src="../js/notifications.js"></script>
+  </body>
+</html>

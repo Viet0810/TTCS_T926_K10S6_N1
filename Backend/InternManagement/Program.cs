@@ -27,6 +27,7 @@ builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 builder.Services.AddScoped<InternManagement.Services.ReviewEmailService>();
 builder.Services.AddScoped<InternManagement.Services.NotificationService>();
+builder.Services.AddScoped<InternManagement.Services.WeeklyReportService>();
 builder.Services.AddSingleton<Lib.Net.Http.WebPush.PushServiceClient>();
 builder.Services.AddScoped<InternManagement.Services.WebPushService>();
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();

@@ -25,6 +25,8 @@ const featureLabels = {
   APPROVE_DOCUMENTS: {
     label: "Xem và duyệt tài liệu", href: "document-reviews.html",
   },
+  VIEW_WEEKLY_REPORTS: { label: "Báo cáo tuần & phản hồi", href: "weekly-reports.html" },
+  SUBMIT_WEEKLY_REPORTS: { label: "Gửi báo cáo tuần", href: "weekly-report-submit.html" },
   MANAGE_PERMISSIONS: { label: "Ma trận phân quyền", href: "permissions.html" },
 };
 

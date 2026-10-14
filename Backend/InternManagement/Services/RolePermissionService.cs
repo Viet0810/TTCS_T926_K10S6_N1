@@ -14,6 +14,8 @@ public static class PermissionNames
     public const string ViewDocuments = "VIEW_DOCUMENTS";
     public const string ApproveDocuments = "APPROVE_DOCUMENTS";
     public const string ManagePermissions = "MANAGE_PERMISSIONS";
+    public const string ViewWeeklyReports = "VIEW_WEEKLY_REPORTS";
+    public const string SubmitWeeklyReports = "SUBMIT_WEEKLY_REPORTS";
 }
 
 public sealed class RolePermissionService
@@ -50,13 +52,15 @@ public sealed class RolePermissionService
                 PermissionNames.ViewInterns,
                 PermissionNames.SearchInterns,
                 PermissionNames.ViewProfile,
-                PermissionNames.ViewDocuments
+                PermissionNames.ViewDocuments,
+                PermissionNames.ViewWeeklyReports
             ],
             ["INTERN"] =
             [
                 PermissionNames.UploadDocuments,
                 PermissionNames.ViewProfile,
-                PermissionNames.ViewDocuments
+                PermissionNames.ViewDocuments,
+                PermissionNames.SubmitWeeklyReports
             ]
         };
 

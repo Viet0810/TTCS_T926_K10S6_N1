@@ -11,6 +11,8 @@ const permissionLabels = {
   VIEW_DOCUMENTS: "Xem tài liệu",
   APPROVE_DOCUMENTS: "Duyệt tài liệu",
   MANAGE_PERMISSIONS: "Quản lý phân quyền",
+  VIEW_WEEKLY_REPORTS: "Xem báo cáo tuần và phản hồi Mentor",
+  SUBMIT_WEEKLY_REPORTS: "Gửi báo cáo tuần",
 };
 
 async function loadRolePermissions() {

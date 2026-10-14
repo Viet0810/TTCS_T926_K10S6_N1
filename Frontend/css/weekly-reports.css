@@ -1,0 +1,23 @@
+.weekly-report-filters { display:grid; grid-template-columns: minmax(200px,1.4fr) repeat(2,minmax(170px,1fr)); gap:14px; margin:0 0 18px; }
+.weekly-report-filters label { display:grid; gap:7px; color:var(--muted); font-size:12px; font-weight:700; }
+.weekly-report-filters input,.weekly-report-filters select,.weekly-report-card textarea { width:100%; min-height:42px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--input); color:var(--ink); }
+.weekly-report-message { min-height:20px; color:var(--muted); }
+.weekly-report-list { display:grid; gap:14px; }
+.weekly-report-card { padding:20px; border:1px solid var(--line); border-radius:14px; background:#fff; }
+.weekly-report-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:16px; }
+.weekly-report-card h3 { margin:0 0 5px; font-size:17px; }
+.weekly-report-subtitle,.weekly-report-date { margin:0; color:var(--muted); font-size:12px; }
+.weekly-report-badge { flex:0 0 auto; padding:6px 10px; border-radius:999px; background:#fff5dd; color:#90610a; font-size:11px; font-weight:700; }
+.weekly-report-badge.is-done { background:#e7f7ef; color:#137345; }
+.weekly-report-sections { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.weekly-report-section { min-width:0; padding:13px; border-radius:10px; background:#f7f9fd; }
+.weekly-report-section h4 { margin:0 0 7px; color:#345074; font-size:12px; }
+.weekly-report-section p { margin:0; color:#35445b; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.weekly-report-feedback { margin-top:14px; padding:14px; border-left:3px solid var(--primary); border-radius:0 10px 10px 0; background:#f2f6ff; }
+.weekly-report-feedback h4 { margin:0 0 6px; font-size:12px; }
+.weekly-report-feedback p { margin:0; white-space:pre-wrap; line-height:1.6; }
+.weekly-report-card-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+.feedback-intern { color:var(--muted); }
+.feedback-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.weekly-report-empty { padding:34px 18px; border:1px dashed #cad5e5; border-radius:12px; color:var(--muted); text-align:center; }
+@media (max-width:700px) { .weekly-report-filters,.weekly-report-sections { grid-template-columns:1fr; } .weekly-report-card-header { flex-direction:column; } }

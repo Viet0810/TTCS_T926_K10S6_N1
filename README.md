@@ -78,17 +78,18 @@ Các mục tiêu trên được xác định dựa trên phạm vi chức năng 
 
 ## 4. Đối tượng sử dụng
 
-Dựa trên các actor và User Story trong Product Backlog, các đối tượng chính của hệ thống bao gồm:
+Các tác nhân dưới đây được đối chiếu với vai trò, quyền và màn hình đã có trong mã nguồn:
 
-| Actor                                      | Vai trò                                                 | Chức năng chính                                                          |
-| ------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **Quản trị viên / Người quản lý hệ thống** | Quản lý chung, giám sát và điều hành hoạt động thực tập | Quản lý tài khoản, cấu hình hệ thống, giám sát tiến độ, báo cáo tổng hợp |
-| **Giảng viên / Người phụ trách**           | Theo dõi và đánh giá sinh viên trong quá trình thực tập | Xem hồ sơ sinh viên, theo dõi tiến độ, đánh giá, cập nhật kết quả        |
-| **Sinh viên thực tập**                     | Người tham gia chương trình thực tập                    | Cập nhật thông tin cá nhân, theo dõi nhiệm vụ, nộp kết quả, xem tiến độ  |
-| **Đơn vị/Doanh nghiệp thực tập**           | Đối tác tiếp nhận sinh viên thực tập                    | Quản lý địa điểm, người hướng dẫn, theo dõi sinh viên thực tập           |
-| **Người hướng dẫn**                        | Hướng dẫn và giám sát công việc của sinh viên           | Giao nhiệm vụ, theo dõi tiến độ, đánh giá kết quả thực tập               |
+| Actor trong hệ thống | Vai trò | Chức năng hiện có |
+| --- | --- | --- |
+| **Quản trị viên (ADMIN)** | Quản trị tài khoản và hệ thống | Quản lý tài khoản; xem, tìm kiếm, tạo và chỉnh sửa hồ sơ thực tập sinh; xem và duyệt tài liệu; quản lý ma trận phân quyền. |
+| **Nhân sự (HR)** | Tiếp nhận và quản lý hồ sơ thực tập sinh | Xem, tìm kiếm, tạo và chỉnh sửa hồ sơ; xem và duyệt CV/đơn xin thực tập; cập nhật trạng thái thực tập. |
+| **Người hướng dẫn (MENTOR)** | Theo dõi thực tập sinh được phân công | Xem và tìm kiếm hồ sơ; xem báo cáo tuần và gửi/cập nhật phản hồi cho báo cáo của thực tập sinh được gắn với email Mentor. |
+| **Thực tập sinh (INTERN)** | Tham gia chương trình thực tập | Xem/cập nhật hồ sơ cá nhân; nộp CV/đơn xin thực tập; gửi báo cáo tuần và xem phản hồi của Mentor; nhận thông báo về trạng thái hồ sơ. |
 
-Nếu Product Backlog không nêu rõ thêm các actor khác, các actor trên được xem là các nhóm chính phù hợp với phạm vi hệ thống.
+### Tác nhân khác
+
+**Giảng viên hướng dẫn** và **đơn vị/doanh nghiệp tiếp nhận** là các bên liên quan trong quy trình nghiệp vụ. Mã nguồn hiện có trường thông tin giảng viên, đơn vị và người hướng dẫn trong hồ sơ, nhưng chưa có vai trò đăng nhập hoặc màn hình nghiệp vụ riêng cho các bên này.
 
 ---
 

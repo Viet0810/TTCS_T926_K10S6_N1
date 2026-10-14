@@ -130,6 +130,14 @@ const API = {
   },
   downloadMyDocument: (kind) => requestApi(`/interns/me/documents/${encodeURIComponent(kind)}`, { headers: getAuthHeader() }, "blob"),
   getDocumentReviews: () => requestApi("/document-reviews", { headers: getAuthHeader() }),
+  getWeeklyReports: () => requestApi("/weekly-reports", { headers: getAuthHeader() }),
+  getMyWeeklyReports: () => requestApi("/weekly-reports/me", { headers: getAuthHeader() }),
+  submitMyWeeklyReport: (report) => requestApi("/weekly-reports/me", {
+    method: "POST", headers: getAuthHeader(), body: JSON.stringify(report),
+  }),
+  saveWeeklyReportFeedback: (id, feedback) => requestApi(`/weekly-reports/${encodeURIComponent(id)}/feedback`, {
+    method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ feedback }),
+  }),
   downloadDocumentReview: (id, kind) => requestApi(`/document-reviews/${encodeURIComponent(id)}/${encodeURIComponent(kind)}`, { headers: getAuthHeader() }, "blob"),
   reviewDocument: (id, kind, decision) => requestApi(`/document-reviews/${encodeURIComponent(id)}/${encodeURIComponent(kind)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(decision),
