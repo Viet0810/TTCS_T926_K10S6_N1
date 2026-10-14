@@ -94,6 +94,11 @@ builder.Services.AddScoped<
     InternManagement.Services.AttendanceReportService
 >();
 
+builder.Services.AddScoped<
+    InternManagement.Services.INotificationService,
+    InternManagement.Services.NotificationService
+>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

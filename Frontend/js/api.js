@@ -178,4 +178,20 @@ const API = {
     method: "DELETE",
     headers: getAuthHeader(),
   }),
+
+  // Hệ thống thông báo (K10S6N1-156 / K10S6N1-157)
+  getNotifications: (params) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : "";
+    return requestApi(`/notifications${qs}`, { headers: getAuthHeader() });
+  },
+  getNotificationUnreadCount: () => requestApi("/notifications/unread-count", { headers: getAuthHeader() }),
+  markNotificationRead: (id) => requestApi(`/notifications/${encodeURIComponent(id)}/read`, {
+    method: "POST", headers: getAuthHeader()
+  }),
+  markAllNotificationsRead: () => requestApi("/notifications/mark-all-read", {
+    method: "POST", headers: getAuthHeader()
+  }),
+  seedNotifications: () => requestApi("/notifications/seed", {
+    method: "POST", headers: getAuthHeader()
+  }),
 };
