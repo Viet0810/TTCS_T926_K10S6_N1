@@ -35,14 +35,44 @@ public sealed class InternPortalController : ControllerBase
         return Ok(await ReadRows(db, "SELECT t.Id,t.Title,t.Description,t.AssignedAt,t.Deadline,t.Priority,t.Status,m.FullName AS MentorName FROM dbo.InternTasks t JOIN dbo.Interns i ON i.Id=t.InternId JOIN dbo.Users m ON m.Id=t.MentorUserId WHERE i.UserId=@user ORDER BY t.AssignedAt DESC", user!.Id, ct));
     }
 
+    [HttpGet("tasks/{id:int}")]
+    public async Task<IActionResult> TaskDetail(int id, CancellationToken ct)
+    {
+        if (!TryIntern(out var user, out var error)) return error!;
+        await using var db = new SqlConnection(connectionString); await db.OpenAsync(ct);
+        await using var cmd = db.CreateCommand();
+        cmd.CommandText = "SELECT t.Id,t.Title,t.Description,t.AssignedAt,t.Deadline,t.Priority,t.Status,m.FullName AS MentorName FROM dbo.InternTasks t JOIN dbo.Interns i ON i.Id=t.InternId JOIN dbo.Users m ON m.Id=t.MentorUserId WHERE i.UserId=@user AND t.Id=@id";
+        cmd.Parameters.AddWithValue("@user", user!.Id);
+        cmd.Parameters.AddWithValue("@id", id);
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct)) return NotFound(new { message = "Không tìm thấy nhiệm vụ." });
+        var row = new Dictionary<string, object?>();
+        for (var i = 0; i < reader.FieldCount; i++)
+            row[reader.GetName(i)] = await reader.IsDBNullAsync(i, ct) ? null : reader.GetValue(i);
+        return Ok(row);
+    }
+
     [HttpPut("tasks/{id:int}/status")]
     public async Task<IActionResult> UpdateTaskStatus(int id, TaskStatusRequest request, CancellationToken ct)
     {
         if (!TryIntern(out var user, out var error)) return error!;
-        if (request.Status is not ("InProgress" or "PendingReview")) return BadRequest(new { message = "Trạng thái nhiệm vụ không hợp lệ." });
         await using var db = new SqlConnection(connectionString); await db.OpenAsync(ct);
+        await using var current = db.CreateCommand();
+        current.CommandText = "SELECT t.Status FROM dbo.InternTasks t JOIN dbo.Interns i ON i.Id=t.InternId WHERE t.Id=@id AND i.UserId=@user";
+        current.Parameters.AddWithValue("@id", id);
+        current.Parameters.AddWithValue("@user", user!.Id);
+        var currentStatus = await current.ExecuteScalarAsync(ct) as string;
+        if (currentStatus is null) return NotFound(new { message = "Không tìm thấy nhiệm vụ." });
+
+        if (!IsAllowedTaskStatusTransition(currentStatus, request?.Status, out var transitionMessage))
+        {
+            if (transitionMessage is null || transitionMessage == "Trạng thái nhiệm vụ không hợp lệ.")
+                return BadRequest(new { message = transitionMessage ?? "Trạng thái nhiệm vụ không hợp lệ." });
+            return Conflict(new { message = transitionMessage });
+        }
+
         await using var cmd = db.CreateCommand(); cmd.CommandText = "UPDATE t SET Status=@status FROM dbo.InternTasks t JOIN dbo.Interns i ON i.Id=t.InternId WHERE t.Id=@id AND i.UserId=@user AND t.Status<>N'Completed'";
-        cmd.Parameters.AddWithValue("@status", request.Status); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@user", user!.Id);
+        cmd.Parameters.AddWithValue("@status", request!.Status); cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@user", user!.Id);
         if (await cmd.ExecuteNonQueryAsync(ct) == 0) return NotFound(new { message = "Không tìm thấy nhiệm vụ." });
         await NotifyMentor(db, id, "TaskUpdate", "Thực tập sinh cập nhật nhiệm vụ", $"Nhiệm vụ được chuyển sang {request.Status}.", true, ct);
         return Ok(new { message = "Đã cập nhật trạng thái nhiệm vụ." });
@@ -112,6 +142,29 @@ public sealed class InternPortalController : ControllerBase
         await using var cmd = db.CreateCommand(); cmd.CommandText = "UPDATE dbo.UserNotifications SET ReadAt=COALESCE(ReadAt,SYSUTCDATETIME()) WHERE Id=@id AND UserId=@user"; cmd.Parameters.AddWithValue("@id", id); cmd.Parameters.AddWithValue("@user", user!.Id);
         return await cmd.ExecuteNonQueryAsync(ct) == 0 ? NotFound(new { message = "Không tìm thấy thông báo." }) : NoContent();
     }
+
+    public static bool IsAllowedTaskStatusTransition(string? currentStatus, string? requestedStatus, out string? message)
+    {
+        if (string.IsNullOrWhiteSpace(requestedStatus)) { message = "Trạng thái nhiệm vụ không hợp lệ."; return false; }
+        if (requestedStatus is not ("InProgress" or "PendingReview")) { message = "Trạng thái nhiệm vụ không hợp lệ."; return false; }
+        if (string.Equals(currentStatus, "Completed", StringComparison.OrdinalIgnoreCase)) { message = "Nhiệm vụ đã hoàn thành, không thể cập nhật tiếp."; return false; }
+        if (string.Equals(requestedStatus, "InProgress", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentStatus, "NotStarted", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentStatus, "InProgress", StringComparison.OrdinalIgnoreCase))
+        {
+            message = "Nhiệm vụ chỉ có thể bắt đầu từ trạng thái Chưa bắt đầu hoặc Đang thực hiện.";
+            return false;
+        }
+        if (string.Equals(requestedStatus, "PendingReview", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentStatus, "InProgress", StringComparison.OrdinalIgnoreCase))
+        {
+            message = "Nhiệm vụ phải ở trạng thái Đang thực hiện trước khi gửi đánh giá.";
+            return false;
+        }
+
+        message = null;
+        return true;
+    }
+
+    public static bool IsTaskOwnedByCurrentIntern(int currentUserId, int taskOwnerUserId)
+        => currentUserId == taskOwnerUserId;
 
     private bool TryIntern(out AuthenticatedUser? user, out IActionResult? failure)
     {
