@@ -1,0 +1,60 @@
+.meeting-main{min-width:0}.meeting-card{padding:24px;border-radius:16px;margin-bottom:24px;min-width:0;box-shadow:0 3px 16px #0f172a08}.meeting-card h2{margin:0 0 12px}.meeting-card p{color:#64748b}.meeting-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}.meeting-grid label{display:flex;flex-direction:column;gap:8px;font-weight:600}.meeting-grid input,.meeting-grid textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:white}.meeting-wide{grid-column:1/-1}.meeting-grid fieldset{min-width:0;border:1px solid #e2e8f0;border-radius:12px;padding:16px}.meeting-people{max-height:220px;overflow-y:auto;margin-top:12px}.meeting-people label{display:flex;flex-direction:row;align-items:center;padding:10px;gap:12px;font-weight:400;overflow-wrap:anywhere}.meeting-people input{width:18px;flex-shrink:0}.meeting-actions{display:flex;justify-content:flex-end}.meeting-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.meeting-heading button{padding:8px 12px}.meeting-table-wrap{overflow-x:auto;max-width:100%}.meeting-table{width:100%;min-width:800px;border-collapse:collapse;table-layout:fixed}.meeting-table th,.meeting-table td{text-align:left;padding:14px;border-bottom:1px solid #e2e8f0;vertical-align:top;overflow-wrap:anywhere}.meeting-table th{background:#f8fafc}.meeting-table th:first-child{width:26%}.meeting-table small{display:block;color:#64748b;margin-top:8px;white-space:pre-wrap}.meeting-card [hidden]{display:none!important}@media(max-width:700px){.meeting-grid{grid-template-columns:1fr}.meeting-wide{grid-column:auto}.meeting-card{padding:18px}.meeting-actions button{width:100%}}
+
+/* Meeting composition and participant presentation. */
+.meeting-compose{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr);gap:24px;align-items:start;margin-bottom:24px}
+.meeting-compose:has(#meetingCreate[hidden]){display:none}
+.meeting-compose>.meeting-card{margin-bottom:0;padding:28px;background:#fff;border:1px solid #e6ebf2;border-radius:18px}
+.meeting-form-heading{padding-bottom:20px;border-bottom:1px solid #edf0f5}
+.meeting-eyebrow{display:block;margin-bottom:10px;font-size:11px;letter-spacing:1.2px;font-weight:700;color:#6c7fe0}
+.meeting-form-heading h2{font-size:23px;letter-spacing:-.5px;margin:0 0 8px}
+.meeting-form-heading p{font-size:14px;line-height:1.6;margin:0}
+.meeting-grid{gap:20px}
+.meeting-grid>label,.meeting-datetime-field>label{font-size:14px;color:#334155}
+.meeting-input{position:relative;display:block;min-width:0}
+.meeting-input>svg{position:absolute;left:14px;top:14px;width:20px;height:20px;fill:none;stroke:#8897ad;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.meeting-grid .meeting-input>input{height:48px;padding:12px 14px 12px 44px;border-color:#dbe2ec;border-radius:10px;font-size:14px}
+.meeting-grid .meeting-input>textarea{padding:14px 14px 14px 44px;resize:vertical;min-height:100px;font-size:14px;font-weight:400;line-height:1.6;border-color:#dbe2ec}
+.meeting-input input::placeholder,.meeting-input textarea::placeholder{color:#94a3b8;font-weight:400}
+.meeting-grid .meeting-input>input:hover,.meeting-grid .meeting-input>textarea:hover{border-color:#aab8cc}
+.meeting-grid .meeting-input>input:focus,.meeting-grid .meeting-input>textarea:focus{outline:none;border-color:#3568e8;box-shadow:0 0 0 3px #3568e81c}
+.meeting-optional{font-size:12px;font-weight:400;color:#94a3b8;margin-left:6px}
+.meeting-grid .meeting-participants{padding:16px;border:1px solid #e2e8f0;background:#fff;border-radius:12px}
+.meeting-participants legend{padding:0 6px;font-size:14px;font-weight:600;color:#334155}
+.meeting-participants-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-size:12px;color:#64748b}
+.meeting-count{white-space:nowrap;background:#eef2ff;color:#5965cc;border-radius:99px;padding:6px 10px;font-size:11px;font-weight:600}
+.meeting-people{max-height:248px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;margin-top:12px;padding-right:4px}
+.meeting-grid .meeting-person{display:flex;flex-direction:row;align-items:center;gap:12px;padding:12px;margin:0 0 6px;border:1px solid transparent;border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s}
+.meeting-person:hover{background:#f7f9fd}
+.meeting-grid .meeting-person.is-selected{background:#f0f5ff;border-color:#cbdcff}
+.meeting-grid .meeting-person:focus-within{outline:2px solid #3568e8;outline-offset:-2px}
+.meeting-grid .meeting-person input{width:17px;height:17px;margin:0;accent-color:#3568e8;flex-shrink:0}
+.meeting-person-avatar{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#eef0fa;color:#6474aa;font-size:12px;font-weight:700}
+.meeting-person-info{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.meeting-person-heading{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.meeting-person-heading strong{font-size:13px;font-weight:600;color:#334155}
+.meeting-person-email{font-size:12px;font-weight:400;color:#8290a6;overflow-wrap:anywhere}
+.meeting-person-role{padding:3px 7px;border-radius:6px;background:#f1f3f7;color:#64748b;font-size:10px;letter-spacing:.3px;font-weight:600}
+.meeting-person-role[data-role=HR]{background:#edeaff;color:#7761c7}
+.meeting-person-role[data-role=MENTOR]{background:#e5f6ed;color:#23865c}
+.meeting-person-role[data-role=INTERN]{background:#e2f7fb;color:#1d8da3}
+.meeting-grid .meeting-actions{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid #edf0f5;padding-top:20px;margin-top:2px}
+.meeting-action-note{max-width:260px;color:#94a3b8;font-size:12px;line-height:1.5}
+.meeting-action-buttons{display:flex;gap:10px;flex-shrink:0}
+.meeting-action-buttons button{min-height:42px;padding:10px 18px;border-radius:10px;font-size:13px;white-space:nowrap}
+.meeting-action-buttons .btn-primary{background:#3568e8;box-shadow:0 4px 12px #3568e826}
+.meeting-guide{display:grid;gap:20px;min-width:0}
+.meeting-guide-card{padding:24px;border:1px solid #e6ebf2;background:#fff;border-radius:16px;box-shadow:0 3px 16px #0f172a06}
+.meeting-guide-card h2{font-size:17px;line-height:1.5;margin:0 0 10px;color:#26374e}
+.meeting-guide-card p{font-size:13px;color:#8390a3;line-height:1.7;margin:0}
+.meeting-guide-intro{background:linear-gradient(160deg,#f4f7ff 0%,#fff 65%)}
+.meeting-guide-icon{display:grid;place-items:center;width:52px;height:52px;margin-bottom:18px;background:#e7edff;border-radius:15px;color:#5d7ae1}
+.meeting-guide-icon svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.meeting-guide ol{list-style:none;padding:0;margin:24px 0 0;display:grid;gap:20px}
+.meeting-guide ol li{display:flex;gap:12px;align-items:flex-start}
+.meeting-guide ol li>span{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;flex-shrink:0;background:#ecf0ff;color:#6e7fc8;font-size:11px;font-weight:700}
+.meeting-guide strong{display:block;font-size:13px;margin:2px 0 5px;color:#46546c}
+.meeting-guide ol p{font-size:12px;line-height:1.6}
+.meeting-tips{padding-left:18px;margin:14px 0 0;display:grid;gap:12px;font-size:12px;line-height:1.7;color:#8390a3}
+.meeting-tips li::marker{color:#97a9d2}
+@media(max-width:1050px){.meeting-compose{grid-template-columns:minmax(0,1fr)}.meeting-guide{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.meeting-compose{gap:18px}.meeting-compose>.meeting-card{padding:18px}.meeting-guide{grid-template-columns:minmax(0,1fr)}.meeting-grid .meeting-actions{align-items:stretch;flex-direction:column}.meeting-action-note{max-width:none}.meeting-action-buttons{justify-content:flex-end}.meeting-action-buttons button{width:auto}.meeting-participants-heading{align-items:flex-start;flex-direction:column;gap:8px}.meeting-grid .meeting-person{gap:8px;padding:10px 6px}.meeting-person-avatar{width:32px;height:32px}}diff --git a/Frontend/js/meeting-datetime.js b/Frontend/js/meeting-datetime.js

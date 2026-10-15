@@ -6,6 +6,8 @@ namespace InternManagement.Services;
 
 public static class PermissionNames
 {
+    public const string ReadMeetings = "MEETING_READ";
+    public const string CreateMeeting = "MEETING_CREATE";
     public const string ReadMentorTasks = "MENTOR_TASK_READ";
     public const string CreateTask = "TASK_CREATE";
     public const string ReadOwnTasks = "OWN_TASK_READ";
@@ -76,13 +78,14 @@ public sealed class RolePermissionService
                 PermissionNames.ManagePermissions,
                 PermissionNames.ReadPermissions,
 
-                // Quyền đánh giá cuối kỳ
-                PermissionNames.ViewFinalEvaluations,
-                PermissionNames.UpdateFinalEvaluations
+                // ADMIN chỉ được xem đánh giá cuối kỳ
+                PermissionNames.ViewFinalEvaluations
             ],
 
             ["HR"] =
             [
+                PermissionNames.ReadMeetings,
+                PermissionNames.CreateMeeting,
                 PermissionNames.ManageContracts,
                 PermissionNames.AssignMentor,
                 PermissionNames.ViewInterns,
@@ -102,7 +105,7 @@ public sealed class RolePermissionService
                 PermissionNames.CreateAssignment,
                 PermissionNames.UpdateAssignment,
 
-                // Quyền đánh giá cuối kỳ
+                // HR được xem, thêm và sửa đánh giá
                 PermissionNames.ViewFinalEvaluations,
                 PermissionNames.UpdateFinalEvaluations
             ],
@@ -114,7 +117,7 @@ public sealed class RolePermissionService
                 PermissionNames.SearchInterns,
                 PermissionNames.ViewProfile,
 
-                // Quyền đánh giá cuối kỳ
+                // MENTOR được xem, thêm và sửa đánh giá
                 PermissionNames.ViewFinalEvaluations,
                 PermissionNames.UpdateFinalEvaluations
             ],
@@ -131,7 +134,10 @@ public sealed class RolePermissionService
                 PermissionNames.ViewDocuments,
                 PermissionNames.ViewOwnProfile,
                 PermissionNames.EditOwnProfile,
-                PermissionNames.ViewOwnSchedule
+                PermissionNames.ViewOwnSchedule,
+
+                // INTERN chỉ được xem đánh giá của bản thân
+                PermissionNames.ViewFinalEvaluations
             ]
         };
 
@@ -140,7 +146,7 @@ public sealed class RolePermissionService
             ? Array.AsReadOnly(permissions)
             : Array.Empty<string>();
 
-    // No process/token cache: revocations apply to the very next API call.
+    // Không dùng cache để thay đổi quyền có hiệu lực ngay.
     public IReadOnlyList<string> GetPermissions(string? role)
     {
         if (string.IsNullOrWhiteSpace(role))

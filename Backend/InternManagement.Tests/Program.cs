@@ -39,6 +39,24 @@ await using (var create = master.CreateCommand())
 
 try
 {
+    if(args.Contains("--meeting-only"))
+    {
+        await using var fixture = new SqlConnection(testSettings.ConnectionString); await fixture.OpenAsync();
+        await using var setup = fixture.CreateCommand();
+        setup.CommandText = """
+            CREATE TABLE dbo.Users(
+                Id INT IDENTITY PRIMARY KEY, Username NVARCHAR(254) NOT NULL UNIQUE,
+                FullName NVARCHAR(200) NOT NULL, Email NVARCHAR(254) NOT NULL UNIQUE,
+                PasswordHash NVARCHAR(500) NOT NULL, Role VARCHAR(10) NOT NULL,MustChangePassword BIT NOT NULL DEFAULT 0);
+            CREATE TABLE dbo.RolePermissions(Role VARCHAR(10) NOT NULL,Permission VARCHAR(64) NOT NULL,PRIMARY KEY(Role,Permission));
+            CREATE TABLE dbo.PermissionMigrations(Name VARCHAR(100) NOT NULL PRIMARY KEY);
+            """;
+        await setup.ExecuteNonQueryAsync();
+        await InternManagement.Infrastructure.MeetingMigration.ApplyAsync(fixture, default);
+        await MeetingEmailChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});
+        await MeetingApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});
+        return;
+    }
     await new DatabaseInitializer().InitializeAsync(testSettings.ConnectionString);
     if(args.Contains("--paging-only"))
     {

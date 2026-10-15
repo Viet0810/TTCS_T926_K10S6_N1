@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lịch họp | Quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css"><link rel="stylesheet" href="../css/meetings.css">
+  <link rel="stylesheet" href="../css/meeting-datetime.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Lịch họp</h1></div></div>
+      <div class="dashboard-session"><span id="roleBadge" class="badge"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main meeting-main">
+      <p id="meetingAccess" role="status">Đang kiểm tra quyền truy cập…</p>
+      <div class="meeting-compose">
+      <section class="card meeting-card" id="meetingCreate" hidden>
+        <div class="meeting-form-heading"><span class="meeting-eyebrow">KẾT NỐI & CỘNG TÁC</span><h2>Tạo cuộc họp</h2><p>Sắp xếp thời gian, kết nối mọi người và cùng trao đổi.</p></div>
+        <form id="meetingForm" class="meeting-grid">
+          <label class="meeting-wide">Tiêu đề cuộc họp<span class="meeting-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M8 5v14m8-14v14M5 19h6m2 0h6"/></svg><input name="title" maxlength="200" placeholder="Ví dụ: Trao đổi tiến độ thực tập tuần này" required></span></label>
+          <div class="meeting-datetime-field"><label for="meetingStart">Bắt đầu</label><input id="meetingStart" name="start" type="datetime-local" required></div>
+          <div class="meeting-datetime-field"><label for="meetingEnd">Kết thúc</label><input id="meetingEnd" name="end" type="datetime-local" required></div>
+          <label class="meeting-wide">Địa điểm hoặc link cuộc họp<span class="meeting-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><input name="location" maxlength="500" placeholder="Phòng họp hoặc đường dẫn cuộc họp trực tuyến"></span></label>
+          <fieldset class="meeting-wide meeting-participants"><legend>Người tham gia</legend><div class="meeting-participants-heading"><span>Chọn người dùng trong hệ thống</span><span id="participantCount" class="meeting-count" aria-live="polite">Đã chọn 0 người</span></div><div class="meeting-input meeting-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="participantSearch" type="search" placeholder="Tìm tên, email hoặc vai trò…" aria-label="Tìm người tham gia"></div><div id="participantOptions" class="meeting-people"></div></fieldset>
+          <label class="meeting-wide"><span>Mô tả <span class="meeting-optional">Không bắt buộc</span></span><span class="meeting-input meeting-textarea"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M5 10h14M5 15h14M5 20h9"/></svg><textarea name="description" maxlength="2000" rows="3" placeholder="Nội dung trao đổi, tài liệu cần chuẩn bị…"></textarea></span></label>
+          <div class="meeting-actions meeting-wide"><span class="meeting-action-note">Email sẽ được gửi đến người tham gia sau khi tạo.</span><div class="meeting-action-buttons"><button type="reset" class="btn-secondary">Hủy</button><button id="meetingSave" class="btn-primary" disabled>Tạo cuộc họp</button></div></div>
+        </form>
+      </section>
+      <aside class="meeting-guide" aria-label="Hướng dẫn tạo lịch họp">
+        <section class="card meeting-guide-card meeting-guide-intro"><div class="meeting-guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v4m10-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><path d="m8 15 3 3 5-5"/></svg></div><h2>Lên lịch họp dễ dàng</h2><p>Một cuộc hẹn rõ ràng giúp cả nhóm chuẩn bị tốt hơn.</p><ol><li><span>1</span><div><strong>Điền thông tin</strong><p>Chọn thời gian và địa điểm phù hợp.</p></div></li><li><span>2</span><div><strong>Chọn người tham gia</strong><p>Tìm Intern, Mentor hoặc HR trong danh sách.</p></div></li><li><span>3</span><div><strong>Tạo cuộc họp</strong><p>Hệ thống gửi email đến những người đã chọn.</p></div></li></ol></section>
+        <section class="card meeting-guide-card"><h2>Một số lưu ý</h2><ul class="meeting-tips"><li>Thời gian hiển thị theo múi giờ Việt Nam (GMT+7), định dạng 24 giờ.</li><li>Giờ kết thúc cần sau giờ bắt đầu.</li><li>Chỉ người được chọn mới nhận email thông báo.</li><li>Thêm mô tả để mọi người nắm rõ nội dung trước cuộc họp.</li></ul></section>
+      </aside>
+      </div>
+      <section class="card meeting-card" id="meetingList" hidden>
+        <div class="meeting-heading"><h2>Danh sách cuộc họp</h2><button id="meetingReload" type="button" class="btn-secondary">Tải lại</button></div>
+        <p id="meetingState" role="status"></p>
+        <div class="meeting-table-wrap"><table class="meeting-table"><thead><tr><th>Tiêu đề / Mô tả</th><th>Thời gian (GMT+7)</th><th>Địa điểm / Link</th><th>Người tham gia</th><th>Email đã gửi</th></tr></thead><tbody id="meetingRows"></tbody></table></div>
+      </section>
+    </main>
+  </div>
+  <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/meeting-datetime.js"></script><script src="../js/meetings.js"></script>
+</body>
+</html>
