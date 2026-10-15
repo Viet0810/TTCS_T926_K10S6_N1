@@ -36,6 +36,23 @@
     lockProgram();
     button.disabled=!intern || !canAssign(id) || mentorSelect.options.length<=1;
   }
+  function renderMentorLoad(rowsData) {
+    const rows = document.getElementById("mentorLoadRows");
+    if (!rows) return;
+    rows.replaceChildren();
+    if (!rowsData.length) {
+      const cell = document.createElement("td"); cell.colSpan = 3; cell.textContent = "Chưa có Mentor nào được phân công Intern.";
+      const row = document.createElement("tr"); row.append(cell); rows.append(row); return;
+    }
+    rowsData.forEach(item => {
+      const row = document.createElement("tr");
+      [item.mentorName || "Mentor chưa có tên", item.email || "—", `${item.internCount} Intern`].forEach(value => {
+        const cell = document.createElement("td"); cell.textContent = value; row.append(cell);
+      });
+      rows.append(row);
+    });
+  }
+
   function renderRows(assignments, programs) {
     const rows = document.getElementById("assignmentRows");
     rows.replaceChildren();
@@ -59,8 +76,8 @@
   }
   async function reload() {
     if (!form) {
-      const [assignments, programs] = await Promise.all([API.getAssignments(), API.getAssignmentPrograms()]);
-      renderRows(assignments, programs); return "";
+      const [assignments, programs, mentorLoad] = await Promise.all([API.getAssignments(), API.getAssignmentPrograms(), API.getMentorLoad()]);
+      renderRows(assignments, programs); renderMentorLoad(mentorLoad); return "";
     }
     const [allInterns, mentors, programs] = await Promise.all([
       API.getAssignmentInterns(), API.getAssignmentMentors(), API.getAssignmentPrograms(),

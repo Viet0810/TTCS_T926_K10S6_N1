@@ -8,6 +8,9 @@ public sealed record AssignMentorRequest(
 
 public sealed record MentorOption(int Id, string FullName, string Email);
 
+public sealed record MentorLoadItem(
+    int MentorId, string MentorName, string Email, int InternCount);
+
 public sealed record InternAssignmentResponse(
     int InternId, string FullName, string Email, int? MentorUserId,
     string? MentorName, int? InternshipProgramId, string? Status);

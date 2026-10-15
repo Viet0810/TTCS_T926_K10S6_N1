@@ -78,6 +78,7 @@ internal static class ApiChecks
                 await Task.Delay(100);
             }
             check(ready,"application starts with routing and rate limiting enabled");
+            if(Environment.GetCommandLineArgs().Contains("--tasks-only")){await InternTaskChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
             await RolePermissionChecks.RunAsync(http, connectionString, check);
             if(Environment.GetCommandLineArgs().Contains("--sprint2-only")){await InternAssignmentChecks.RunAsync(http,connectionString,check,RestartAsync);await Sprint2CompletionChecks.RunAsync(http,connectionString,check);completed=true;return;}
             await Sprint1RbacChecks.RunAsync(http, connectionString, check, RestartAsync, CheckLiveBrowserAsync);
@@ -147,7 +148,7 @@ internal static class ApiChecks
             }
             await Task.WhenAll(stdout,stderr);
             var diagnostics = await stdout + (restartedStdout is null ? "" : await restartedStdout);
-            if(completed&&!Environment.GetCommandLineArgs().Contains("--sprint2-only"))check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
+            if(completed&&!Environment.GetCommandLineArgs().Contains("--sprint2-only")&&!Environment.GetCommandLineArgs().Contains("--tasks-only"))check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
                 && diagnostics.Contains("trace") && diagnostics.Contains("UTC"), "backend failure logs identify endpoint, trace and time");
             if(completed)check(!diagnostics.Contains("Permission-test-9") && !diagnostics.Contains("Account-test-9")
                 && !diagnostics.Contains("Temporary-test-9") && !diagnostics.Contains("Replacement-test-9")

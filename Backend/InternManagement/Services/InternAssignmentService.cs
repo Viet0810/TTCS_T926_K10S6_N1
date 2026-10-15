@@ -21,6 +21,25 @@ public sealed class InternAssignmentService(IConfiguration configuration)
         return result;
     }
 
+    public async Task<List<MentorLoadItem>> GetMentorLoadAsync(CancellationToken cancellationToken)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new SqlCommand("""
+            SELECT u.Id, u.FullName, u.Email, COUNT(i.Id) AS InternCount
+            FROM dbo.Users u
+            LEFT JOIN dbo.Interns i ON i.MentorUserId = u.Id
+            WHERE u.Role = 'MENTOR'
+            GROUP BY u.Id, u.FullName, u.Email
+            ORDER BY u.FullName, u.Id
+            """, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var result = new List<MentorLoadItem>();
+        while (await reader.ReadAsync(cancellationToken))
+            result.Add(new(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetInt32(3)));
+        return result;
+    }
+
     public async Task<List<InternAssignmentResponse>> GetInternsAsync(bool assignedOnly, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);

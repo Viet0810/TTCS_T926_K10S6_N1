@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng ký nghỉ phép | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/visuals.css">
+  <link rel="stylesheet" href="../css/leave-request.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand">
+        <div class="dashboard-logo">
+          <img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312">
+        </div>
+        <div class="dashboard-title">
+          <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+          <h1>Đăng ký nghỉ phép</h1>
+        </div>
+      </div>
+      <div class="dashboard-session">
+        <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+        <button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button>
+      </div>
+    </header>
+
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+
+    <main class="dashboard-main">
+      <!-- Thống kê tổng quan -->
+      <section class="leave-stats-grid">
+        <div class="leave-stat-card">
+          <div class="leave-stat-icon stat-icon-total">📝</div>
+          <div class="leave-stat-info">
+            <span id="totalLeaveCount" class="leave-stat-number">0</span>
+            <span class="leave-stat-label">Tổng số đơn</span>
+          </div>
+        </div>
+        <div class="leave-stat-card">
+          <div class="leave-stat-icon stat-icon-pending">⏳</div>
+          <div class="leave-stat-info">
+            <span id="pendingLeaveCount" class="leave-stat-number">0</span>
+            <span class="leave-stat-label">Chờ phê duyệt</span>
+          </div>
+        </div>
+        <div class="leave-stat-card">
+          <div class="leave-stat-icon stat-icon-approved">✅</div>
+          <div class="leave-stat-info">
+            <span id="approvedLeaveCount" class="leave-stat-number">0</span>
+            <span class="leave-stat-label">Đã phê duyệt</span>
+          </div>
+        </div>
+        <div class="leave-stat-card">
+          <div class="leave-stat-icon stat-icon-rejected">❌</div>
+          <div class="leave-stat-info">
+            <span id="rejectedLeaveCount" class="leave-stat-number">0</span>
+            <span class="leave-stat-label">Bị từ chối</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Form nộp đơn xin nghỉ -->
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">TẠO YÊU CẦU NGHỈ PHÉP</span>
+            <h2>Nộp đơn xin nghỉ phép</h2>
+            <p>Vui lòng điền đầy đủ và chính xác thông tin để Mentor hoặc Nhân sự xét duyệt kịp thời.</p>
+          </div>
+        </div>
+
+        <form id="leaveRequestForm" novalidate>
+          <div class="leave-form-grid">
+            <div class="form-group">
+              <label for="leaveType">Loại nghỉ phép <span class="required">*</span></label>
+              <select id="leaveType" name="leaveType" class="form-control" required>
+                <option value="SICK_LEAVE">Nghỉ ốm / Khám bệnh</option>
+                <option value="ACADEMIC_LEAVE">Nghỉ học tập / Thi cử tại trường</option>
+                <option value="PERSONAL_LEAVE">Việc riêng gia đình</option>
+                <option value="OTHER">Lý do khác</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="durationType">Hình thức thời gian <span class="required">*</span></label>
+              <select id="durationType" name="durationType" class="form-control" required>
+                <option value="FULL_DAY">Cả ngày (1.0 ngày)</option>
+                <option value="MORNING">Ca sáng (0.5 ngày: 08:00 - 12:00)</option>
+                <option value="AFTERNOON">Ca chiều (0.5 ngày: 13:30 - 17:30)</option>
+                <option value="MULTI_DAY">Nhiều ngày liên tiếp</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="startDate">Từ ngày <span class="required">*</span></label>
+              <input type="date" id="startDate" name="startDate" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="endDate">Đến ngày <span class="required">*</span></label>
+              <input type="date" id="endDate" name="endDate" class="form-control" disabled required>
+            </div>
+
+            <div class="form-group form-group-full">
+              <div id="leavePreviewBanner" class="leave-preview-banner">
+                <span>⏱️ Dự kiến nghỉ:</span>
+                <span id="previewTotalDays" class="leave-preview-days">1.0 ngày công</span>
+                <span id="previewDateRangeNote">(Từ ngày 2026-10-15 đến 2026-10-15)</span>
+              </div>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="reason">Lý do xin nghỉ <span class="required">*</span></label>
+              <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Nhập chi tiết lý do xin nghỉ phép (tối thiểu 10 ký tự)..." required maxlength="1000"></textarea>
+              <div class="form-helper">
+                <span>Trình bày rõ ràng lý do để Mentor xem xét thuận tiện nhất.</span>
+                <span id="charCounter" class="char-counter">0 / 1000 ký tự (tối thiểu 10)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="document-actions" style="margin-top: 20px;">
+            <button id="submitLeaveBtn" type="submit" class="btn-primary">
+              <span class="btn-text">Gửi đơn xin nghỉ phép</span>
+            </button>
+            <button id="resetFormBtn" type="button" class="btn-secondary">Làm mới form</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Danh sách lịch sử yêu cầu -->
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">LỊCH SỬ NGHỈ PHÉP</span>
+            <h2>Danh sách yêu cầu nghỉ của bạn</h2>
+            <p>Theo dõi tiến độ xét duyệt và nhận xét từ Mentor / Bộ phận nhân sự.</p>
+          </div>
+          <button id="refreshListBtn" type="button" class="btn-secondary">↻ Làm mới</button>
+        </div>
+
+        <div class="leave-filters-bar">
+          <div class="filter-tabs" role="tablist" aria-label="Bộ lọc trạng thái">
+            <button type="button" class="filter-tab active" data-status="ALL">Tất cả</button>
+            <button type="button" class="filter-tab" data-status="PENDING">Chờ duyệt</button>
+            <button type="button" class="filter-tab" data-status="APPROVED">Đã duyệt</button>
+            <button type="button" class="filter-tab" data-status="REJECTED">Từ chối</button>
+            <button type="button" class="filter-tab" data-status="CANCELLED">Đã hủy</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th>
+                <th>Loại nghỉ</th>
+                <th>Thời gian nghỉ</th>
+                <th>Số ngày</th>
+                <th>Lý do xin nghỉ</th>
+                <th>Trạng thái</th>
+                <th>Người duyệt & Nhận xét</th>
+                <th style="text-align: right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="leaveRequestsTableBody">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 24px;">Đang tải dữ liệu…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal xác nhận hủy đơn -->
+    <div id="cancelModal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span class="modal-icon-danger">⚠️</span>
+          <h3 id="modalTitle" class="modal-title">Xác nhận hủy đơn</h3>
+        </div>
+        <div class="modal-body">
+          <p>Bạn có chắc chắn muốn hủy đơn xin nghỉ phép <strong id="cancelTargetId">#0</strong> không?</p>
+          <p style="font-size: 0.85rem; color: #ef4444; margin-top: 6px;">Lưu ý: Sau khi hủy, trạng thái đơn sẽ chuyển sang "Đã hủy" và không thể hoàn tác.</p>
+        </div>
+        <div class="modal-actions">
+          <button id="closeCancelModalBtn" type="button" class="btn-secondary">Giữ lại đơn</button>
+          <button id="confirmCancelBtn" type="button" class="btn-danger">Hủy đơn ngay</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+
+  <script src="../js/ui.js"></script>
+  <script src="../js/tables.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/visuals.js"></script>
+  <script src="../js/navigation.js"></script>
+  <script src="../js/intern-leave-request.js"></script>
+</body>
+</html>

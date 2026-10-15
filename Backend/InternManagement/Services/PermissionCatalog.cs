@@ -13,6 +13,7 @@ public sealed record PermissionDescriptor(string Code, string Module, string Lab
         PermissionNames.CreateContract or PermissionNames.UpdateContract or PermissionNames.DeleteContract => [PermissionNames.ManageContracts],
         PermissionNames.CreateProgram or PermissionNames.UpdateProgram or PermissionNames.DeleteProgram => [PermissionNames.ManagePrograms],
         PermissionNames.CreateAssignment or PermissionNames.UpdateAssignment or PermissionNames.DeleteAssignment => [PermissionNames.AssignMentor],
+        PermissionNames.CreateTask => [PermissionNames.ReadMentorTasks],
         _ => []
     };
 }
@@ -22,6 +23,9 @@ public static class PermissionCatalog
     private static readonly string[] Staff = ["ADMIN", "HR", "MENTOR", "INTERN"];
     public static readonly PermissionDescriptor[] Entries =
     [
+        new(PermissionNames.ReadMentorTasks, "mentor-tasks", "Nhiệm vụ đã giao", "READ", ["MENTOR"]),
+        new(PermissionNames.CreateTask, "mentor-tasks", "Giao nhiệm vụ", "CREATE", ["MENTOR"]),
+        new(PermissionNames.ReadOwnTasks, "own-tasks", "Nhiệm vụ của tôi", "READ", ["INTERN"]),
         new(PermissionNames.ViewInterns, "interns", "Hồ sơ thực tập sinh", "READ", Staff),
         new(PermissionNames.ManageInterns, "interns", "Hồ sơ thực tập sinh", "CREATE", Staff),
         new(PermissionNames.EditInterns, "interns", "Hồ sơ thực tập sinh", "UPDATE", Staff),

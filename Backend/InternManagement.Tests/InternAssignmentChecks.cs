@@ -70,6 +70,8 @@ internal static class InternAssignmentChecks
         var mentors = await Get("/api/intern-assignments/mentors");
         check(mentors.EnumerateArray().Any(m => m.GetProperty("id").GetInt32() == mentorId)
             && !mentors.EnumerateArray().Any(m => m.GetProperty("id").GetInt32() == hrId), "mentor options exclude non-MENTOR users");
+        var mentorLoad = await Get("/api/intern-assignments/mentor-load");
+        check(mentorLoad.EnumerateArray().Any(item => item.GetProperty("mentorId").GetInt32() == mentorId && item.GetProperty("internCount").GetInt32() >= 0), "HR can view the mentor workload summary API");
         using var programCreate = await http.PostAsJsonAsync("/api/program-schedule", new { startDate = "2026-10-01", endDate = "2026-12-31" });
         using var program = JsonDocument.Parse(await programCreate.Content.ReadAsStringAsync());
         var programId = program.RootElement.GetProperty("data").GetProperty("id").GetInt32();
@@ -112,6 +114,8 @@ internal static class InternAssignmentChecks
         var current = assignments.EnumerateArray().Where(a => a.GetProperty("internId").GetInt32() == internIds[0]).ToArray();
         check(current.Length == 1 && current[0].GetProperty("mentorUserId").GetInt32() == mentorId
             && current[0].GetProperty("status").GetString() == "Đang thực tập", "refresh returns one durable assignment and updated status");
+        var mentorLoadAfterAssignment = await Get("/api/intern-assignments/mentor-load");
+        check(mentorLoadAfterAssignment.EnumerateArray().Any(item => item.GetProperty("mentorId").GetInt32() == mentorId && item.GetProperty("internCount").GetInt32() > 0), "mentor workload count reflects assigned interns");
         using var invalidIntern = await http.PutAsJsonAsync("/api/intern-assignments/2147483647", assignment);
         using var invalidMentor = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = int.MaxValue, internshipProgramId = programId });
         using var wrongRole = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = hrId, internshipProgramId = programId });
