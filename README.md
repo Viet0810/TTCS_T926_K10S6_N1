@@ -1,14 +1,6 @@
 
 # HỆ THỐNG QUẢN LÝ THỰC TẬP SINH
 
-## Chạy trên máy local
-
-Yêu cầu .NET SDK 9 và SQL Server Express có database `TTCS_T926_K10S6_N1`. Cấu hình Development dùng Windows Authentication với instance `.\SQLEXPRESS`.
-
-Tại thư mục dự án, chạy `powershell -ExecutionPolicy Bypass -File .\run.ps1` hoặc `dotnet run --project Backend/InternManagement --launch-profile http`. Sau khi backend khởi động, mở **http://localhost:5024/** để sử dụng frontend và API cùng nhau. Đăng nhập bằng tài khoản hiện có trong database. Nhấn Ctrl+C ở terminal để dừng.
-
-Nếu dùng SQL Server khác, thay `ConnectionStrings:InternManagement` trong `Backend/InternManagement/appsettings.Development.json` hoặc đặt biến môi trường `ConnectionStrings__InternManagement`. Gửi email cần cấu hình SMTP riêng theo hướng dẫn bên dưới.
-
 Hướng dẫn cấu hình đăng nhập và email đặt lại mật khẩu: [docs/password-recovery.md](docs/password-recovery.md).
 
 Cấu trúc backend, API hồ sơ và quyền HR: [docs/backend-frontend-contract.md](docs/backend-frontend-contract.md).

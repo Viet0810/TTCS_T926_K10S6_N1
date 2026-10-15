@@ -141,18 +141,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// Serve the existing frontend together with the API during local development.
-if (app.Environment.IsDevelopment())
-{
-    var frontendPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "../../Frontend"));
-    if (Directory.Exists(frontendPath))
-    {
-        var frontendFiles = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendPath);
-        app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = frontendFiles });
-        app.UseStaticFiles(new StaticFileOptions { FileProvider = frontendFiles });
-    }
-}
-
 app.UseRateLimiter();
 
 app.MapControllers();
