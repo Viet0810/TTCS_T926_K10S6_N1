@@ -25,7 +25,7 @@ window.AppVisual = (() => {
     figure.append(icon(name)); return figure;
   }
   const roleIcons = { ADMIN: 'shield', HR: 'users', MENTOR: 'mentor', INTERN: 'profile' };
-  const moduleIcon = href => /contract/.test(href) ? 'signature' : /assignment/.test(href) ? 'assignment' : /attendance/.test(href) ? 'clock' : /schedule|program/.test(href) ? 'calendar' : /permission/.test(href) ? 'shield' : /search/.test(href) ? 'search' : /review/.test(href) ? 'review' : /upload/.test(href) ? 'upload' : /user-/.test(href) ? 'account' : /mentor/.test(href) ? 'mentor' : /dashboard/.test(href) ? 'dashboard' : /profile|intern-manage/.test(href) ? 'profile' : 'file';
+  const moduleIcon = href => /contract/.test(href) ? 'signature' : /assignment/.test(href) ? 'assignment' : /attendance/.test(href) ? 'clock' : /schedule|program|leave/.test(href) ? 'calendar' : /permission/.test(href) ? 'shield' : /search/.test(href) ? 'search' : /review/.test(href) ? 'review' : /upload/.test(href) ? 'upload' : /user-/.test(href) ? 'account' : /mentor/.test(href) ? 'mentor' : /dashboard/.test(href) ? 'dashboard' : /profile|intern-manage/.test(href) ? 'profile' : 'file';
   document.querySelectorAll('[data-role]').forEach(button => button.prepend(icon(roleIcons[button.dataset.role])));
   document.querySelectorAll('.section-heading h2').forEach(heading => heading.prepend(icon(moduleIcon(location.pathname))));
   document.querySelector('.auth-brand-content')?.append(illustration('profile'));
