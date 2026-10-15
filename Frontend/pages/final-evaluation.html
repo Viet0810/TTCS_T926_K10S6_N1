@@ -10,42 +10,51 @@
 <body>
   <main class="evaluation-container">
     <header class="page-header">
-      <a href="dashboard.html" class="back-link">← Quay lại Dashboard</a>
+      <a href="dashboard.html" class="back-link">
+        ← Quay lại Dashboard
+      </a>
+
       <div class="header-content">
         <div>
           <span class="eyebrow">QUẢN LÝ THỰC TẬP SINH</span>
           <h1>Tổng hợp đánh giá cuối kỳ</h1>
           <p>Theo dõi kết quả thực tập và nhận xét của người hướng dẫn.</p>
         </div>
-        <span class="role-badge">HR</span>
+        <span class="role-badge" id="roleBadge">HR</span>
       </div>
     </header>
 
+    <!-- THỐNG KÊ -->
     <section class="stats-grid" aria-label="Thống kê đánh giá">
       <article class="stat-card">
         <span>Tổng số Intern</span>
         <strong id="totalInterns">0</strong>
       </article>
+
       <article class="stat-card">
         <span>Đã đánh giá</span>
         <strong id="evaluatedCount">0</strong>
       </article>
+
       <article class="stat-card">
         <span>Chưa đánh giá</span>
         <strong id="pendingCount">0</strong>
       </article>
+
       <article class="stat-card">
         <span>Điểm trung bình</span>
         <strong id="averageScore">—</strong>
       </article>
     </section>
 
+    <!-- DANH SÁCH ĐÁNH GIÁ -->
     <section class="evaluation-card">
       <div class="section-header">
         <div>
           <h2>Danh sách kết quả đánh giá</h2>
           <p>Tra cứu và tổng hợp kết quả thực tập sinh.</p>
         </div>
+
         <button id="exportBtn" class="primary-btn" type="button">
           Xuất báo cáo CSV
         </button>
@@ -85,6 +94,8 @@
         </div>
       </div>
 
+      <p id="evaluationMessage" role="status" aria-live="polite"></p>
+
       <div class="table-wrapper">
         <table>
           <thead>
@@ -106,13 +117,24 @@
       <p id="emptyMessage" class="empty-message" hidden>
         Không tìm thấy kết quả phù hợp.
       </p>
+
       <p id="resultCount" class="result-count"></p>
     </section>
 
-    <section class="evaluation-card detail-card" id="detailSection" hidden>
+    <!-- CHI TIẾT ĐÁNH GIÁ -->
+    <section
+      class="evaluation-card detail-card"
+      id="detailSection"
+      hidden
+    >
       <div class="section-header">
         <h2>Chi tiết đánh giá cuối kỳ</h2>
-        <button id="closeDetailBtn" class="secondary-btn" type="button">
+
+        <button
+          id="closeDetailBtn"
+          class="secondary-btn"
+          type="button"
+        >
           Đóng
         </button>
       </div>
@@ -130,6 +152,166 @@
           In kết quả
         </button>
       </div>
+    </section>
+
+    <!-- BIỂU MẪU THÊM / SỬA ĐÁNH GIÁ DÀNH CHO HR -->
+    <section
+      class="evaluation-card detail-card"
+      id="evaluationFormSection"
+      aria-labelledby="evaluationFormTitle"
+      hidden
+    >
+      <div class="section-header">
+        <div>
+          <h2 id="evaluationFormTitle">Thêm đánh giá cuối kỳ</h2>
+          <p id="evaluationInternName">
+            Nhập kết quả đánh giá cho thực tập sinh.
+          </p>
+        </div>
+
+        <button
+          id="closeEvaluationFormBtn"
+          class="secondary-btn"
+          type="button"
+        >
+          Đóng
+        </button>
+      </div>
+
+      <form id="evaluationForm">
+        <input type="hidden" id="evaluationInternId">
+        <input type="hidden" id="evaluationMode" value="create">
+
+        <div class="filters">
+          <div class="filter-group">
+            <label for="evaluationPeriod">Đợt thực tập</label>
+            <input
+              type="text"
+              id="evaluationPeriod"
+              maxlength="200"
+              placeholder="Ví dụ: Đợt thực tập 2026"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationAttendance">
+              Điểm chuyên cần (0–10)
+            </label>
+            <input
+              type="number"
+              id="evaluationAttendance"
+              min="0"
+              max="10"
+              step="0.1"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationAttitude">
+              Điểm thái độ (0–10)
+            </label>
+            <input
+              type="number"
+              id="evaluationAttitude"
+              min="0"
+              max="10"
+              step="0.1"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationProfessionalSkills">
+              Điểm kỹ năng chuyên môn (0–10)
+            </label>
+            <input
+              type="number"
+              id="evaluationProfessionalSkills"
+              min="0"
+              max="10"
+              step="0.1"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationWorkResult">
+              Điểm kết quả công việc (0–10)
+            </label>
+            <input
+              type="number"
+              id="evaluationWorkResult"
+              min="0"
+              max="10"
+              step="0.1"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationFinalScore">
+              Điểm tổng kết (0–10)
+            </label>
+            <input
+              type="number"
+              id="evaluationFinalScore"
+              min="0"
+              max="10"
+              step="0.1"
+              required
+            >
+          </div>
+
+          <div class="filter-group">
+            <label for="evaluationClassification">Xếp loại</label>
+            <select id="evaluationClassification" required>
+              <option value="">-- Chọn xếp loại --</option>
+              <option value="Xuất sắc">Xuất sắc</option>
+              <option value="Giỏi">Giỏi</option>
+              <option value="Khá">Khá</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Yếu">Yếu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="evaluationComment">Nhận xét đánh giá</label>
+          <textarea
+            id="evaluationComment"
+            rows="5"
+            maxlength="2000"
+            placeholder="Nhập nhận xét về quá trình thực tập..."
+            style="width:100%;box-sizing:border-box;"
+          ></textarea>
+        </div>
+
+        <p
+          id="evaluationFormMessage"
+          role="status"
+          aria-live="polite"
+        ></p>
+
+        <div class="detail-actions">
+          <button
+            id="saveEvaluationBtn"
+            class="primary-btn"
+            type="submit"
+          >
+            Lưu đánh giá
+          </button>
+
+          <button
+            id="cancelEvaluationBtn"
+            class="secondary-btn"
+            type="button"
+          >
+            Hủy
+          </button>
+        </div>
+      </form>
     </section>
 
     <footer class="page-footer">
