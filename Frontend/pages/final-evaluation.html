@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tổng hợp đánh giá cuối kỳ | Intern Management</title>
+  <link rel="stylesheet" href="../css/final-evaluation.css">
+</head>
+<body>
+  <main class="evaluation-container">
+    <header class="page-header">
+      <a href="dashboard.html" class="back-link">← Quay lại Dashboard</a>
+      <div class="header-content">
+        <div>
+          <span class="eyebrow">QUẢN LÝ THỰC TẬP SINH</span>
+          <h1>Tổng hợp đánh giá cuối kỳ</h1>
+          <p>Theo dõi kết quả thực tập và nhận xét của người hướng dẫn.</p>
+        </div>
+        <span class="role-badge">HR</span>
+      </div>
+    </header>
+
+    <section class="stats-grid" aria-label="Thống kê đánh giá">
+      <article class="stat-card">
+        <span>Tổng số Intern</span>
+        <strong id="totalInterns">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Đã đánh giá</span>
+        <strong id="evaluatedCount">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Chưa đánh giá</span>
+        <strong id="pendingCount">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Điểm trung bình</span>
+        <strong id="averageScore">—</strong>
+      </article>
+    </section>
+
+    <section class="evaluation-card">
+      <div class="section-header">
+        <div>
+          <h2>Danh sách kết quả đánh giá</h2>
+          <p>Tra cứu và tổng hợp kết quả thực tập sinh.</p>
+        </div>
+        <button id="exportBtn" class="primary-btn" type="button">
+          Xuất báo cáo CSV
+        </button>
+      </div>
+
+      <div class="filters">
+        <div class="filter-group search-group">
+          <label for="searchInput">Tìm kiếm</label>
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="Nhập tên hoặc mã sinh viên..."
+          >
+        </div>
+
+        <div class="filter-group">
+          <label for="periodFilter">Đợt thực tập</label>
+          <select id="periodFilter">
+            <option value="">Tất cả đợt</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="classificationFilter">Xếp loại</label>
+          <select id="classificationFilter">
+            <option value="">Tất cả xếp loại</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="statusFilter">Trạng thái</label>
+          <select id="statusFilter">
+            <option value="">Tất cả trạng thái</option>
+            <option value="Đã đánh giá">Đã đánh giá</option>
+            <option value="Chưa đánh giá">Chưa đánh giá</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Mã sinh viên</th>
+              <th>Họ và tên</th>
+              <th>Đơn vị thực tập</th>
+              <th>Đợt thực tập</th>
+              <th>Điểm</th>
+              <th>Xếp loại</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="evaluationTableBody"></tbody>
+        </table>
+      </div>
+
+      <p id="emptyMessage" class="empty-message" hidden>
+        Không tìm thấy kết quả phù hợp.
+      </p>
+      <p id="resultCount" class="result-count"></p>
+    </section>
+
+    <section class="evaluation-card detail-card" id="detailSection" hidden>
+      <div class="section-header">
+        <h2>Chi tiết đánh giá cuối kỳ</h2>
+        <button id="closeDetailBtn" class="secondary-btn" type="button">
+          Đóng
+        </button>
+      </div>
+
+      <div id="internInfo" class="detail-grid"></div>
+
+      <h3>Kết quả đánh giá</h3>
+      <div id="evaluationResult" class="detail-grid"></div>
+
+      <h3>Nhận xét của người hướng dẫn</h3>
+      <p id="mentorComment" class="mentor-comment"></p>
+
+      <div class="detail-actions">
+        <button id="printBtn" class="primary-btn" type="button">
+          In kết quả
+        </button>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      © 2026 Hệ thống quản lý thực tập sinh
+    </footer>
+  </main>
+
+  <script src="../js/final-evaluation.js"></script>
+</body>
+</html>
