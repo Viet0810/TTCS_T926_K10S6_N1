@@ -16,6 +16,7 @@
 <body>
   <div class="dashboard">
 
+    <!-- HEADER -->
     <header class="dashboard-header">
       <div class="dashboard-brand">
         <div class="dashboard-logo">
@@ -53,16 +54,17 @@
       </div>
     </header>
 
-    <!-- Menu điều hướng theo vai trò -->
+    <!-- MENU ĐIỀU HƯỚNG CHUNG -->
     <nav
       id="roleMenu"
       class="role-menu"
       aria-label="Điều hướng chính"
     ></nav>
 
+    <!-- NỘI DUNG DASHBOARD -->
     <main class="dashboard-main">
 
-      <!-- Lời chào -->
+      <!-- LỜI CHÀO -->
       <section class="card dashboard-welcome">
         <div class="section-heading">
           <div>
@@ -79,50 +81,30 @@
         ></p>
       </section>
 
-      <!-- Thống kê Dashboard -->
+      <!-- THỐNG KÊ -->
       <div
         id="dashboardKpis"
         class="dashboard-kpis"
         aria-label="Tổng quan dữ liệu"
       ></div>
 
-      <!-- Chức năng xem kết quả đánh giá cuối kỳ -->
-      <section class="card final-evaluation-section">
-        <div class="section-heading">
-          <div>
-            <span class="section-label">ĐÁNH GIÁ THỰC TẬP</span>
-            <h2>Kết quả đánh giá cuối kỳ</h2>
-          </div>
-        </div>
-
-        <p>
-          Xem điểm tổng kết, xếp loại và nhận xét
-          của người hướng dẫn sau khi kết thúc
-          chương trình thực tập.
-        </p>
-
-        <div style="margin-top: 18px;">
-          <a
-            href="final-evaluation.html"
-            class="btn-secondary"
-          >
-            Xem kết quả đánh giá →
-          </a>
-        </div>
-      </section>
-
     </main>
 
+    <!-- FOOTER -->
     <footer class="dashboard-footer">
       © 2026 Hệ thống quản lý thực tập sinh
     </footer>
 
   </div>
 
+  <!-- JAVASCRIPT -->
   <script src="../js/api.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/visuals.js"></script>
-  <script src="../js/navigation.js"></script>
+
+  <!-- Tải phiên bản navigation.js mới -->
+  <script src="../js/navigation.js?v=20261015-3"></script>
+
   <script src="../js/dashboard.js"></script>
 
 </body>
