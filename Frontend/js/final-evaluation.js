@@ -7,6 +7,10 @@ let evaluations = [];
 let filteredEvaluations = [];
 let currentRole = "";
 
+function canEditEvaluation() {
+  return currentRole === "HR" || currentRole === "MENTOR";
+}
+
 function getElement(id) {
   return document.getElementById(id);
 }
@@ -267,8 +271,8 @@ function renderTable() {
 
     actionCell.appendChild(detailButton);
 
-    // Chỉ HR được thêm hoặc sửa đánh giá
-    if (currentRole === "HR") {
+    // HR và MENTOR được thêm hoặc sửa đánh giá
+    if (canEditEvaluation()) {
       const editButton = document.createElement("button");
 
       editButton.type = "button";
@@ -390,8 +394,8 @@ function showDetail(id) {
 
 // Mở form thêm/sửa
 function openEvaluationForm(id) {
-  if (currentRole !== "HR") {
-    alert("Chỉ HR được thêm hoặc sửa đánh giá.");
+  if (!canEditEvaluation()) {
+    alert("Chỉ HR và MENTOR được thêm hoặc sửa đánh giá.");
     return;
   }
 
@@ -473,8 +477,8 @@ function getEvaluationPayload() {
 async function saveEvaluation(event) {
   event.preventDefault();
 
-  if (currentRole !== "HR") {
-    alert("Chỉ HR được lưu đánh giá.");
+  if (!canEditEvaluation()) {
+    alert("Chỉ HR và MENTOR được lưu đánh giá.");
     return;
   }
 
@@ -713,5 +717,23 @@ document.addEventListener("DOMContentLoaded", () => {
     closeEvaluationForm
   );
 
-  loadEvaluations();
+  // Ưu tiên vai trò được Backend xác nhận thay vì dữ liệu lưu cũ trong trình duyệt.
+  async function initializeEvaluations() {
+    try {
+      if (window.API?.getCurrentUser) {
+        const session = await API.getCurrentUser();
+        const serverRole = session?.user?.role;
+        if (serverRole) {
+          currentRole = String(serverRole).toUpperCase();
+          if (roleBadge) roleBadge.textContent = currentRole;
+        }
+      }
+    } catch (error) {
+      console.warn("Không thể xác nhận vai trò từ Backend:", error);
+    }
+
+    await loadEvaluations();
+  }
+
+  initializeEvaluations();
 });
