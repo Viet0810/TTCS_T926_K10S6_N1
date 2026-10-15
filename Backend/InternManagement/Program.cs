@@ -35,6 +35,7 @@ builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 // THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
 builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
+builder.Services.AddScoped<InternManagement.Services.InternTaskService>();
 builder.Services.AddScoped<InternManagement.Services.ContractService>();
 builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
@@ -139,6 +140,18 @@ if (!app.Environment.IsDevelopment())
 
 
 app.UseCors();
+
+// Serve the existing frontend together with the API during local development.
+if (app.Environment.IsDevelopment())
+{
+    var frontendPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "../../Frontend"));
+    if (Directory.Exists(frontendPath))
+    {
+        var frontendFiles = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendPath);
+        app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = frontendFiles });
+        app.UseStaticFiles(new StaticFileOptions { FileProvider = frontendFiles });
+    }
+}
 
 app.UseRateLimiter();
 

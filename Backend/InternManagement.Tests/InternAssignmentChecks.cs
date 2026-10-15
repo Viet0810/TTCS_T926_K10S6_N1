@@ -6,7 +6,7 @@ using Microsoft.Data.SqlClient;
 
 internal static class InternAssignmentChecks
 {
-    public static async Task RunAsync(HttpClient http, string connectionString, Action<bool, string> check)
+    public static async Task RunAsync(HttpClient http, string connectionString, Action<bool, string> check, Func<Task>? restart = null)
     {
         async Task Login(string username, string password = "Permission-test-9")
         {
@@ -124,6 +124,20 @@ internal static class InternAssignmentChecks
         check(unchanged.EnumerateArray().Single(a => a.GetProperty("internId").GetInt32() == internIds[0]).GetProperty("mentorUserId").GetInt32() == mentorId
             && unchanged.EnumerateArray().Single(a => a.GetProperty("internId").GetInt32() == internIds[0]).GetProperty("status").GetString() == "Đang thực tập",
             "invalid saves preserve existing assignment");
+        lookup.CommandText = "INSERT dbo.AttendanceRecords(InternId,Date,CheckIn,CheckOut,WorkingHours,Status) VALUES(@id,'2026-10-01','08:00:00','17:00:00',8,'ON_TIME')";
+        lookup.Parameters.AddWithValue("@id", internIds[0]);
+        await lookup.ExecuteNonQueryAsync();
+        async Task<string> RelatedData()
+        {
+            lookup.CommandText = "SELECT (SELECT * FROM dbo.InternContracts WHERE InternId=@id ORDER BY InternId FOR JSON PATH) + (SELECT * FROM dbo.AttendanceRecords WHERE InternId=@id ORDER BY Id FOR JSON PATH)";
+            return (string)(await lookup.ExecuteScalarAsync())!;
+        }
+        var relatedBefore = await RelatedData();
+        using var otherProgramResponse = await http.PostAsJsonAsync("/api/program-schedule", new { startDate = "2027-01-01", endDate = "2027-03-31" });
+        using var otherProgram = JsonDocument.Parse(await otherProgramResponse.Content.ReadAsStringAsync());
+        var otherProgramId = otherProgram.RootElement.GetProperty("data").GetProperty("id").GetInt32();
+        using var changedProgram = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId, internshipProgramId = otherProgramId });
+        check(changedProgram.StatusCode == HttpStatusCode.BadRequest, "reassignment cannot overwrite existing program");
         using var reassign = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId });
         check(reassign.StatusCode == HttpStatusCode.OK, "HR reassigns to another real mentor");
         var refreshed = await Get("/api/intern-assignments");
@@ -131,6 +145,35 @@ internal static class InternAssignmentChecks
         check(replaced.Length == 1 && replaced[0].GetProperty("mentorUserId").GetInt32() == replacementMentorId
             && replaced[0].GetProperty("internshipProgramId").GetInt32()==programId
             && replaced[0].GetProperty("status").GetString() == "Đang thực tập", "reassignment preserves status without duplicate");
+        check(await RelatedData() == relatedBefore, "reassignment preserves contract and attendance rows");
+        if (restart is not null)
+        {
+            await restart();
+            await Login("permission-hr");
+            var durable = await Get("/api/intern-assignments");
+            check(durable.EnumerateArray().Single(a => a.GetProperty("internId").GetInt32() == internIds[0]).GetProperty("mentorUserId").GetInt32() == replacementMentorId
+                && await RelatedData() == relatedBefore, "backend restart preserves assignment and related data");
+        }
+        lookup.Parameters.Clear();
+        lookup.CommandText = "DELETE dbo.RolePermissions WHERE Role='HR' AND Permission IN ('ASSIGNMENT_CREATE','ASSIGNMENT_UPDATE')";
+        await lookup.ExecuteNonQueryAsync();
+        using var noWritePermission = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", assignment);
+        check(noWritePermission.StatusCode == HttpStatusCode.Forbidden, "HR without assignment action permissions receives 403");
+        lookup.CommandText = "INSERT dbo.RolePermissions(Role,Permission) VALUES('HR','ASSIGNMENT_CREATE'),('HR','ASSIGNMENT_UPDATE')";
+        await lookup.ExecuteNonQueryAsync();
+        lookup.CommandText = "INSERT dbo.RolePermissions(Role,Permission) VALUES('HR','ASSIGNMENT_DELETE')";
+        await lookup.ExecuteNonQueryAsync();
+        using var removeAssignment = await http.DeleteAsync($"/api/intern-assignments/{internIds[0]}");
+        check(removeAssignment.IsSuccessStatusCode, "authorized assignment removal succeeds");
+        lookup.Parameters.AddWithValue("@id", internIds[0]);
+        lookup.CommandText = "SELECT COUNT(*) FROM dbo.Interns WHERE Id=@id AND MentorUserId IS NULL AND InternshipProgramId=" + programId + " AND Status=N'Đang thực tập'";
+        check(Convert.ToInt32(await lookup.ExecuteScalarAsync()) == 1 && await RelatedData() == relatedBefore, "removal preserves program status contract and attendance");
+        lookup.Parameters.Clear();
+        lookup.CommandText = "DELETE dbo.RolePermissions WHERE Role='HR' AND Permission='ASSIGNMENT_DELETE'";
+        await lookup.ExecuteNonQueryAsync();
+        await Login("permission-hr");
+        using var restoreAssignment = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId });
+        check(restoreAssignment.IsSuccessStatusCode, "reassign after removal reuses existing program");
 
         await Login("schedule-a@ictu.edu.vn", "Schedule-test-9");
         var schedule = await Get("/api/interns/me/schedule");

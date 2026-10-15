@@ -1,4 +1,7 @@
-const BASE_URL = window.INTERN_API_BASE_URL || "http://localhost:5024/api";
+const BASE_URL = window.INTERN_API_BASE_URL ||
+  (location.protocol !== "file:" && location.port === "5024"
+    ? `${location.origin}/api`
+    : "http://localhost:5024/api");
 
 class ApiError extends Error {
   constructor(message, status = 0, context = {}) {
