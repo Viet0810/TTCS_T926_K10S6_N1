@@ -6,6 +6,9 @@ namespace InternManagement.Services;
 
 public static class PermissionNames
 {
+    public const string ReadMentorTasks = "MENTOR_TASK_READ";
+    public const string CreateTask = "TASK_CREATE";
+    public const string ReadOwnTasks = "OWN_TASK_READ";
     public const string RejectDocuments = "REJECT_DOCUMENTS";
     public const string AttendanceCheckIn = "ATTENDANCE_CHECK_IN";
     public const string AttendanceCheckOut = "ATTENDANCE_CHECK_OUT";
@@ -106,6 +109,7 @@ public sealed class RolePermissionService
 
             ["MENTOR"] =
             [
+                PermissionNames.ReadMentorTasks, PermissionNames.CreateTask,
                 PermissionNames.ViewInterns,
                 PermissionNames.SearchInterns,
                 PermissionNames.ViewProfile,
@@ -117,6 +121,7 @@ public sealed class RolePermissionService
 
             ["INTERN"] =
             [
+                PermissionNames.ReadOwnTasks,
                 PermissionNames.ViewOwnContract,
                 PermissionNames.OwnAttendance,
                 PermissionNames.AttendanceCheckIn,

@@ -48,6 +48,10 @@ try
     {
         await AttendanceRuleChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
     }
+    if(args.Contains("--tasks-only"))
+    {
+        await ApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
     if(args.Contains("--sprint2-only"))
     {
         await using var fixture=new SqlConnection(testSettings.ConnectionString);await fixture.OpenAsync();

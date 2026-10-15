@@ -200,6 +200,7 @@ public sealed class DatabaseInitializer
         await Infrastructure.Sprint2CompletionMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint1PermissionMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint2ActionPermissionMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.InternTaskMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.NotificationMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.LeaveRequestMigration.ApplyAsync(connection, cancellationToken);
     }
