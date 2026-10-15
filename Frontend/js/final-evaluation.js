@@ -1,100 +1,146 @@
 
 "use strict";
 
-// Dữ liệu mẫu để kiểm thử giao diện HR.
-// Khi tích hợp Backend, thay mảng này bằng dữ liệu từ API.
-const evaluations = [
-  {
-    id: 1,
-    studentCode: "DTC245200001",
-    name: "Nguyễn Văn A",
-    className: "CNTT K22A",
-    company: "Công ty Công nghệ ABC",
-    mentor: "Trần Văn B",
-    period: "Đợt 1 - 2026",
-    attendance: 9,
-    attitude: 8.5,
-    professionalSkills: 8,
-    workResult: 9,
-    finalScore: 8.6,
-    classification: "Giỏi",
-    status: "Đã đánh giá",
-    comment: "Có trách nhiệm, hoàn thành tốt công việc."
-  },
-  {
-    id: 2,
-    studentCode: "DTC245200002",
-    name: "Trần Thị B",
-    className: "CNTT K22A",
-    company: "Công ty Phần mềm XYZ",
-    mentor: "Nguyễn Văn C",
-    period: "Đợt 1 - 2026",
-    attendance: 9.5,
-    attitude: 9,
-    professionalSkills: 9,
-    workResult: 9,
-    finalScore: 9.1,
-    classification: "Xuất sắc",
-    status: "Đã đánh giá",
-    comment: "Chủ động, có kỹ năng chuyên môn tốt."
-  },
-  {
-    id: 3,
-    studentCode: "DTC245200003",
-    name: "Lê Văn C",
-    className: "CNTT K22B",
-    company: "Công ty Công nghệ ABC",
-    mentor: "Trần Văn B",
-    period: "Đợt 1 - 2026",
-    attendance: null,
-    attitude: null,
-    professionalSkills: null,
-    workResult: null,
-    finalScore: null,
-    classification: "",
-    status: "Chưa đánh giá",
-    comment: ""
-  },
-  {
-    id: 4,
-    studentCode: "DTC245200004",
-    name: "Phạm Thị D",
-    className: "CNTT K22B",
-    company: "Công ty Giải pháp DEF",
-    mentor: "Lê Văn H",
-    period: "Đợt 2 - 2026",
-    attendance: 8,
-    attitude: 8,
-    professionalSkills: 7.5,
-    workResult: 8,
-    finalScore: 7.9,
-    classification: "Khá",
-    status: "Đã đánh giá",
-    comment: "Hoàn thành nhiệm vụ, cần cải thiện kỹ năng chuyên môn."
-  },
-  {
-    id: 5,
-    studentCode: "DTC245200005",
-    name: "Hoàng Văn E",
-    className: "CNTT K22C",
-    company: "Công ty Phần mềm XYZ",
-    mentor: "Nguyễn Văn C",
-    period: "Đợt 2 - 2026",
-    attendance: null,
-    attitude: null,
-    professionalSkills: null,
-    workResult: null,
-    finalScore: null,
-    classification: "",
-    status: "Chưa đánh giá",
-    comment: ""
-  }
-];
+const API_BASE_URL = "http://localhost:5024/api/FinalEvaluations";
 
-let filteredEvaluations = [...evaluations];
+let evaluations = [];
+let filteredEvaluations = [];
+let currentRole = "";
 
 function getElement(id) {
   return document.getElementById(id);
+}
+
+// Lấy token đăng nhập
+function getToken() {
+  const keys = ["authToken", "accessToken", "token"];
+
+  for (const key of keys) {
+    const token =
+      localStorage.getItem(key) ||
+      sessionStorage.getItem(key);
+
+    if (token) {
+      return token.replace(/^Bearer\s+/i, "");
+    }
+  }
+
+  return "";
+}
+
+// Xác định vai trò từ thông tin đăng nhập
+function getCurrentRole() {
+  const roleKeys = ["role", "userRole", "currentRole"];
+  const stores = [localStorage, sessionStorage];
+
+  for (const store of stores) {
+    for (const key of roleKeys) {
+      const role = store.getItem(key);
+
+      if (role) {
+        return role.toUpperCase();
+      }
+    }
+
+    for (const key of ["user", "currentUser", "authUser"]) {
+      try {
+        const user = JSON.parse(store.getItem(key) || "null");
+        if (user?.role) {
+          return String(user.role).toUpperCase();
+        }
+      } catch {
+        // Bỏ qua dữ liệu không phải JSON
+      }
+    }
+  }
+
+  return "";
+}
+
+// Gọi API
+async function apiRequest(path = "", method = "GET", body = null) {
+  const token = getToken();
+
+  const headers = {
+    Accept: "application/json"
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (body !== null) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers,
+    ...(body !== null ? { body: JSON.stringify(body) } : {})
+  });
+
+  if (!response.ok) {
+    let message = "";
+
+    try {
+      const errorData = await response.json();
+
+      message =
+        typeof errorData === "string"
+          ? errorData
+          : errorData.message ||
+            errorData.title ||
+            errorData.detail ||
+            "";
+    } catch {
+      message = await response.text().catch(() => "");
+    }
+
+    if (response.status === 401) {
+      throw new Error("Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.");
+    }
+
+    if (response.status === 403) {
+      throw new Error("Tài khoản không có quyền thực hiện thao tác này.");
+    }
+
+    if (response.status === 409) {
+      throw new Error(message || "Thực tập sinh đã có đánh giá.");
+    }
+
+    throw new Error(message || `Lỗi API: ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+}
+
+function apiGet(path = "") {
+  return apiRequest(path);
+}
+
+// Chuẩn hóa dữ liệu
+function normalizeEvaluation(item) {
+  return {
+    id: Number(item.internId),
+    studentCode: item.studentCode ?? "",
+    name: item.name ?? "",
+    className: item.className ?? "",
+    company: item.company ?? "",
+    mentor: item.mentor ?? "",
+    period: item.period ?? "",
+    attendance: item.attendance,
+    attitude: item.attitude,
+    professionalSkills: item.professionalSkills,
+    workResult: item.workResult,
+    finalScore: item.finalScore,
+    classification: item.classification ?? "",
+    status: item.status ?? "Chưa đánh giá",
+    comment: item.comment ?? ""
+  };
 }
 
 function formatValue(value) {
@@ -103,65 +149,85 @@ function formatValue(value) {
     : String(value);
 }
 
-// Thống kê theo toàn bộ dữ liệu
-function updateStatistics() {
-  const total = evaluations.length;
+function isEvaluated(item) {
+  return item.status === "Đã đánh giá";
+}
 
-  const evaluated = evaluations.filter(
-    item => item.status === "Đã đánh giá"
-  );
-
-  const pending = total - evaluated.length;
+// Thống kê
+function updateStatistics(statistics = null) {
+  const evaluated = evaluations.filter(isEvaluated);
 
   const scores = evaluated
     .map(item => item.finalScore)
-    .filter(score => typeof score === "number" && Number.isFinite(score));
+    .filter(value => value !== null && value !== undefined && value !== "")
+    .map(Number)
+    .filter(Number.isFinite);
 
   const average = scores.length
     ? scores.reduce((sum, score) => sum + score, 0) / scores.length
     : null;
 
+  const total = statistics?.totalInterns ?? evaluations.length;
+  const evaluatedCount = statistics?.evaluatedCount ?? evaluated.length;
+  const pendingCount = statistics?.pendingCount ?? total - evaluatedCount;
+  const averageScore = statistics?.averageScore ?? average;
+
   getElement("totalInterns").textContent = total;
-  getElement("evaluatedCount").textContent = evaluated.length;
-  getElement("pendingCount").textContent = pending;
+  getElement("evaluatedCount").textContent = evaluatedCount;
+  getElement("pendingCount").textContent = pendingCount;
+
   getElement("averageScore").textContent =
-    average === null ? "—" : average.toFixed(2);
+    averageScore === null || averageScore === undefined
+      ? "—"
+      : Number(averageScore).toFixed(2);
 }
 
-// Tạo các lựa chọn lọc từ dữ liệu thực tế
+// Bộ lọc
 function populateFilters() {
-  const periods = [...new Set(evaluations.map(item => item.period))];
+  const periodFilter = getElement("periodFilter");
+  const classificationFilter = getElement("classificationFilter");
+
+  const oldPeriod = periodFilter.value;
+  const oldClassification = classificationFilter.value;
+
+  periodFilter.replaceChildren(new Option("Tất cả đợt", ""));
+  classificationFilter.replaceChildren(
+    new Option("Tất cả xếp loại", "")
+  );
+
+  const periods = [
+    ...new Set(evaluations.map(item => item.period).filter(Boolean))
+  ];
+
   const classifications = [
     ...new Set(evaluations.map(item => item.classification).filter(Boolean))
   ];
 
-  const periodFilter = getElement("periodFilter");
-  const classificationFilter = getElement("classificationFilter");
-
   periods.forEach(period => {
-    const option = document.createElement("option");
-    option.value = period;
-    option.textContent = period;
-    periodFilter.appendChild(option);
+    periodFilter.add(new Option(period, period));
   });
 
   classifications.forEach(classification => {
-    const option = document.createElement("option");
-    option.value = classification;
-    option.textContent = classification;
-    classificationFilter.appendChild(option);
+    classificationFilter.add(new Option(classification, classification));
   });
+
+  periodFilter.value = oldPeriod;
+  classificationFilter.value = oldClassification;
 }
 
-// Tạo ô trong bảng, tránh chèn HTML từ dữ liệu
 function createCell(row, value) {
   const cell = document.createElement("td");
-  cell.textContent = value;
+
+  cell.textContent =
+    value === null || value === undefined || value === ""
+      ? "—"
+      : String(value);
+
   row.appendChild(cell);
   return cell;
 }
 
-// Hiển thị danh sách đánh giá
+// Hiển thị danh sách
 function renderTable() {
   const tableBody = getElement("evaluationTableBody");
   tableBody.replaceChildren();
@@ -173,23 +239,24 @@ function renderTable() {
     createCell(row, item.name);
     createCell(row, item.company);
     createCell(row, item.period);
-    createCell(row, item.finalScore ?? "—");
-    createCell(row, item.classification || "—");
+    createCell(row, item.finalScore);
+    createCell(row, item.classification);
 
     const statusCell = document.createElement("td");
     const status = document.createElement("span");
 
-    status.className = item.status === "Đã đánh giá"
+    status.className = isEvaluated(item)
       ? "status status-done"
       : "status status-pending";
 
     status.textContent = item.status;
+
     statusCell.appendChild(status);
     row.appendChild(statusCell);
 
     const actionCell = document.createElement("td");
-    const detailButton = document.createElement("button");
 
+    const detailButton = document.createElement("button");
     detailButton.type = "button";
     detailButton.className = "detail-btn";
     detailButton.textContent = "Xem chi tiết";
@@ -199,22 +266,41 @@ function renderTable() {
     });
 
     actionCell.appendChild(detailButton);
-    row.appendChild(actionCell);
 
+    // Chỉ HR được thêm hoặc sửa đánh giá
+    if (currentRole === "HR") {
+      const editButton = document.createElement("button");
+
+      editButton.type = "button";
+      editButton.className = "primary-btn";
+      editButton.textContent = isEvaluated(item)
+        ? "Sửa đánh giá"
+        : "Thêm đánh giá";
+
+      editButton.style.marginLeft = "8px";
+
+      editButton.addEventListener("click", () => {
+        openEvaluationForm(item.id);
+      });
+
+      actionCell.appendChild(editButton);
+    }
+
+    row.appendChild(actionCell);
     tableBody.appendChild(row);
   });
 
-  getElement("emptyMessage").hidden = filteredEvaluations.length > 0;
+  getElement("emptyMessage").hidden =
+    filteredEvaluations.length > 0;
 
   getElement("resultCount").textContent =
     `Hiển thị ${filteredEvaluations.length}/${evaluations.length} thực tập sinh`;
 }
 
-// Tìm kiếm và lọc danh sách
+// Tìm kiếm và lọc
 function filterEvaluations() {
-  const keyword = getElement("searchInput").value
-    .trim()
-    .toLocaleLowerCase("vi");
+  const keyword = getElement("searchInput")
+    .value.trim().toLocaleLowerCase("vi");
 
   const period = getElement("periodFilter").value;
   const classification = getElement("classificationFilter").value;
@@ -225,28 +311,19 @@ function filterEvaluations() {
       item.name.toLocaleLowerCase("vi").includes(keyword) ||
       item.studentCode.toLocaleLowerCase("vi").includes(keyword);
 
-    const matchesPeriod = !period || item.period === period;
-
-    const matchesClassification =
-      !classification || item.classification === classification;
-
-    const matchesStatus = !status || item.status === status;
-
     return (
       matchesSearch &&
-      matchesPeriod &&
-      matchesClassification &&
-      matchesStatus
+      (!period || item.period === period) &&
+      (!classification || item.classification === classification) &&
+      (!status || item.status === status)
     );
   });
 
-  // Đóng chi tiết cũ khi thay đổi bộ lọc
   getElement("detailSection").hidden = true;
-
   renderTable();
 }
 
-// Tạo ô hiển thị thông tin chi tiết
+// Hiển thị chi tiết
 function createInfoItem(label, value) {
   const item = document.createElement("div");
   item.className = "info-item";
@@ -258,7 +335,6 @@ function createInfoItem(label, value) {
   content.textContent = formatValue(value);
 
   item.append(title, content);
-
   return item;
 }
 
@@ -271,11 +347,13 @@ function renderInformation(containerId, entries) {
   });
 }
 
-// Xem chi tiết đánh giá của một Intern
 function showDetail(id) {
   const intern = evaluations.find(item => item.id === id);
 
-  if (!intern) return;
+  if (!intern) {
+    alert("Không tìm thấy thực tập sinh.");
+    return;
+  }
 
   renderInformation("internInfo", [
     ["Họ và tên", intern.name],
@@ -299,30 +377,166 @@ function showDetail(id) {
   getElement("mentorComment").textContent =
     intern.comment || "Chưa có nhận xét.";
 
-  const detailSection = getElement("detailSection");
-  detailSection.hidden = false;
+  getElement("evaluationFormSection").hidden = true;
 
-  detailSection.scrollIntoView({
+  const section = getElement("detailSection");
+  section.hidden = false;
+
+  section.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
 }
 
-// Chuyển dữ liệu thành nội dung CSV
+// Mở form thêm/sửa
+function openEvaluationForm(id) {
+  if (currentRole !== "HR") {
+    alert("Chỉ HR được thêm hoặc sửa đánh giá.");
+    return;
+  }
+
+  const intern = evaluations.find(item => item.id === id);
+
+  if (!intern) {
+    alert("Không tìm thấy thực tập sinh.");
+    return;
+  }
+
+  const evaluated = isEvaluated(intern);
+
+  getElement("evaluationForm").reset();
+
+  getElement("evaluationInternId").value = intern.id;
+  getElement("evaluationMode").value =
+    evaluated ? "update" : "create";
+
+  getElement("evaluationFormTitle").textContent =
+    evaluated ? "Sửa đánh giá cuối kỳ" : "Thêm đánh giá cuối kỳ";
+
+  getElement("evaluationInternName").textContent =
+    `${intern.name} - ${intern.studentCode}`;
+
+  getElement("evaluationPeriod").value = intern.period || "";
+
+  if (evaluated) {
+    const fields = {
+      evaluationAttendance: intern.attendance,
+      evaluationAttitude: intern.attitude,
+      evaluationProfessionalSkills: intern.professionalSkills,
+      evaluationWorkResult: intern.workResult,
+      evaluationFinalScore: intern.finalScore,
+      evaluationClassification: intern.classification,
+      evaluationComment: intern.comment
+    };
+
+    Object.entries(fields).forEach(([id, value]) => {
+      getElement(id).value = value ?? "";
+    });
+  }
+
+  getElement("evaluationFormMessage").textContent = "";
+  getElement("detailSection").hidden = true;
+
+  const section = getElement("evaluationFormSection");
+  section.hidden = false;
+
+  section.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+// Đóng form
+function closeEvaluationForm() {
+  getElement("evaluationFormSection").hidden = true;
+  getElement("evaluationForm").reset();
+  getElement("evaluationFormMessage").textContent = "";
+}
+
+// Đọc dữ liệu nhập
+function getEvaluationPayload() {
+  return {
+    period: getElement("evaluationPeriod").value.trim(),
+    attendance: Number(getElement("evaluationAttendance").value),
+    attitude: Number(getElement("evaluationAttitude").value),
+    professionalSkills: Number(
+      getElement("evaluationProfessionalSkills").value
+    ),
+    workResult: Number(getElement("evaluationWorkResult").value),
+    finalScore: Number(getElement("evaluationFinalScore").value),
+    classification: getElement("evaluationClassification").value,
+    comment: getElement("evaluationComment").value.trim()
+  };
+}
+
+// Lưu đánh giá xuống SQL Server thông qua Backend
+async function saveEvaluation(event) {
+  event.preventDefault();
+
+  if (currentRole !== "HR") {
+    alert("Chỉ HR được lưu đánh giá.");
+    return;
+  }
+
+  const form = getElement("evaluationForm");
+
+  if (!form.reportValidity()) {
+    return;
+  }
+
+  const internId = Number(getElement("evaluationInternId").value);
+  const mode = getElement("evaluationMode").value;
+
+  if (!Number.isInteger(internId) || internId <= 0) {
+    alert("ID thực tập sinh không hợp lệ.");
+    return;
+  }
+
+  const payload = getEvaluationPayload();
+  const method = mode === "update" ? "PUT" : "POST";
+
+  const saveButton = getElement("saveEvaluationBtn");
+  const message = getElement("evaluationFormMessage");
+
+  saveButton.disabled = true;
+  saveButton.textContent = "Đang lưu...";
+  message.textContent = "";
+
+  try {
+    await apiRequest(`/${internId}`, method, payload);
+
+    closeEvaluationForm();
+    await loadEvaluations();
+
+    getElement("evaluationMessage").textContent =
+      "Đã lưu đánh giá cuối kỳ thành công.";
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  } catch (error) {
+    console.error("Lỗi lưu đánh giá:", error);
+    message.textContent = error.message;
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = "Lưu đánh giá";
+  }
+}
+
+// Xuất CSV
 function csvCell(value) {
   const text = value === null || value === undefined
     ? ""
     : String(value);
 
-  // Ngăn công thức CSV bị thực thi khi mở bằng Excel
-  const safeText = /^[\s]*[=+\-@]/.test(text)
+  const safeText = /^\s*[=+\-@]/.test(text)
     ? "'" + text
     : text;
 
   return `"${safeText.replace(/"/g, '""')}"`;
 }
 
-// Xuất danh sách hiện đang được lọc
 function exportCSV() {
   if (filteredEvaluations.length === 0) {
     alert("Không có dữ liệu để xuất báo cáo.");
@@ -359,7 +573,6 @@ function exportCSV() {
     .map(row => row.map(csvCell).join(","))
     .join("\r\n");
 
-  // BOM giúp Excel nhận diện tiếng Việt UTF-8
   const blob = new Blob(["\uFEFF", csvContent], {
     type: "text/csv;charset=utf-8;"
   });
@@ -377,24 +590,105 @@ function exportCSV() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// Khởi tạo trang
+// Tải dữ liệu từ Backend
+async function loadEvaluations() {
+  const tableBody = getElement("evaluationTableBody");
+
+  tableBody.replaceChildren();
+
+  const loadingRow = document.createElement("tr");
+  const loadingCell = document.createElement("td");
+
+  loadingCell.colSpan = 8;
+  loadingCell.textContent = "Đang tải dữ liệu đánh giá...";
+
+  loadingRow.appendChild(loadingCell);
+  tableBody.appendChild(loadingRow);
+
+  try {
+    const data = await apiGet();
+
+    if (!Array.isArray(data)) {
+      throw new Error("Dữ liệu API trả về không đúng định dạng.");
+    }
+
+    evaluations = data.map(normalizeEvaluation);
+
+    populateFilters();
+
+    let statistics = null;
+
+    try {
+      statistics = await apiGet("/statistics");
+    } catch (error) {
+      console.warn("Không tải được thống kê:", error);
+    }
+
+    updateStatistics(statistics);
+    filterEvaluations();
+
+    return true;
+  } catch (error) {
+    console.error("Lỗi tải đánh giá:", error);
+
+    evaluations = [];
+    filteredEvaluations = [];
+
+    updateStatistics();
+
+    tableBody.replaceChildren();
+
+    const errorRow = document.createElement("tr");
+    const errorCell = document.createElement("td");
+
+    errorCell.colSpan = 8;
+    errorCell.textContent = error.message;
+
+    errorRow.appendChild(errorCell);
+    tableBody.appendChild(errorRow);
+
+    getElement("emptyMessage").hidden = true;
+    getElement("resultCount").textContent =
+      "Không thể tải dữ liệu từ Backend";
+
+    return false;
+  }
+}
+
+// Khởi tạo
 document.addEventListener("DOMContentLoaded", () => {
-  updateStatistics();
-  populateFilters();
-  renderTable();
+  currentRole = getCurrentRole();
 
-  getElement("searchInput").addEventListener("input", filterEvaluations);
+  const roleBadge = getElement("roleBadge");
 
-  getElement("periodFilter").addEventListener("change", filterEvaluations);
+  if (roleBadge) {
+    roleBadge.textContent = currentRole || "Người dùng";
+  }
+
+  getElement("searchInput").addEventListener(
+    "input",
+    filterEvaluations
+  );
+
+  getElement("periodFilter").addEventListener(
+    "change",
+    filterEvaluations
+  );
 
   getElement("classificationFilter").addEventListener(
     "change",
     filterEvaluations
   );
 
-  getElement("statusFilter").addEventListener("change", filterEvaluations);
+  getElement("statusFilter").addEventListener(
+    "change",
+    filterEvaluations
+  );
 
-  getElement("exportBtn").addEventListener("click", exportCSV);
+  getElement("exportBtn").addEventListener(
+    "click",
+    exportCSV
+  );
 
   getElement("closeDetailBtn").addEventListener("click", () => {
     getElement("detailSection").hidden = true;
@@ -403,4 +697,21 @@ document.addEventListener("DOMContentLoaded", () => {
   getElement("printBtn").addEventListener("click", () => {
     window.print();
   });
+
+  getElement("evaluationForm").addEventListener(
+    "submit",
+    saveEvaluation
+  );
+
+  getElement("closeEvaluationFormBtn").addEventListener(
+    "click",
+    closeEvaluationForm
+  );
+
+  getElement("cancelEvaluationBtn").addEventListener(
+    "click",
+    closeEvaluationForm
+  );
+
+  loadEvaluations();
 });
