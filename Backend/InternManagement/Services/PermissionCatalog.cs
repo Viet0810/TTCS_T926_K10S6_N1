@@ -53,6 +53,8 @@ public static class PermissionCatalog
         new(PermissionNames.CreateProgram, "programs", "Quản lý chương trình", "CREATE", Staff),
         new(PermissionNames.UpdateProgram, "programs", "Quản lý chương trình", "UPDATE", Staff),
         new(PermissionNames.DeleteProgram, "programs", "Quản lý chương trình", "DELETE", Staff),
+        new(PermissionNames.ViewFinalEvaluations, "final-evaluations", "Đánh giá cuối kỳ", "READ", ["ADMIN", "HR", "MENTOR"]),
+        new(PermissionNames.UpdateFinalEvaluations, "final-evaluations", "Đánh giá cuối kỳ", "UPDATE", ["ADMIN", "HR", "MENTOR"]),
         new(PermissionNames.ViewAttendanceReport, "reports", "Báo cáo chuyên cần", "READ", Staff),
         new(PermissionNames.OwnAttendance, "attendance", "Chấm công của tôi", "READ", Staff),
         new(PermissionNames.AttendanceCheckIn, "attendance", "Chấm công của tôi", "CHECK_IN", Staff),

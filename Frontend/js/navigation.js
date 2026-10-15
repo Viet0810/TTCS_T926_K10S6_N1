@@ -2,6 +2,7 @@ window.AppNavigation = (() => {
   const items = [
     { label: "Bảng điều khiển", href: "dashboard.html" },
     { label: "Quản lý tài khoản", href: "user-manage.html", permissions: ["MANAGE_USERS"] },
+    { label: "Thêm Mentor", href: "mentor-create.html", roles: ["HR"] },
     { label: "Xem danh sách thực tập sinh", href: "intern-manage.html", permissions: ["VIEW_INTERNS"] },
     { label: "Tìm kiếm & Lọc thực tập sinh", href: "hr-search-filter.html", permissions: ["SEARCH_INTERNS"] },
     { label: "Phân công Mentor", href: "mentor-assignment.html", permissions: ["ASSIGN_MENTOR"] },
@@ -32,6 +33,7 @@ window.AppNavigation = (() => {
       nav.setAttribute("aria-label", "Điều hướng chính");
       const page = location.pathname.split("/").pop();
       for (const item of items) {
+        if (item.roles && !item.roles.includes(role)) continue;
         if (item.permissions && !item.permissions.some(permission => Session.hasPermission(session, permission))) continue;
         const link = document.createElement("a"); link.href = item.href; link.textContent = item.label;
         if (window.AppVisual) link.prepend(AppVisual.icon(AppVisual.moduleIcon(item.href)));
