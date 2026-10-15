@@ -15,8 +15,10 @@ window.AppNavigation = (() => {
     { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"] },
     { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
     { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
+    { label: "Đăng ký nghỉ phép", href: "intern-leave-request.html", permissions: ["OWN_ATTENDANCE"] },
     { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"] },
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
+    { label: "Thông báo", href: "notifications.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
     { label: "Ma trận phân quyền", href: "permissions.html", permissions: ["RBAC_READ"] },
   ];
   function render(session) {
@@ -61,6 +63,19 @@ window.AppNavigation = (() => {
     passwordLink.className = "btn-secondary topbar-password-link";
     passwordLink.textContent = "Đổi mật khẩu";
     actions.insertBefore(passwordLink, document.getElementById("logoutBtn"));
+    if (window.NotificationUI) {
+      window.NotificationUI.mount(actions);
+    } else if (typeof document !== "undefined") {
+      const s1 = document.createElement("script");
+      s1.src = "../js/notification-service.js";
+      s1.onload = () => {
+        const s2 = document.createElement("script");
+        s2.src = "../js/notification-ui.js";
+        s2.onload = () => window.NotificationUI?.mount(actions);
+        document.body.appendChild(s2);
+      };
+      document.body.appendChild(s1);
+    }
   }
   document.addEventListener("click", event => { if (event.target.closest("#logoutBtn")) Session.logout(); });
   if (localStorage.getItem("token")) {

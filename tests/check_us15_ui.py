@@ -10,7 +10,7 @@ let session={user:{role:ROLE},permissions:GRANTS},writes=[],reads=[],accept=fals
 API.getCurrentUser=async()=>session;
 AppUI.confirm=async()=>accept;
 window.fetch=async(url,options={})=>{
- reads.push(url);let data;
+ if(url.endsWith('/tasks')||url.includes('/tasks/'))reads.push(url);let data;
  if(failReads)throw new TypeError('Test connection failure');
  if(options.method==='POST'){writes.push(JSON.parse(options.body));data={id:1};}
  else if(url.endsWith('/tasks/interns'))data=[{internId:12,fullName:'Intern A',email:'intern@company.vn'}];

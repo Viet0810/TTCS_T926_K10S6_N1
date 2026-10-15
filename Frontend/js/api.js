@@ -116,6 +116,7 @@ const API = {
   getAssignments: () => requestApi("/intern-assignments", { headers: getAuthHeader() }),
   getAssignmentInterns: () => requestApi("/intern-assignments/interns", { headers: getAuthHeader() }),
   getAssignmentMentors: () => requestApi("/intern-assignments/mentors", { headers: getAuthHeader() }),
+  getMentorLoad: () => requestApi("/intern-assignments/mentor-load", { headers: getAuthHeader() }),
   getAssignmentPrograms: () => requestApi("/intern-assignments/programs", { headers: getAuthHeader() }),
   assignMentor: (internId, assignment) => requestApi(`/intern-assignments/${encodeURIComponent(internId)}`, {
     method: "PUT", headers: getAuthHeader(), body: JSON.stringify(assignment),
@@ -176,6 +177,37 @@ const API = {
   }),
   deleteUser: (userId) => requestApi(`/users/${encodeURIComponent(userId)}`, {
     method: "DELETE",
+    headers: getAuthHeader(),
+  }),
+
+  // Hệ thống thông báo (K10S6N1-156 / K10S6N1-157)
+  getNotifications: (params) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : "";
+    return requestApi(`/notifications${qs}`, { headers: getAuthHeader() });
+  },
+  getNotificationUnreadCount: () => requestApi("/notifications/unread-count", { headers: getAuthHeader() }),
+  markNotificationRead: (id) => requestApi(`/notifications/${encodeURIComponent(id)}/read`, {
+    method: "POST", headers: getAuthHeader()
+  }),
+  markAllNotificationsRead: () => requestApi("/notifications/mark-all-read", {
+    method: "POST", headers: getAuthHeader()
+  }),
+  seedNotifications: () => requestApi("/notifications/seed", {
+    method: "POST", headers: getAuthHeader()
+  }),
+
+  // Đăng ký nghỉ phép cho Thực tập sinh (K10S6N1-136 / K10S6N1-137)
+  getLeaveRequests: (params) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : "";
+    return requestApi(`/interns/me/leave-requests${qs}`, { headers: getAuthHeader() });
+  },
+  createLeaveRequest: (data) => requestApi("/interns/me/leave-requests", {
+    method: "POST",
+    headers: getAuthHeader(),
+    body: JSON.stringify(data),
+  }),
+  cancelLeaveRequest: (id) => requestApi(`/interns/me/leave-requests/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
     headers: getAuthHeader(),
   }),
 };

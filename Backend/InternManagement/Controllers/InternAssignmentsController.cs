@@ -30,6 +30,10 @@ public sealed class InternAssignmentsController(
     public async Task<IActionResult> GetMentors(CancellationToken cancellationToken) =>
         Denied() ?? Ok(await assignments.GetMentorsAsync(cancellationToken));
 
+    [HttpGet("mentor-load")]
+    public async Task<IActionResult> GetMentorLoad(CancellationToken cancellationToken) =>
+        Denied() ?? Ok(await assignments.GetMentorLoadAsync(cancellationToken));
+
     [HttpGet("programs")]
     public async Task<IActionResult> GetPrograms() => Denied() ?? Ok(await programs.GetAllAsync());
 

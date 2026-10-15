@@ -95,6 +95,16 @@ builder.Services.AddScoped<
     InternManagement.Services.AttendanceReportService
 >();
 
+builder.Services.AddScoped<
+    InternManagement.Services.INotificationService,
+    InternManagement.Services.NotificationService
+>();
+
+builder.Services.AddScoped<
+    InternManagement.Services.ILeaveRequestService,
+    InternManagement.Services.LeaveRequestService
+>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
