@@ -195,4 +195,19 @@ const API = {
   seedNotifications: () => requestApi("/notifications/seed", {
     method: "POST", headers: getAuthHeader()
   }),
+
+  // Đăng ký nghỉ phép cho Thực tập sinh (K10S6N1-136 / K10S6N1-137)
+  getLeaveRequests: (params) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : "";
+    return requestApi(`/interns/me/leave-requests${qs}`, { headers: getAuthHeader() });
+  },
+  createLeaveRequest: (data) => requestApi("/interns/me/leave-requests", {
+    method: "POST",
+    headers: getAuthHeader(),
+    body: JSON.stringify(data),
+  }),
+  cancelLeaveRequest: (id) => requestApi(`/interns/me/leave-requests/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
+    headers: getAuthHeader(),
+  }),
 };

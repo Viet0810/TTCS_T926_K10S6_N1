@@ -99,6 +99,11 @@ builder.Services.AddScoped<
     InternManagement.Services.NotificationService
 >();
 
+builder.Services.AddScoped<
+    InternManagement.Services.ILeaveRequestService,
+    InternManagement.Services.LeaveRequestService
+>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

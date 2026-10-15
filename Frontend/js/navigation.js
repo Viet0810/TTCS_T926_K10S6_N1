@@ -14,6 +14,7 @@ window.AppNavigation = (() => {
     { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"] },
     { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
     { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
+    { label: "Đăng ký nghỉ phép", href: "intern-leave-request.html", permissions: ["OWN_ATTENDANCE"] },
     { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"] },
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
     { label: "Thông báo", href: "notifications.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
