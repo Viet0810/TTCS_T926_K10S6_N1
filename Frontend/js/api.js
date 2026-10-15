@@ -175,6 +175,11 @@ const API = {
     headers: getAuthHeader(),
     body: JSON.stringify(userData),
   }),
+  createMentor: (mentorData) => requestApi("/mentors", {
+    method: "POST",
+    headers: getAuthHeader(),
+    body: JSON.stringify(mentorData),
+  }),
   deleteUser: (userId) => requestApi(`/users/${encodeURIComponent(userId)}`, {
     method: "DELETE",
     headers: getAuthHeader(),

@@ -9,7 +9,7 @@ names=dict(re.findall(r'public const string (\w+) = "([A-Z_]+)"',source))
 roles={role:[names[key] for key in re.findall(r'PermissionNames\.(\w+)',body)] for role,body in re.findall(r'\["(ADMIN|HR|MENTOR|INTERN)"\] =\s*\[(.*?)\]',source,re.S)}
 expected={
  'ADMIN':['dashboard.html','user-manage.html','intern-manage.html','hr-search-filter.html','profile.html','permissions.html'],
- 'HR':['dashboard.html','intern-manage.html','hr-search-filter.html','mentor-assignment.html','mentor-assignment-list.html','profile.html','document-reviews.html','contracts.html','program-setting.html','attendance-report.html'],
+ 'HR':['dashboard.html','intern-manage.html','hr-search-filter.html','mentor-create.html','mentor-assignment.html','mentor-assignment-list.html','profile.html','document-reviews.html','contracts.html','program-setting.html','attendance-report.html'],
  'MENTOR':['dashboard.html','intern-manage.html','hr-search-filter.html','profile.html'],
  'INTERN':['dashboard.html','profile.html','intern-schedule.html','intern-upload-cv.html','internship-profile.html','intern-contract.html','intern-attendance.html'],
 }
