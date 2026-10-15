@@ -18,7 +18,7 @@ public sealed class FinalEvaluationService
             );
     }
 
-    // Lấy danh sách Intern cùng kết quả đánh giá cuối kỳ mới nhất.
+    // Lấy danh sách thực tập sinh và đánh giá mới nhất.
     public async Task<IReadOnlyList<FinalEvaluationResponse>> GetAllAsync(
         CancellationToken cancellationToken)
     {
@@ -101,12 +101,14 @@ public sealed class FinalEvaluationService
                 ProfessionalSkills = GetDecimal(
                     reader, "ProfessionalSkills"
                 ),
+
                 WorkResult = GetDecimal(reader, "WorkResult"),
                 FinalScore = GetDecimal(reader, "FinalScore"),
 
                 Classification = GetString(
                     reader, "Classification"
                 ),
+
                 Status = GetString(reader, "Status"),
                 Comment = GetString(reader, "Comment")
             });
@@ -115,7 +117,60 @@ public sealed class FinalEvaluationService
         return results;
     }
 
-    // Lấy chi tiết kết quả đánh giá mới nhất theo InternId.
+    // Xác định InternId từ tài khoản đăng nhập.
+    // Liên kết Users và Interns bằng Email.
+    public async Task<int?> GetInternIdByUserIdAsync(
+        int userId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection =
+            new SqlConnection(connectionString);
+
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+
+        command.CommandText = """
+            SELECT i.Id
+            FROM dbo.Users AS u
+            INNER JOIN dbo.Interns AS i
+                ON i.Email = u.Email
+            WHERE u.Id = @userId
+              AND u.Role = 'INTERN';
+            """;
+
+        command.Parameters.Add("@userId", SqlDbType.Int)
+            .Value = userId;
+
+        var result = await command.ExecuteScalarAsync(
+            cancellationToken
+        );
+
+        return result is null || result == DBNull.Value
+            ? null
+            : Convert.ToInt32(result);
+    }
+
+    // Lấy đánh giá của một thực tập sinh.
+    // InternId phải được Backend xác minh trước khi gọi.
+    public async Task<IReadOnlyList<FinalEvaluationResponse>> GetOwnAsync(
+        int internId,
+        CancellationToken cancellationToken)
+    {
+        var evaluation = await GetByIdAsync(
+            internId,
+            cancellationToken
+        );
+
+        if (evaluation is null)
+        {
+            return Array.Empty<FinalEvaluationResponse>();
+        }
+
+        return new[] { evaluation };
+    }
+
+    // Lấy chi tiết đánh giá mới nhất theo InternId.
     public async Task<FinalEvaluationResponse?> GetByIdAsync(
         int internId,
         CancellationToken cancellationToken)
@@ -127,7 +182,7 @@ public sealed class FinalEvaluationService
         );
     }
 
-    // Tổng hợp số lượng và điểm đánh giá cho HR.
+    // Thống kê đánh giá cuối kỳ.
     public async Task<FinalEvaluationStatisticsResponse> GetStatisticsAsync(
         CancellationToken cancellationToken)
     {
@@ -153,7 +208,7 @@ public sealed class FinalEvaluationService
         };
     }
 
-    // THÊM MỚI ĐÁNH GIÁ CUỐI KỲ.
+    // Thêm đánh giá cuối kỳ.
     public async Task<bool> CreateAsync(
         int internId,
         FinalEvaluationRequest request,
@@ -206,7 +261,7 @@ public sealed class FinalEvaluationService
         return affectedRows > 0;
     }
 
-    // CẬP NHẬT ĐÁNH GIÁ CUỐI KỲ MỚI NHẤT.
+    // Cập nhật đánh giá cuối kỳ mới nhất.
     public async Task<bool> UpdateAsync(
         int internId,
         FinalEvaluationRequest request,
@@ -280,7 +335,7 @@ public sealed class FinalEvaluationService
                 ?? DBNull.Value;
     }
 
-    // Đọc dữ liệu chuỗi, xử lý giá trị NULL.
+    // Đọc dữ liệu chuỗi, xử lý NULL.
     private static string GetString(
         SqlDataReader reader,
         string column)
@@ -292,7 +347,7 @@ public sealed class FinalEvaluationService
             : reader.GetString(ordinal);
     }
 
-    // Đọc dữ liệu điểm số, xử lý giá trị NULL.
+    // Đọc dữ liệu điểm số, xử lý NULL.
     private static decimal? GetDecimal(
         SqlDataReader reader,
         string column)
