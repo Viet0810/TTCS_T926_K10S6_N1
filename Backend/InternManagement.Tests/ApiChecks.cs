@@ -80,7 +80,7 @@ internal static class ApiChecks
             check(ready,"application starts with routing and rate limiting enabled");
             if(Environment.GetCommandLineArgs().Contains("--tasks-only")){await InternTaskChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
             await RolePermissionChecks.RunAsync(http, connectionString, check);
-            if(Environment.GetCommandLineArgs().Contains("--sprint2-only")){await InternAssignmentChecks.RunAsync(http,connectionString,check);await Sprint2CompletionChecks.RunAsync(http,connectionString,check);completed=true;return;}
+            if(Environment.GetCommandLineArgs().Contains("--sprint2-only")){await InternAssignmentChecks.RunAsync(http,connectionString,check,RestartAsync);await Sprint2CompletionChecks.RunAsync(http,connectionString,check);completed=true;return;}
             await Sprint1RbacChecks.RunAsync(http, connectionString, check, RestartAsync, CheckLiveBrowserAsync);
             await DynamicRbacChecks.RunAsync(http, connectionString, check);
             await Sprint1ProfileChecks.RunAsync(http, connectionString, check);

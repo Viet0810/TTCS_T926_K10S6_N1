@@ -40,7 +40,7 @@ public sealed class InternAssignmentsController(
     [HttpPut("{internId:int}")]
     public async Task<IActionResult> Assign(int internId, AssignMentorRequest request, CancellationToken cancellationToken)
     {
-        var access=authorization.Evaluate(Request);
+        var access=authorization.Evaluate(Request, PermissionNames.AssignMentor);
         if(access.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(access.Status);
         var create=permissions.HasPermission(access.User!.Role,PermissionNames.CreateAssignment);
         var update=permissions.HasPermission(access.User.Role,PermissionNames.UpdateAssignment);
@@ -60,6 +60,8 @@ public sealed class InternAssignmentsController(
     [HttpDelete("{internId:int}")]
     public async Task<IActionResult> Delete(int internId,CancellationToken ct)
     {
+        var denied = Denied();
+        if (denied is not null) return denied;
         var access=authorization.Evaluate(Request,PermissionNames.DeleteAssignment);
         if(access.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(access.Status);
         return await assignments.DeleteAsync(internId,ct)?Ok(new{message="Đã xóa phân công."}):NotFound(new{message="Không tìm thấy phân công."});

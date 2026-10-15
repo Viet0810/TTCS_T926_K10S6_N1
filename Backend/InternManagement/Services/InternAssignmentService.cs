@@ -73,6 +73,8 @@ public sealed class InternAssignmentService(IConfiguration configuration)
                     ((MentorUserId IS NULL AND @Create=0) OR (MentorUserId IS NOT NULL AND @Update=0))) THEN 5
                 WHEN NOT EXISTS (SELECT 1 FROM dbo.Users WITH (HOLDLOCK) WHERE Id = @MentorId AND Role = 'MENTOR') THEN 2
                 WHEN @ProgramId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.InternshipPrograms WITH (HOLDLOCK) WHERE Id = @ProgramId) THEN 3
+                WHEN @ProgramId IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Interns WHERE Id = @InternId
+                    AND MentorUserId IS NOT NULL AND InternshipProgramId IS NOT NULL AND InternshipProgramId <> @ProgramId) THEN 8
                 WHEN NOT EXISTS (SELECT 1 FROM dbo.InternDocuments WITH (HOLDLOCK) WHERE InternId=@InternId AND Kind='application' AND ReviewStatus='approved')
                     OR EXISTS (SELECT 1 FROM dbo.InternDocuments WITH (HOLDLOCK) WHERE InternId=@InternId AND ReviewStatus='rejected') THEN 6
                 WHEN NOT EXISTS(SELECT 1 FROM dbo.InternContracts WITH(HOLDLOCK) WHERE InternId=@InternId)
@@ -92,6 +94,7 @@ public sealed class InternAssignmentService(IConfiguration configuration)
             throw new AssignmentValidationException(validation == 1 ? "Không tìm thấy thực tập sinh."
                 : validation == 2 ? "Tài khoản Mentor không tồn tại hoặc không có vai trò MENTOR."
                 : validation == 3 ? "Không tìm thấy chương trình thực tập."
+                : validation == 8 ? "Đổi Mentor phải giữ chương trình thực tập hiện tại."
                 : validation == 6 ? "Hồ sơ chưa được duyệt hoặc có tài liệu bị từ chối."
                 : validation == 7 ? "Cần hợp đồng và chương trình thực tập trước khi phân công."
                 : "Trạng thái thực tập sinh không cho phép phân công Mentor.", validation == 1);
@@ -103,7 +106,7 @@ public sealed class InternAssignmentService(IConfiguration configuration)
     public async Task<bool> DeleteAsync(int internId,CancellationToken ct)
     {
         await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);
-        await using var command=new SqlCommand("UPDATE dbo.Interns SET MentorUserId=NULL,InternshipProgramId=NULL WHERE Id=@id AND MentorUserId IS NOT NULL",connection);
+        await using var command=new SqlCommand("UPDATE dbo.Interns SET MentorUserId=NULL WHERE Id=@id AND MentorUserId IS NOT NULL",connection);
         command.Parameters.Add("@id",SqlDbType.Int).Value=internId;
         return await command.ExecuteNonQueryAsync(ct)==1;
     }
