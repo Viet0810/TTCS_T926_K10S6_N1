@@ -7,6 +7,7 @@ window.AppNavigation = (() => {
     { label: "Tìm kiếm & Lọc thực tập sinh", href: "hr-search-filter.html", permissions: ["SEARCH_INTERNS"] },
     { label: "Phân công Mentor", href: "mentor-assignment.html", permissions: ["ASSIGN_MENTOR"] },
     { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR"] },
+    { label: "Nhiệm vụ", href: "tasks.html", permissions: ["MENTOR_TASK_READ", "OWN_TASK_READ"] },
     { label: "Hồ sơ cá nhân", href: "profile.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
     { label: "Lịch thực tập", href: "intern-schedule.html", permissions: ["VIEW_OWN_SCHEDULE"] },
     { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html", permissions: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS"] },
@@ -20,6 +21,7 @@ window.AppNavigation = (() => {
 
     { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
     { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
+    { label: "Đăng ký nghỉ phép", href: "intern-leave-request.html", permissions: ["OWN_ATTENDANCE"] },
     { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"] },
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
     { label: "Thông báo", href: "notifications.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },

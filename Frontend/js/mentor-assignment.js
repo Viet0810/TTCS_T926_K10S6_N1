@@ -9,7 +9,11 @@
   let saving = false;
   let grants = [];
   const has = code => grants.includes(code);
-  const canAssign = id => has(interns.find(item=>item.internId===Number(id))?.mentorUserId ? 'ASSIGNMENT_UPDATE' : 'ASSIGNMENT_CREATE');
+  const canAssign = id => has('ASSIGN_MENTOR') && has(interns.find(item=>item.internId===Number(id))?.mentorUserId ? 'ASSIGNMENT_UPDATE' : 'ASSIGNMENT_CREATE');
+  function lockProgram() {
+    const intern = interns.find(item => item.internId === Number(internSelect.value));
+    programSelect.disabled = saving || Boolean(intern?.mentorUserId && intern?.internshipProgramId);
+  }
   document.addEventListener('session-permissions-updated',event=>{
     grants=event.detail.permissions||[];
     if(button){button.hidden=!has('ASSIGNMENT_CREATE')&&!has('ASSIGNMENT_UPDATE');button.disabled=saving||!has('ASSIGN_MENTOR')||!canAssign(internSelect.value);}
@@ -29,6 +33,7 @@
     internSelect.value = intern ? String(intern.internId) : "";
     mentorSelect.value = intern?.mentorUserId ? String(intern.mentorUserId) : "";
     programSelect.value = intern?.internshipProgramId ? String(intern.internshipProgramId) : "";
+    lockProgram();
     button.disabled=!intern || !canAssign(id) || mentorSelect.options.length<=1;
   }
   function renderMentorLoad(rowsData) {
@@ -106,6 +111,7 @@
       Session.redirectIfExpired(error);
     } finally {
       saving = false; controls.forEach(control => control.disabled = false);
+      lockProgram();
       button.disabled = !interns.length || mentorSelect.options.length <= 1 || !canAssign(internSelect.value); button.textContent = "Phân công";
     }
   });

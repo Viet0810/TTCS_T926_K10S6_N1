@@ -38,6 +38,7 @@ builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
 
 // Service phân công thực tập
 builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
+builder.Services.AddScoped<InternManagement.Services.InternTaskService>();
 
 // K10S6N1-128: Service lấy và tổng hợp đánh giá cuối kỳ
 builder.Services.AddScoped<InternManagement.Services.FinalEvaluationService>();
@@ -112,6 +113,11 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     InternManagement.Services.INotificationService,
     InternManagement.Services.NotificationService
+>();
+
+builder.Services.AddScoped<
+    InternManagement.Services.ILeaveRequestService,
+    InternManagement.Services.LeaveRequestService
 >();
 
 var app = builder.Build();
