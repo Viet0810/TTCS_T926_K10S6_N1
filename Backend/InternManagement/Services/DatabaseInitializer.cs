@@ -203,5 +203,6 @@ public sealed class DatabaseInitializer
         await Infrastructure.InternTaskMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.NotificationMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.LeaveRequestMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.MeetingMigration.ApplyAsync(connection, cancellationToken);
     }
 }

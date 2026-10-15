@@ -6,6 +6,8 @@ namespace InternManagement.Services;
 
 public static class PermissionNames
 {
+    public const string ReadMeetings = "MEETING_READ";
+    public const string CreateMeeting = "MEETING_CREATE";
     public const string ReadMentorTasks = "MENTOR_TASK_READ";
     public const string CreateTask = "TASK_CREATE";
     public const string ReadOwnTasks = "OWN_TASK_READ";
@@ -82,6 +84,8 @@ public sealed class RolePermissionService
 
             ["HR"] =
             [
+                PermissionNames.ReadMeetings,
+                PermissionNames.CreateMeeting,
                 PermissionNames.ManageContracts,
                 PermissionNames.AssignMentor,
                 PermissionNames.ViewInterns,
