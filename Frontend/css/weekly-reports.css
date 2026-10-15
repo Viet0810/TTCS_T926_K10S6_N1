@@ -1,0 +1,23 @@
+.weekly-reports-page .dashboard-main, .weekly-reports-page .card { min-width: 0; }
+.weekly-reports-page .card { border-radius: 16px; background: #fff; box-shadow: 0 4px 20px #172b4d08; }
+.weekly-reports-page h2 { font-size: 18px; }
+.weekly-reports-page .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.weekly-reports-page textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; padding: 12px 14px; border: 1px solid #dce3ed; border-radius: 11px; background: #f8fafc; color: #172b4d; font: inherit; line-height: 1.6; }
+.weekly-reports-page textarea:focus { outline: 2px solid #6c94ed; outline-offset: 2px; }
+.weekly-reports-page #reportForm { grid-template-columns: minmax(0,1fr); }
+.weekly-reports-page .form-actions { justify-content: flex-end; }
+.weekly-reports-page small, .weekly-reports-page .report-meta { color: #64748b; }
+.weekly-reports-page .weekly-report { min-width: 0; padding: 20px 0; border-bottom: 1px solid #edf1f7; }
+.weekly-reports-page .weekly-report:last-child { border: 0; }
+.weekly-reports-page h3 { margin: 0 0 8px; font-size: 16px; }
+.weekly-reports-page .report-text, .weekly-reports-page .report-meta { white-space: pre-wrap; overflow-wrap: anywhere; }
+.weekly-reports-page .report-feedback { padding: 12px 16px; margin: 12px 0; background: #f3f7ff; border-radius: 12px; }
+.weekly-reports-page .feedback-form { display: grid; gap: 10px; }
+.weekly-reports-page .feedback-form button { justify-self: end; }
+.weekly-reports-page .report-state { padding: 24px 0; text-align: center; color: #64748b; }
+.weekly-reports-page button:disabled { opacity: .65; cursor: default; }
+@media(max-width:640px) { .weekly-reports-page .weekly-report { padding: 16px 0; } }
+
+.weekly-reports-page .report-feedback-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.weekly-reports-page .report-feedback-status.is-pending { background: #fff7e6; color: #8a5700; }
+.weekly-reports-page .report-feedback-status.is-reviewed { background: #eaf8f0; color: #17663c; }

@@ -32,7 +32,8 @@ public sealed class InternAssignmentsController(
 
     [HttpGet("mentor-load")]
     public async Task<IActionResult> GetMentorLoad(CancellationToken cancellationToken) =>
-        Denied() ?? Ok(await assignments.GetMentorLoadAsync(cancellationToken));
+        authorization.Evaluate(Request, PermissionNames.ReadMentorWorkload) is { Status: not AuthorizationStatus.Authorized } denied
+            ? AuthorizationResponses.Denied(denied.Status) : Ok(await assignments.GetMentorLoadAsync(cancellationToken));
 
     [HttpGet("programs")]
     public async Task<IActionResult> GetPrograms() => Denied() ?? Ok(await programs.GetAllAsync());

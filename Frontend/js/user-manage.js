@@ -6,6 +6,8 @@ let users = [];
 let creatingUser = false;
 let canCreateUser = false;
 let canDeleteUser = false;
+let canResendLoginEmail = false;
+let mentorOnly = false;
 
 function accountMessage(text, type = "error") {
   let box = document.getElementById("accountMessage");
@@ -49,8 +51,9 @@ async function loadUsers() { return userPager.load(); }
 
 function renderUsers() {
   const keyword = searchInput.value.trim().toLowerCase();
+  const visibleUsers = users.filter(user => user.role !== "ADMIN");
 
-  tableBody.innerHTML = users
+  tableBody.innerHTML = visibleUsers
     .map(
       (user) => `
         <tr>
@@ -58,13 +61,13 @@ function renderUsers() {
           <td>${escapeHtml(user.email)}</td>
           <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
           <td>
-            ${canCreateUser && ["HR", "MENTOR"].includes(user.role) ? `<button type="button" class="btn-secondary" data-resend-id="${user.id}">Gửi lại email đăng nhập</button>` : ""}
+            ${canResendLoginEmail && ["HR", "MENTOR"].includes(user.role) ? `<button type="button" class="btn-secondary" data-resend-id="${user.id}">Gửi lại email đăng nhập</button>` : ""}
             ${!canDeleteUser || user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
           </td>
         </tr>`,
     )
     .join("");
-  if (!users.length) {
+  if (!visibleUsers.length) {
     const cell = tableBody.insertRow().insertCell(); cell.colSpan = 4; cell.className = "empty-state";
     cell.textContent = keyword ? "Không tìm thấy tài khoản phù hợp." : "Chưa có tài khoản.";
   }
@@ -83,6 +86,31 @@ async function initializePage() {
       return;
     }
     canCreateUser = Session.hasPermission(session, "CREATE_USER");
+    canResendLoginEmail = session.user?.role === "ADMIN" && canCreateUser;
+    if (createForm && session.user?.role !== "ADMIN") {
+      const adminOption = document.querySelector('#role option[value="ADMIN"]');
+      if (adminOption) adminOption.remove();
+    }
+    mentorOnly = session.user?.role === "HR";
+    if (mentorOnly) {
+      document.title = "Quản lý Mentor | Hệ thống quản lý thực tập sinh";
+      const pageTitle = document.querySelector(".dashboard-title h1");
+      const listTitle = document.querySelector(".user-list-heading h2");
+      const listDescription = document.querySelector(".user-list-heading p");
+      if (pageTitle) pageTitle.textContent = "Quản lý Mentor";
+      if (listTitle) listTitle.textContent = "Quản lý Mentor";
+      if (listDescription) listDescription.textContent = "Danh sách Mentor đang được quản lý trong hệ thống.";
+      if (searchInput) {
+        searchInput.placeholder = "Tìm Mentor theo tên hoặc email...";
+        searchInput.setAttribute("aria-label", "Tìm Mentor");
+      }
+      if (createLink) createLink.textContent = "+ Thêm Mentor";
+    }
+    if (createForm && session.user?.role === "HR") {
+      const roleSelect = document.getElementById("role");
+      [...roleSelect.options].forEach(option => { option.disabled = option.value !== "MENTOR"; });
+      roleSelect.value = "MENTOR"; updateAccountPasswordFields();
+    }
     canDeleteUser = Session.hasPermission(session, "DELETE_USER");
     if (createForm && !canCreateUser) {
       window.location.href = "user-manage.html";
@@ -105,7 +133,7 @@ let userSearchTimer;searchInput?.addEventListener("input",()=>{clearTimeout(user
 tableBody?.addEventListener("click", async (event) => {
   const resend = event.target.closest("[data-resend-id]");
   if (resend) {
-    if (!canCreateUser || resend.disabled || !await AppUI.confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?", "Gửi lại email đăng nhập")) return;
+    if (!canResendLoginEmail || resend.disabled || !await AppUI.confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?", "Gửi lại email đăng nhập")) return;
     resend.disabled = true;
     try { const result = await API.resendLoginEmail(resend.dataset.resendId); accountMessage(result.message, result.emailSent === false ? "warning" : "success"); }
     catch (error) { accountMessage(error.message); Session.redirectIfExpired(error); }
@@ -169,6 +197,7 @@ createForm?.addEventListener("submit", async function (event) {
       accountMessage(result.message, result.emailSent === false ? "warning" : "success");
 
       this.reset();
+      if (mentorOnly) document.getElementById("role").value = "MENTOR";
       updateAccountPasswordFields();
 
       if (tableBody) {

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo cáo tuần | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/weekly-reports.css">
+</head>
+<body class="weekly-reports-page">
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Báo cáo tuần</h1></div></div>
+      <div class="dashboard-session"><span id="roleBadge" class="role-badge"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main">
+      <p id="reportsMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải báo cáo...</p>
+      <section id="createReportSection" class="card" hidden>
+        <h2>Gửi báo cáo tuần</h2>
+        <form id="reportForm" class="create-user-form">
+          <div class="form-group"><label for="reportWeek">Tuần báo cáo</label><input type="date" id="reportWeek" required><small>Chọn một ngày trong tuần. Hệ thống lưu tuần từ thứ Hai đến Chủ nhật.</small></div>
+          <div class="form-group report-content-field"><label for="reportContent">Công việc đã làm</label><textarea id="reportContent" required maxlength="4000" rows="5" placeholder="Công việc đã thực hiện, kết quả và khó khăn trong tuần"></textarea></div>
+<div class="form-group"><label for="reportResults">Kết quả</label><textarea id="reportResults" required maxlength="1000" rows="3"></textarea></div>
+<div class="form-group"><label for="reportDifficulties">Khó khăn</label><textarea id="reportDifficulties" required maxlength="1000" rows="3"></textarea></div>
+<div class="form-group"><label for="reportNextPlan">Kế hoạch tiếp theo</label><textarea id="reportNextPlan" required maxlength="1000" rows="3"></textarea></div>
+          <p>Mỗi tuần gửi một báo cáo; báo cáo đã gửi được giữ trong lịch sử.</p>
+          <div class="form-actions"><button type="submit" id="submitReport" class="btn-primary">Gửi báo cáo</button></div>
+        </form>
+      </section>
+      <section id="reportListSection" class="card" hidden>
+        <div class="section-heading"><h2>Lịch sử báo cáo tuần</h2><button type="button" id="reloadReports" class="btn-secondary">Tải lại</button></div>
+        <div id="reportInternFilterGroup" class="form-group" hidden><label for="reportInternFilter">Lọc theo Intern</label><select id="reportInternFilter"><option value="">Tất cả Intern</option></select></div>
+        <div id="reportList" aria-live="polite" aria-busy="false"></div>
+      </section>
+    </main>
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/weekly-reports.js"></script>
+</body>
+</html>

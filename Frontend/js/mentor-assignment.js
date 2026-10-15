@@ -19,6 +19,8 @@
     if(button){button.hidden=!has('ASSIGNMENT_CREATE')&&!has('ASSIGNMENT_UPDATE');button.disabled=saving||!has('ASSIGN_MENTOR')||!canAssign(internSelect.value);}
     document.querySelectorAll('#assignmentRows a').forEach(link=>link.hidden=!has('ASSIGNMENT_UPDATE'));
     document.querySelectorAll('#assignmentRows .btn-danger').forEach(button=>button.hidden=!has('ASSIGNMENT_DELETE'));
+    const workloadRows = document.getElementById('mentorLoadRows');
+    if (workloadRows) { workloadRows.closest('.table-container').hidden = !has('MENTOR_WORKLOAD_READ'); if (!has('MENTOR_WORKLOAD_READ')) workloadRows.replaceChildren(); }
     if(!has('ASSIGN_MENTOR')){if(form)form.hidden=true;document.getElementById('assignmentRows')?.replaceChildren();}
   });
   const programLabel = item => `${item.name || `#${item.id}`}${item.department ? ` (${item.department})` : ""}: ${new Date(item.startDate).toLocaleDateString("vi-VN")} – ${new Date(item.endDate).toLocaleDateString("vi-VN")}`;
@@ -76,7 +78,10 @@
   }
   async function reload() {
     if (!form) {
-      const [assignments, programs, mentorLoad] = await Promise.all([API.getAssignments(), API.getAssignmentPrograms(), API.getMentorLoad()]);
+      const [assignments, programs, mentorLoad] = await Promise.all([has('ASSIGN_MENTOR') ? API.getAssignments() : Promise.resolve([]), has('ASSIGN_MENTOR') ? API.getAssignmentPrograms() : Promise.resolve([]), has('MENTOR_WORKLOAD_READ') ? API.getMentorLoad() : Promise.resolve([])]);
+      document.getElementById('mentorLoadRows').closest('.table-container').hidden = !has('MENTOR_WORKLOAD_READ');
+      document.getElementById('assignmentRows').closest('.table-container').hidden = !has('ASSIGN_MENTOR');
+      document.querySelector('#assignmentList a.btn-primary').hidden = !has('ASSIGNMENT_CREATE') && !has('ASSIGNMENT_UPDATE');
       renderRows(assignments, programs); renderMentorLoad(mentorLoad); return "";
     }
     const [allInterns, mentors, programs] = await Promise.all([
@@ -120,7 +125,7 @@
     try {
       const session = await API.getCurrentUser();
       grants=session.permissions||[];
-      if (!Session.hasPermission(session, "ASSIGN_MENTOR")) {
+      if (!Session.hasPermission(session, "ASSIGN_MENTOR") && (form || !has('MENTOR_WORKLOAD_READ'))) {
         notify("Bạn không có quyền phân công Mentor."); return;
       }
       const emptyMessage = await reload();

@@ -29,6 +29,8 @@ public sealed class InternsController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.ViewOwnSchedule);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "INTERN")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         // Only the signed-in user identifies the owner; route/query parameters cannot override it.
         return Ok(await assignments.GetOwnScheduleAsync(decision.User!.Id, cancellationToken));
     }

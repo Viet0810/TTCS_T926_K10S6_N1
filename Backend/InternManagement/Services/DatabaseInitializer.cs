@@ -201,8 +201,12 @@ public sealed class DatabaseInitializer
         await Infrastructure.Sprint1PermissionMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint2ActionPermissionMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.InternTaskMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.WeeklyReportMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.NotificationMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.LeaveRequestMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.MeetingMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.Sprint3PermissionMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.WorkScheduleMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.EvaluationAuditMigration.ApplyAsync(connection, cancellationToken);
     }
 }

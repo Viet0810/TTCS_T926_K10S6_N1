@@ -33,8 +33,15 @@ public sealed class RequestAuthorizationService
         if (user!.MustChangePassword && RequestRequiresPasswordChange(request))
             return new AuthorizationDecision(AuthorizationStatus.PasswordChangeRequired, user);
 
-        if (requiredPermission is not null && !permissions.HasPermission(user.Role, requiredPermission))
-            return new AuthorizationDecision(AuthorizationStatus.Forbidden, user);
+        if (requiredPermission is not null)
+        {
+            var grants = permissions.GetPermissions(user.Role);
+            var definition = PermissionCatalog.Entries.SingleOrDefault(p => p.Code == requiredPermission);
+            if (!grants.Contains(requiredPermission) || definition is null
+                || (user.Role != "ADMIN" && !definition.Roles.Contains(user.Role))
+                || definition.Requires.Any(code => !grants.Contains(code)))
+                return new AuthorizationDecision(AuthorizationStatus.Forbidden, user);
+        }
 
         return new AuthorizationDecision(AuthorizationStatus.Authorized, user);
     }

@@ -3,11 +3,22 @@
  * Controller trang Trung tâm thông báo (Frontend - K10S6N1-157)
  */
 
-let allNotifications = [];
+let allNotifications = [], notificationPageSession = {};
+const notificationPermission = code => Session.hasPermission(notificationPageSession, code);
+function applyNotificationPermissions(session) {
+  notificationPageSession = session;
+  const read = notificationPermission("NOTIFICATION_READ");
+  document.getElementById("pageMarkAllReadBtn").hidden = !read || !notificationPermission("NOTIFICATION_UPDATE");
+  if (document.getElementById("pageSeedBtn")) document.getElementById("pageSeedBtn").hidden = !read || !notificationPermission("NOTIFICATION_CREATE");
+  if (!read) { allNotifications = []; updateStats([]); }
+  applyFilters();
+}
+document.addEventListener("session-permissions-updated", event => applyNotificationPermissions(event.detail));
 
 document.addEventListener("DOMContentLoaded", async () => {
   setupPageEventListeners();
-  await loadPageNotifications();
+  try { applyNotificationPermissions(await API.getCurrentUser()); await loadPageNotifications(); }
+  catch (error) { AppUI.toast(error.message, "error"); Session.redirectIfExpired(error); }
 });
 
 function setupPageEventListeners() {
@@ -24,7 +35,8 @@ function setupPageEventListeners() {
 
   if (markAllBtn) {
     markAllBtn.addEventListener("click", async () => {
-      await NotificationService.markAllAsRead();
+      if (!notificationPermission("NOTIFICATION_UPDATE")) return;
+      try { await NotificationService.markAllAsRead(); } catch (error) { AppUI.toast(error.message, "error"); return; }
       allNotifications.forEach(x => { x.isRead = true; });
       updateStats(allNotifications);
       applyFilters();
@@ -40,7 +52,8 @@ function setupPageEventListeners() {
 
   if (seedBtn) {
     seedBtn.addEventListener("click", async () => {
-      await NotificationService.seedSamples();
+      if (!notificationPermission("NOTIFICATION_CREATE")) return;
+      try { await NotificationService.seedSamples(); } catch (error) { AppUI.toast(error.message, "error"); return; }
       await loadPageNotifications();
       if (window.NotificationUI) NotificationUI.refreshBadge();
     });
@@ -48,6 +61,7 @@ function setupPageEventListeners() {
 }
 
 async function loadPageNotifications() {
+  if (!notificationPermission("NOTIFICATION_READ")) return;
   const infoEl = document.getElementById("notifsLoadedInfo");
   if (infoEl) infoEl.textContent = "Đang tải dữ liệu…";
 
@@ -59,7 +73,8 @@ async function loadPageNotifications() {
     if (infoEl) infoEl.textContent = `Hiển thị ${allNotifications.length} thông báo gần nhất`;
     if (window.NotificationUI) NotificationUI.refreshBadge();
   } catch (err) {
-    console.error("[notifications-page] Load error:", err);
+    allNotifications = []; updateStats([]); applyFilters();
+    AppUI.toast(err.message, "error");
     if (infoEl) infoEl.textContent = "Lỗi tải thông báo";
   }
 }
@@ -151,7 +166,7 @@ function renderPageList(items) {
               <span>🏷️ ${escapeHtml(categoryLabel)}</span>
             </div>
             <div style="display: flex; gap: 8px;">
-              ${!item.isRead ? `<button type="button" class="btn-secondary mark-single-btn" data-id="${item.id}" style="padding: 2px 10px; font-size: 12px;">Đánh dấu đã đọc</button>` : ''}
+              ${!item.isRead && notificationPermission("NOTIFICATION_UPDATE") ? `<button type="button" class="btn-secondary mark-single-btn" data-id="${item.id}" style="padding: 2px 10px; font-size: 12px;">Đánh dấu đã đọc</button>` : ''}
               ${sanitizeUrl(item.actionUrl) ? `<a href="${escapeHtml(sanitizeUrl(item.actionUrl))}" class="btn-primary" style="padding: 2px 12px; font-size: 12px; text-decoration: none;">Xem chi tiết →</a>` : ''}
             </div>
           </div>
@@ -165,7 +180,8 @@ function renderPageList(items) {
       e.stopPropagation();
       const id = btn.getAttribute("data-id");
       if (id) {
-        await NotificationService.markAsRead(id);
+        if (!notificationPermission("NOTIFICATION_UPDATE")) return;
+        try { await NotificationService.markAsRead(id); } catch (error) { AppUI.toast(error.message, "error"); return; }
         const item = allNotifications.find(x => x.id === Number(id));
         if (item) item.isRead = true;
         updateStats(allNotifications);

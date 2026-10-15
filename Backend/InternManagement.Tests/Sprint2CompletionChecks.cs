@@ -41,7 +41,8 @@ internal static class Sprint2CompletionChecks
         {
             await Login(role);
             using var denied=await http.PutAsJsonAsync("/api/interns/me",ownUpdate);
-            check(denied.StatusCode==HttpStatusCode.Forbidden,"own profile rejects "+role);
+            check(role=="permission-admin" ? denied.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound
+                : denied.StatusCode==HttpStatusCode.Forbidden,"own profile cannot resolve a foreign Intern for "+role);
         }
         await Login(email,password);
         foreach(var field in new[]{"userId","internId","email","role","status","mentorUserId","internshipProgramId","startDate","endDate"})
@@ -139,9 +140,9 @@ internal static class Sprint2CompletionChecks
         foreach(var role in new[]{"admin","mentor","hr"})
         {
             await Login("permission-"+role);
-            using var denied=await http.PostAsync("/api/interns/me/attendance/check-in",null);check(denied.StatusCode==HttpStatusCode.Forbidden,role+" cannot use own intern check-in");
-            using var contract=await http.GetAsync("/api/interns/me/contract");check(contract.StatusCode==HttpStatusCode.Forbidden,role+" cannot use own intern contract");
-            if(role!="hr"){using var deniedHr=await http.GetAsync("/api/contracts");check(deniedHr.StatusCode==HttpStatusCode.Forbidden,role+" cannot manage contracts");}
+            using var denied=await http.PostAsync("/api/interns/me/attendance/check-in",null);check(role=="admin" ? denied.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound : denied.StatusCode==HttpStatusCode.Forbidden,role+" cannot check in without an owned Intern profile");
+            using var contract=await http.GetAsync("/api/interns/me/contract");check(role=="admin" ? contract.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound : contract.StatusCode==HttpStatusCode.Forbidden,role+" cannot access an unrelated own contract");
+            if(role!="hr"){using var deniedHr=await http.GetAsync("/api/contracts");check(deniedHr.StatusCode==(role=="admin"?HttpStatusCode.OK:HttpStatusCode.Forbidden),role+" contract management follows configured permissions");}
         }
         var config=new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string,string?>{{"ConnectionStrings:InternManagement",connectionString}}).Build();
         await using(var sql=new SqlConnection(connectionString)){await sql.OpenAsync();await using var command=sql.CreateCommand();command.CommandText="UPDATE dbo.InternshipPrograms SET EndDate='2030-12-31' WHERE Id=@id";command.Parameters.AddWithValue("@id",programId);await command.ExecuteNonQueryAsync();}

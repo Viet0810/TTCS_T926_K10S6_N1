@@ -24,15 +24,17 @@ var settings = new ConfigurationBuilder().AddJsonFile(settingsPath)
     .AddEnvironmentVariables().Build();
 var source = settings.GetConnectionString("InternManagement") ?? throw new Exception("Missing SQL configuration.");
 if (Environment.GetEnvironmentVariable("INTERN_TEST_SQL_SERVER") is { Length: > 0 } testServer)
-    source = new SqlConnectionStringBuilder(source) { DataSource = testServer }.ConnectionString;
+    source = new SqlConnectionStringBuilder(source) { DataSource = testServer, IntegratedSecurity = true, Encrypt = false, TrustServerCertificate = true }.ConnectionString;
 var databaseName = "InternManagement_AuthTests_" + Guid.NewGuid().ToString("N");
 if (!Regex.IsMatch(databaseName, "^InternManagement_AuthTests_[a-f0-9]{32}$")) throw new Exception("Unsafe database name.");
-var masterSettings = new SqlConnectionStringBuilder(source) { InitialCatalog = "master", ConnectTimeout = 5 };
+var masterSettings = new SqlConnectionStringBuilder(source) { InitialCatalog = "master", ConnectTimeout = 30 };
 var testSettings = new SqlConnectionStringBuilder(source) { InitialCatalog = databaseName, ConnectTimeout = 5 };
 await using var master = new SqlConnection(masterSettings.ConnectionString);
 await master.OpenAsync();
 await using (var create = master.CreateCommand())
 {
+    // SQL Express can allocate disposable database files slowly under local disk pressure.
+    create.CommandTimeout = 120;
     create.CommandText = $"CREATE DATABASE [{databaseName}]";
     await create.ExecuteNonQueryAsync();
 }
@@ -53,6 +55,7 @@ try
             """;
         await setup.ExecuteNonQueryAsync();
         await InternManagement.Infrastructure.MeetingMigration.ApplyAsync(fixture, default);
+        await InternManagement.Infrastructure.NotificationMigration.ApplyAsync(fixture, default);
         await MeetingEmailChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});
         await MeetingApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});
         return;
@@ -65,6 +68,18 @@ try
     if(args.Contains("--attendance-only"))
     {
         await AttendanceRuleChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
+    if(args.Contains("--reports-only"))
+    {
+        await ApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
+    if(args.Contains("--sprint3-rbac-only") || args.Contains("--admin-rbac-only"))
+    {
+        await ApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
+    }
+    if(args.Contains("--ownership-only"))
+    {
+        await ApiChecks.RunAsync(testSettings.ConnectionString,(ok,name)=>{if(!ok)throw new Exception("FAIL: "+name);Console.WriteLine("PASS: "+name);});return;
     }
     if(args.Contains("--tasks-only"))
     {

@@ -203,9 +203,10 @@ internal static class InternAssignmentChecks
             check(forbiddenSchedule.StatusCode == HttpStatusCode.Forbidden, role + " cannot use own intern schedule API");
             if (role != "hr")
             {
-                using var forbiddenAssignment = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", assignment);
+                using var forbiddenAssignment = await http.PutAsJsonAsync($"/api/intern-assignments/{internIds[0]}", new { mentorUserId = replacementMentorId, internshipProgramId = programId });
                 using var forbiddenList = await http.GetAsync("/api/intern-assignments/mentors");
-                check(forbiddenAssignment.StatusCode == HttpStatusCode.Forbidden && forbiddenList.StatusCode == HttpStatusCode.Forbidden, role + " cannot assign or list assignment options");
+                var expected = role == "admin" ? HttpStatusCode.OK : HttpStatusCode.Forbidden;
+                check(forbiddenAssignment.StatusCode == expected && forbiddenList.StatusCode == expected, role + " assignment access follows configured default permissions");
             }
         }
         // Removing a US13 program keeps assignment and profile intact and clears its schedule link.

@@ -6,6 +6,17 @@
   const deadline = document.getElementById('taskDeadline');
   const save = document.getElementById('saveTask');
   const refresh = document.getElementById('refreshTasks');
+  const progressForm = document.getElementById('progressForm');
+  const progressTask = document.getElementById('progressTask');
+  const progress = document.getElementById('taskProgress');
+  const progressNote = document.getElementById('progressNote');
+  const progressStatus = document.getElementById('progressStatus');
+  function syncProgressStatus() {
+    const value = Number(progress.value);
+    progressStatus.value = progress.value === '' || !progress.validity.valid ? '—' : value === 100 ? 'Hoàn thành' : value === 0 ? 'Đã giao' : 'Đang thực hiện';
+  }
+  progress.addEventListener('input', syncProgressStatus);
+  let loadedTasks = [];
   let session, saving = false, loading = false, version = 0;
   const dateFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   function formatDeadline(value) {
@@ -22,12 +33,18 @@
   const has = permission => Session.hasPermission(session || {}, permission);
   const canRead = () => session?.user?.role === 'MENTOR' ? has('MENTOR_TASK_READ') : session?.user?.role === 'INTERN' && has('OWN_TASK_READ');
   const canCreate = () => session?.user?.role === 'MENTOR' && canRead() && has('TASK_CREATE');
+  const canUpdate = () => session?.user?.role === 'INTERN' && canRead() && has('OWN_TASK_UPDATE');
   const api = (path = '', options = {}) => requestApi('/tasks' + path, { ...options, headers: getAuthHeader() });
   function permissions() {
     document.getElementById('createTaskSection').hidden = !canCreate();
     document.getElementById('taskListSection').hidden = !canRead();
+    document.getElementById('updateProgressSection').hidden = !canUpdate();
+    document.getElementById('saveProgress').disabled = saving || loading || !canUpdate() || !loadedTasks.length;
     save.disabled = saving || !canCreate() || intern.options.length <= 1;
     refresh.disabled = loading || saving;
+    document.querySelectorAll('.task-update-action').forEach(button => {
+      button.hidden = !canUpdate(); button.disabled = saving || loading || !canUpdate();
+    });
     if (!canRead()) {
       version++;
       document.getElementById('taskRows').replaceChildren();
@@ -48,16 +65,43 @@
     intern.replaceChildren(new Option('Chọn thực tập sinh', ''));
     interns.forEach(item => intern.add(new Option(`${item.fullName} (${item.email})`, item.internId)));
     const rows = document.getElementById('taskRows'); rows.replaceChildren();
+    loadedTasks = tasks;
+    const selectedTask = progressTask.value;
+    progressTask.replaceChildren(new Option('Chọn nhiệm vụ', ''));
+    tasks.forEach(task => progressTask.add(new Option(task.content, task.id)));
+    progressTask.value = selectedTask;
     tasks.forEach(task => {
       const row = document.createElement('tr');
       [task.internName, task.mentorName, task.content, formatDeadline(task.deadline),
-        task.status === 'ASSIGNED' ? 'Đã giao' : task.status].forEach((value, index) => {
+        ({ ASSIGNED: 'Đã giao', IN_PROGRESS: 'Đang thực hiện', COMPLETED: 'Hoàn thành' })[task.status] || task.status].forEach((value, index) => {
         const cell = document.createElement('td');
         if (index === 2 || index === 4) {
           const text = document.createElement('span'); text.textContent = value;
           text.className = index === 2 ? 'task-content-preview' : 'task-status';
           if (index === 2) text.title = value;
           cell.append(text);
+          if (index === 4) {
+            const percentage = document.createElement('small'); percentage.className = 'task-progress-label';
+            percentage.textContent = `${task.progress ?? 0}%`; cell.append(percentage);
+            const bar = document.createElement('progress'); bar.className = 'task-progress-bar';
+            bar.max = 100; bar.value = task.progress ?? 0;
+            bar.setAttribute('aria-label', 'Tiến độ: ' + task.content); cell.append(bar);
+            if (session.user.role === 'INTERN') {
+              const action = document.createElement('button'); action.type = 'button';
+              action.className = 'btn-secondary task-update-action'; action.textContent = 'Cập nhật tiến độ';
+              action.addEventListener('click', () => {
+                if (!canUpdate() || saving || loading) return;
+                progressTask.value = String(task.id); progressTask.dispatchEvent(new Event('change'));
+                document.getElementById('updateProgressSection').scrollIntoView({ block: 'center' });
+                progress.focus({ preventScroll: true });
+              });
+              cell.append(action);
+            }
+          }
+          if (index === 2 && task.progressNote) {
+            const note = document.createElement('small'); note.className = 'task-content-preview task-progress-label';
+            note.textContent = 'Tiến độ: ' + task.progressNote; cell.append(note);
+          }
         } else { cell.textContent = value; if (index === 3) cell.className = 'task-deadline'; }
         row.append(cell);
       });
@@ -100,6 +144,28 @@
     } finally {
       saving = false; controls.forEach(control => control.disabled = false); permissions();
     }
+  });
+  progressTask.addEventListener('change', () => {
+    const task = loadedTasks.find(item => String(item.id) === progressTask.value);
+    progress.value = task?.progress ?? 0;
+    progressNote.value = task?.progressNote ?? '';
+    syncProgressStatus();
+  });
+  progressForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (saving || loading || !canUpdate() || !progressForm.reportValidity()) return;
+    saving = true; permissions();
+    let persisted = false;
+    const fields = [...progressForm.querySelectorAll('input,select,textarea')];
+    fields.forEach(field => field.disabled = true);
+    try {
+      await api('/' + progressTask.value + '/progress', { method: 'PATCH', body: JSON.stringify({ progress: Number(progress.value), progressNote: progressNote.value.trim() }) });
+      persisted = true; await load();
+      AppUI.feedback(message, 'Đã cập nhật tiến độ.', 'success');
+    } catch (error) {
+      AppUI.feedback(message, persisted ? 'Tiến độ đã lưu. Hãy tải lại danh sách.' : error.message, persisted ? 'warning' : 'error');
+      Session.redirectIfExpired(error);
+    } finally { saving = false; fields.forEach(field => field.disabled = false); permissions(); }
   });
   document.getElementById('refreshTasks').addEventListener('click', () => load().catch(error => { AppUI.feedback(message, error.message, 'error'); Session.redirectIfExpired(error); }));
   (async () => {

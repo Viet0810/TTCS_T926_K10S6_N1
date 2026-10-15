@@ -21,6 +21,10 @@ public sealed class FinalEvaluationsController : ControllerBase
         this.authorization = authorization;
     }
 
+    private static int? MentorScope(AuthorizationDecision decision) =>
+        string.Equals(decision.User?.Role, "MENTOR", StringComparison.OrdinalIgnoreCase)
+            ? decision.User!.Id : null;
+
     private static bool IsIntern(string? role) =>
         string.Equals(
             role,
@@ -29,6 +33,7 @@ public sealed class FinalEvaluationsController : ControllerBase
         );
 
     private static bool CanEdit(string? role) =>
+        string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(
             role,
             "HR",
@@ -80,7 +85,8 @@ public sealed class FinalEvaluationsController : ControllerBase
         }
 
         var results = await evaluationService.GetAllAsync(
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
 
         return Ok(results);
@@ -146,7 +152,8 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         var statistics =
             await evaluationService.GetStatisticsAsync(
-                cancellationToken
+                cancellationToken,
+                MentorScope(decision)
             );
 
         return Ok(statistics);
@@ -179,13 +186,17 @@ public sealed class FinalEvaluationsController : ControllerBase
                 );
 
             if (!internId.HasValue || internId.Value != id)
-                return Forbid();
+                return StatusCode(StatusCodes.Status403Forbidden);
         }
 
         var result = await evaluationService.GetByIdAsync(
             id,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
+
+        if (result is null && MentorScope(decision).HasValue)
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         if (result is null)
             return NotFound("Không tìm thấy thực tập sinh.");
@@ -209,7 +220,7 @@ public sealed class FinalEvaluationsController : ControllerBase
             return AuthorizationResponses.Denied(decision.Status);
 
         if (!CanEdit(decision.User?.Role))
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         if (id <= 0)
             return BadRequest("InternId phải lớn hơn 0.");
@@ -219,8 +230,12 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         var intern = await evaluationService.GetByIdAsync(
             id,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
+
+        if (intern is null && MentorScope(decision).HasValue)
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         if (intern is null)
             return NotFound("Không tìm thấy thực tập sinh.");
@@ -228,7 +243,8 @@ public sealed class FinalEvaluationsController : ControllerBase
         var created = await evaluationService.CreateAsync(
             id,
             request,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision),decision.User!.Id
         );
 
         if (!created)
@@ -240,7 +256,8 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         var result = await evaluationService.GetByIdAsync(
             id,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
 
         return CreatedAtAction(
@@ -266,7 +283,7 @@ public sealed class FinalEvaluationsController : ControllerBase
             return AuthorizationResponses.Denied(decision.Status);
 
         if (!CanEdit(decision.User?.Role))
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         if (id <= 0)
             return BadRequest("InternId phải lớn hơn 0.");
@@ -276,8 +293,12 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         var intern = await evaluationService.GetByIdAsync(
             id,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
+
+        if (intern is null && MentorScope(decision).HasValue)
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         if (intern is null)
             return NotFound("Không tìm thấy thực tập sinh.");
@@ -285,7 +306,8 @@ public sealed class FinalEvaluationsController : ControllerBase
         var updated = await evaluationService.UpdateAsync(
             id,
             request,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision),decision.User!.Id
         );
 
         if (!updated)
@@ -297,7 +319,8 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         var result = await evaluationService.GetByIdAsync(
             id,
-            cancellationToken
+            cancellationToken,
+            MentorScope(decision)
         );
 
         return Ok(result);

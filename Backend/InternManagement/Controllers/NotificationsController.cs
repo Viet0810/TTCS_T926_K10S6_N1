@@ -20,7 +20,7 @@ public sealed class NotificationsController(
         [FromQuery] string? category = null,
         CancellationToken ct = default)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.ReadNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 
@@ -38,7 +38,7 @@ public sealed class NotificationsController(
     [HttpGet("unread-count")]
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct = default)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.ReadNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 
@@ -60,13 +60,13 @@ public sealed class NotificationsController(
 
     private async Task<IActionResult> HandleMarkAsRead(long id, CancellationToken ct)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.UpdateNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 
         var result = await notifications.MarkAsReadAsync(access.User!.Id, id, ct);
         if (result is null)
-            return NotFound(new { message = "Thông báo không tồn tại hoặc bạn không có quyền thao tác." });
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Thông báo không tồn tại hoặc bạn không có quyền thao tác." });
 
         return Ok(result);
     }
@@ -74,7 +74,7 @@ public sealed class NotificationsController(
     [HttpPost("mark-all-read")]
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct = default)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.UpdateNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 
@@ -85,7 +85,7 @@ public sealed class NotificationsController(
     [HttpPost("seed")]
     public async Task<IActionResult> SeedSamples(CancellationToken ct = default)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.CreateNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 
@@ -98,7 +98,7 @@ public sealed class NotificationsController(
         [FromBody] CreateNotificationRequest request,
         CancellationToken ct = default)
     {
-        var access = auth.Evaluate(Request);
+        var access = auth.Evaluate(Request, PermissionNames.CreateNotifications);
         if (access.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(access.Status);
 

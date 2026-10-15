@@ -9,13 +9,18 @@ public sealed class ListPagingService(IConfiguration config)
     private readonly string connectionString=config.GetConnectionString("InternManagement")!;
     public async Task<PageResponse<InternResponse>> InternsAsync(PageRequest page,InternFilterRequest? filter,CancellationToken ct)
         =>await ReadAsync("Interns",InternRecordMapper.Columns,page,filter,InternRecordMapper.Map,ct);
-    public async Task<PageResponse<UserResponse>> UsersAsync(PageRequest page,CancellationToken ct)
+    public async Task<PageResponse<UserResponse>> UsersAsync(PageRequest page,CancellationToken ct,string? requesterRole=null)
         =>await ReadAsync("Users","Id,Username,FullName,Email,Role,MustChangePassword",page,null,
-            r=>new UserResponse(r.GetInt32(0),r.GetString(1),r.GetString(2),r.GetString(3),r.GetString(4),r.GetBoolean(5)),ct);
-    private async Task<PageResponse<T>> ReadAsync<T>(string table,string columns,PageRequest page,InternFilterRequest? filter,Func<SqlDataReader,T> map,CancellationToken ct)
+            r=>new UserResponse(r.GetInt32(0),r.GetString(1),r.GetString(2),r.GetString(3),r.GetString(4),r.GetBoolean(5)),ct,requesterRole);
+    private async Task<PageResponse<T>> ReadAsync<T>(string table,string columns,PageRequest page,InternFilterRequest? filter,Func<SqlDataReader,T> map,CancellationToken ct,string? requesterRole=null)
     {
         await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);
         await using var cmd=connection.CreateCommand();var where=" WHERE 1=1";
+        if(table=="Users")
+        {
+            where+=" AND Role <> 'ADMIN'";
+            if(string.Equals(requesterRole,"HR",StringComparison.OrdinalIgnoreCase))where+=" AND Role = 'MENTOR'";
+        }
         var search=filter?.Search??page.Search;
         if(!string.IsNullOrWhiteSpace(search))
         {

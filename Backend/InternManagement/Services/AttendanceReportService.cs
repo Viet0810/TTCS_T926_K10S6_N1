@@ -41,7 +41,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 a.WorkingHours,
                 a.Status,
                 a.Note,
-                a.Approver
+                a.Approver,a.ScheduledStart,a.ScheduledEnd
             FROM dbo.AttendanceRecords a
             JOIN dbo.Interns i ON a.InternId = i.Id
             LEFT JOIN dbo.InternshipPrograms p ON p.Id = i.InternshipProgramId
@@ -89,10 +89,13 @@ public sealed class AttendanceReportService : IAttendanceReportService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var scheduleStart=reader.IsDBNull(12)?AttendanceRules.Start:TimeOnly.FromTimeSpan(reader.GetTimeSpan(12));
+            var scheduleEnd=reader.IsDBNull(13)?AttendanceRules.End:TimeOnly.FromTimeSpan(reader.GetTimeSpan(13));
             var status = reader.GetString(9);
-            if(status is not ("LEAVE_APPROVED" or "ABSENT") && AttendanceRules.CheckInStatus(reader.GetString(6)) is not null)status=AttendanceRules.StoredStatus(reader.GetString(6),reader.GetString(7));
+            if(status is not ("LEAVE_APPROVED" or "ABSENT") && AttendanceRules.CheckInStatus(reader.GetString(6)) is not null)status=AttendanceRules.StoredStatus(reader.GetString(6),reader.GetString(7),scheduleStart,scheduleEnd);
             records.Add(new AttendanceRecordResponse
             {
+                ScheduledStart=scheduleStart,ScheduledEnd=scheduleEnd,
                 Id = reader.GetInt32(0),
                 InternId = reader.GetInt32(1),
                 Mssv = reader.GetString(2),
@@ -101,7 +104,7 @@ public sealed class AttendanceReportService : IAttendanceReportService
                 Date = reader.GetString(5),
                 CheckIn = reader.IsDBNull(6) ? "—" : reader.GetString(6),
                 CheckOut = reader.IsDBNull(7) ? "—" : reader.GetString(7),
-                Hours = AttendanceRules.CheckInStatus(reader.GetString(6)) is not null ? AttendanceRules.Hours(reader.GetString(6),reader.GetString(7)) : reader.GetDecimal(8),
+                Hours = AttendanceRules.CheckInStatus(reader.GetString(6)) is not null ? AttendanceRules.Hours(reader.GetString(6),reader.GetString(7),scheduleStart,scheduleEnd) : reader.GetDecimal(8),
                 Status = status,
                 StatusText = GetStatusText(status),
                 Note = reader.IsDBNull(10) ? null : reader.GetString(10),

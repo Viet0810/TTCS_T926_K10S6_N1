@@ -1,14 +1,21 @@
 
 "use strict";
 
-const API_BASE_URL = "http://localhost:5024/api/FinalEvaluations";
+const EVALUATION_API_URL = BASE_URL + "/FinalEvaluations";
 
 let evaluations = [];
 let filteredEvaluations = [];
-let currentRole = "";
+let currentRole = "", evaluationSession = {};
 
+document.addEventListener("session-permissions-updated", event => {
+  evaluationSession = event.detail; currentRole = evaluationSession.user?.role || "";
+  if (!Session.hasPermission(evaluationSession, "VIEW_FINAL_EVALUATIONS")) {
+    evaluations = []; filteredEvaluations = []; getElement("evaluationTableBody")?.replaceChildren();
+  } else if (typeof renderTable === "function") renderTable();
+  if (!canEditEvaluation()) closeEvaluationForm();
+});
 function canEditEvaluation() {
-  return currentRole === "HR" || currentRole === "MENTOR";
+  return ["ADMIN", "HR", "MENTOR"].includes(currentRole) && Session.hasPermission(evaluationSession, "VIEW_FINAL_EVALUATIONS") && Session.hasPermission(evaluationSession, "UPDATE_FINAL_EVALUATIONS");
 }
 
 function getElement(id) {
@@ -77,7 +84,7 @@ async function apiRequest(path = "", method = "GET", body = null) {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${EVALUATION_API_URL}${path}`, {
     method,
     headers,
     ...(body !== null ? { body: JSON.stringify(body) } : {})
@@ -135,6 +142,10 @@ function normalizeEvaluation(item) {
     className: item.className ?? "",
     company: item.company ?? "",
     mentor: item.mentor ?? "",
+    programName: item.programName ?? "",
+    evaluationSource: item.evaluationSource ?? "",
+    mentorScore: item.mentorScore,
+    mentorComment: item.mentorComment ?? "",
     period: item.period ?? "",
     attendance: item.attendance,
     attitude: item.attitude,
@@ -355,7 +366,7 @@ function showDetail(id) {
   const intern = evaluations.find(item => item.id === id);
 
   if (!intern) {
-    alert("Không tìm thấy thực tập sinh.");
+    AppUI.toast("Không tìm thấy thực tập sinh.", "error");
     return;
   }
 
@@ -365,6 +376,10 @@ function showDetail(id) {
     ["Lớp", intern.className],
     ["Đơn vị thực tập", intern.company],
     ["Người hướng dẫn", intern.mentor],
+    ["Chương trình", intern.programName],
+    ["Nguồn đánh giá", intern.evaluationSource === "HR" ? "HR tổng hợp" : intern.evaluationSource === "MENTOR" ? "Mentor đánh giá" : "Dữ liệu trước đây"],
+    ["Điểm Mentor", intern.mentorScore],
+    ["Nhận xét Mentor", intern.mentorComment],
     ["Đợt thực tập", intern.period]
   ]);
 
@@ -402,7 +417,7 @@ function openEvaluationForm(id) {
   const intern = evaluations.find(item => item.id === id);
 
   if (!intern) {
-    alert("Không tìm thấy thực tập sinh.");
+    AppUI.toast("Không tìm thấy thực tập sinh.", "error");
     return;
   }
 
@@ -478,11 +493,12 @@ async function saveEvaluation(event) {
   event.preventDefault();
 
   if (!canEditEvaluation()) {
-    alert("Chỉ HR và MENTOR được lưu đánh giá.");
+    AppUI.toast("Bạn không có quyền lưu đánh giá.", "error");
     return;
   }
 
   const form = getElement("evaluationForm");
+  if (getElement("saveEvaluationBtn").disabled) return;
 
   if (!form.reportValidity()) {
     return;
@@ -492,7 +508,7 @@ async function saveEvaluation(event) {
   const mode = getElement("evaluationMode").value;
 
   if (!Number.isInteger(internId) || internId <= 0) {
-    alert("ID thực tập sinh không hợp lệ.");
+    AppUI.toast("ID thực tập sinh không hợp lệ.", "error");
     return;
   }
 
@@ -514,6 +530,7 @@ async function saveEvaluation(event) {
 
     getElement("evaluationMessage").textContent =
       "Đã lưu đánh giá cuối kỳ thành công.";
+    AppUI.toast("Đã lưu đánh giá.", "success");
 
     window.scrollTo({
       top: 0,
@@ -522,6 +539,7 @@ async function saveEvaluation(event) {
   } catch (error) {
     console.error("Lỗi lưu đánh giá:", error);
     message.textContent = error.message;
+    AppUI.toast(error.message, "error");
   } finally {
     saveButton.disabled = false;
     saveButton.textContent = "Lưu đánh giá";
@@ -596,6 +614,7 @@ function exportCSV() {
 
 // Tải dữ liệu từ Backend
 async function loadEvaluations() {
+  if (!Session.hasPermission(evaluationSession, "VIEW_FINAL_EVALUATIONS")) { getElement("evaluationTableBody").replaceChildren(); return; }
   const tableBody = getElement("evaluationTableBody");
 
   tableBody.replaceChildren();
@@ -720,8 +739,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Ưu tiên vai trò được Backend xác nhận thay vì dữ liệu lưu cũ trong trình duyệt.
   async function initializeEvaluations() {
     try {
-      if (window.API?.getCurrentUser) {
+      if (typeof API !== "undefined" && API.getCurrentUser) {
         const session = await API.getCurrentUser();
+        evaluationSession = session;
         const serverRole = session?.user?.role;
         if (serverRole) {
           currentRole = String(serverRole).toUpperCase();

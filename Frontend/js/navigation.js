@@ -1,14 +1,23 @@
 
 window.AppNavigation = (() => {
+  const adminMenu = new Set([
+    "dashboard.html",
+    "user-manage.html",
+    "permissions.html",
+    "profile.html"
+  ]);
   const items = [
-    { label: "Lịch họp", href: "meetings.html", permissions: ["MEETING_READ"], roles: ["HR"] },
+    { label: "Lịch làm việc", href: "work-schedules.html", permissions: ["WORK_SCHEDULE_READ"] },
+    { label: "Lịch họp", href: "meetings.html", permissions: ["MEETING_READ"] },
     { label: "Bảng điều khiển", href: "dashboard.html" },
     { label: "Quản lý tài khoản", href: "user-manage.html", permissions: ["MANAGE_USERS"] },
+    { label: "Phân quyền RBAC", href: "permissions.html", permissions: ["RBAC_READ"] },
     { label: "Xem danh sách thực tập sinh", href: "intern-manage.html", permissions: ["VIEW_INTERNS"] },
     { label: "Tìm kiếm & Lọc thực tập sinh", href: "hr-search-filter.html", permissions: ["SEARCH_INTERNS"] },
     { label: "Phân công Mentor", href: "mentor-assignment.html", permissions: ["ASSIGN_MENTOR"] },
-    { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR"] },
-    { label: "Nhiệm vụ", href: "tasks.html", permissions: ["MENTOR_TASK_READ", "OWN_TASK_READ"] },
+    { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR", "MENTOR_WORKLOAD_READ"] },
+    { label: "Nhiệm vụ", href: "tasks.html", permissions: ["MENTOR_TASK_READ", "OWN_TASK_READ"], roles: ["MENTOR", "INTERN"] },
+    { label: "Báo cáo tuần", href: "weekly-reports.html", permissions: ["OWN_WEEKLY_REPORT_READ", "MENTOR_WEEKLY_REPORT_READ"], roles: ["INTERN", "MENTOR"] },
     { label: "Hồ sơ cá nhân", href: "profile.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
     { label: "Lịch thực tập", href: "intern-schedule.html", permissions: ["VIEW_OWN_SCHEDULE"] },
     { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html", permissions: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS"] },
@@ -18,15 +27,15 @@ window.AppNavigation = (() => {
     { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"] },
 
     // Đánh giá cuối kỳ: hiển thị cho cả 4 vai trò
-    { label: "Đánh giá cuối kỳ", href: "final-evaluation.html" },
+    { label: "Đánh giá cuối kỳ", href: "final-evaluation.html", permissions: ["VIEW_FINAL_EVALUATIONS"] },
 
     { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
     { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
-    { label: "Đăng ký nghỉ phép", href: "intern-leave-request.html", permissions: ["OWN_ATTENDANCE"] },
+    { label: "Đăng ký nghỉ phép", href: "intern-leave-request.html", permissions: ["OWN_LEAVE_REQUEST_READ"], roles: ["INTERN"] },
+    { label: "Duyệt đơn nghỉ", href: "mentor-leave-requests.html", permissions: ["MENTOR_LEAVE_REQUEST_READ"], roles: ["MENTOR"] },
     { label: "Quản lý chương trình", href: "program-setting.html", permissions: ["MANAGE_PROGRAMS"] },
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
-    { label: "Thông báo", href: "notifications.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
-    { label: "Ma trận phân quyền", href: "permissions.html", permissions: ["RBAC_READ"] }
+    { label: "Thông báo", href: "notifications.html", permissions: ["NOTIFICATION_READ"] }
   ];
 
   function render(session) {
@@ -53,6 +62,7 @@ window.AppNavigation = (() => {
       const page = location.pathname.split("/").pop();
 
       for (const item of items) {
+        if (role === "ADMIN" && !adminMenu.has(item.href)) continue;
         if (item.roles && !item.roles.includes(role)) continue;
         if (
           item.permissions &&
@@ -66,7 +76,7 @@ window.AppNavigation = (() => {
         const link = document.createElement("a");
 
         link.href = item.href;
-        link.textContent = item.label;
+        link.textContent = item.href === "final-evaluation.html" && role === "MENTOR" ? "Đánh giá thực tập sinh" : item.href === "user-manage.html" && role === "HR" ? "Quản lý Mentor" : item.label;
 
         if (window.AppVisual) {
           link.prepend(
@@ -165,7 +175,7 @@ window.AppNavigation = (() => {
     );
 
     if (window.NotificationUI) {
-      window.NotificationUI.mount(actions);
+      window.NotificationUI.mount(actions, session);
     } else if (typeof document !== "undefined") {
       const s1 = document.createElement("script");
 
@@ -177,7 +187,7 @@ window.AppNavigation = (() => {
         s2.src = "../js/notification-ui.js";
 
         s2.onload = () =>
-          window.NotificationUI?.mount(actions);
+          window.NotificationUI?.mount(actions, session);
 
         document.body.appendChild(s2);
       };

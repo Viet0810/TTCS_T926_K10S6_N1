@@ -18,7 +18,7 @@ public sealed class ListPagingController(ListPagingService lists,RequestAuthoriz
     {
         var decision=authorization.Evaluate(Request,PermissionNames.ManageUsers);
         if(decision.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(decision.Status);
-        return Ok(await lists.UsersAsync(page,ct));
+        return Ok(await lists.UsersAsync(page,ct,decision.User!.Role));
     }
     [HttpGet("api/interns/search/page")]
     public async Task<IActionResult> Search([FromQuery]PageRequest page,[FromQuery]InternFilterRequest filter,CancellationToken ct)

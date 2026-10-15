@@ -5,6 +5,7 @@
   function ruleBadge(element,status){element.textContent=ruleLabels[status]||'—';element.className=status?`status-badge ${['ON_TIME','COMPLETED'].includes(status)?'status-ontime':'status-late'}`:'';}
   function render(){
     document.getElementById("attendanceDate").textContent=current.date.split("-").reverse().join("/");
+    document.getElementById("attendanceSchedule").textContent="Giờ làm việc: "+(current.scheduledStart||"08:00").slice(0,5)+" – "+(current.scheduledEnd||"17:30").slice(0,5)+" (Việt Nam). Không tính thêm giờ khi đến sớm/về muộn.";
     document.getElementById("attendanceIn").textContent=current.checkIn||"Chưa check-in";
     document.getElementById("attendanceOut").textContent=current.checkOut||"Chưa check-out";
     document.getElementById("attendanceStatus").textContent=current.checkOut?"Đã hoàn thành":current.checkIn?'Đang làm việc':labels[current.status]||"Chưa chấm công";

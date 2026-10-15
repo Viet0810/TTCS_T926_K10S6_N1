@@ -4,7 +4,8 @@
  */
 
 window.NotificationUI = (() => {
-  let isMounted = false;
+  let isMounted = false, notificationSession = {};
+  const canMarkRead = () => Session.hasPermission(notificationSession, "NOTIFICATION_UPDATE");
   let currentTab = "all"; // 'all' | 'unread'
   let cachedNotifications = [];
 
@@ -18,7 +19,13 @@ window.NotificationUI = (() => {
     }
   }
 
-  function mount(targetContainer) {
+  function mount(targetContainer, session = {}) {
+    notificationSession = session;
+    if (!Session.hasPermission(session, "NOTIFICATION_READ")) {
+      document.getElementById("notificationWrapper")?.remove(); cachedNotifications = []; isMounted = false; return;
+    }
+    const markButton = document.getElementById("markAllReadBtn");
+    if (markButton) markButton.hidden = !canMarkRead();
     if (!targetContainer || document.getElementById("notificationWrapper")) return;
     ensureStyles();
 
@@ -78,6 +85,7 @@ window.NotificationUI = (() => {
     const bellBtn = document.getElementById("notificationBellBtn");
     const popover = document.getElementById("notificationPopover");
     const markAllBtn = document.getElementById("markAllReadBtn");
+    if (markAllBtn) markAllBtn.hidden = !canMarkRead();
     const tabAll = document.getElementById("tabAllNotifs");
     const tabUnread = document.getElementById("tabUnreadNotifs");
 
@@ -98,7 +106,7 @@ window.NotificationUI = (() => {
     if (markAllBtn) {
       markAllBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
-        await markAllAsRead();
+        try { await markAllAsRead(); } catch (error) { AppUI.toast(error.message, "error"); }
       });
     }
 
@@ -142,7 +150,7 @@ window.NotificationUI = (() => {
         pill.textContent = count > 0 ? `${count} mới` : "0";
       }
     } catch (err) {
-      console.warn("[NotificationUI] Could not refresh badge:", err);
+      badge.textContent = "?"; badge.classList.remove("hidden"); badge.title = "Không tải được số thông báo";
     }
   }
 
@@ -225,8 +233,9 @@ window.NotificationUI = (() => {
         const id = itemEl.getAttribute("data-id");
         const actionUrl = itemEl.getAttribute("data-url");
 
-        if (id) {
-          await NotificationService.markAsRead(id);
+        if (id && canMarkRead()) {
+          try { await NotificationService.markAsRead(id); }
+          catch (error) { AppUI.toast(error.message, "error"); return; }
           const found = cachedNotifications.find(x => x.id === Number(id));
           if (found) found.isRead = true;
           itemEl.classList.remove("unread");
@@ -244,6 +253,7 @@ window.NotificationUI = (() => {
   }
 
   async function markAllAsRead() {
+    if (!canMarkRead()) return;
     await NotificationService.markAllAsRead();
     cachedNotifications.forEach(x => { x.isRead = true; });
     renderList(cachedNotifications);

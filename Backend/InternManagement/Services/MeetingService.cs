@@ -26,7 +26,7 @@ public sealed class MeetingService(IConfiguration configuration,IEmailService em
         command.Parameters.Add("@creator",SqlDbType.Int).Value=creatorUserId;command.Parameters.Add("@requestId",SqlDbType.UniqueIdentifier).Value=request.ClientRequestId;
         var existing=await command.ExecuteScalarAsync(ct);
         if(existing is not null){await transaction.CommitAsync(ct);return await LoadResponseAsync(Convert.ToInt32(existing),0,0,ct);}
-        command.CommandText="SELECT COUNT(*) FROM dbo.Users WITH(HOLDLOCK) WHERE Id IN (SELECT value FROM OPENJSON(@participants))";
+        command.CommandText="SELECT COUNT(*) FROM dbo.Users WITH(HOLDLOCK) WHERE Role <> 'ADMIN' AND Id IN (SELECT value FROM OPENJSON(@participants))";
         command.Parameters.Add("@participants",SqlDbType.NVarChar).Value=System.Text.Json.JsonSerializer.Serialize(participants);
         if(Convert.ToInt32(await command.ExecuteScalarAsync(ct))!=participants.Length)throw new ArgumentException("Có người tham gia không tồn tại trong hệ thống.");
         command.CommandText="""
@@ -39,16 +39,18 @@ public sealed class MeetingService(IConfiguration configuration,IEmailService em
         command.Parameters.Add("@description",SqlDbType.NVarChar,2000).Value=(object?)NullIfBlank(request.Description)??DBNull.Value;
         var id=Convert.ToInt32(await command.ExecuteScalarAsync(ct));
         command.CommandText="INSERT dbo.MeetingParticipants(MeetingId,UserId) SELECT @meeting,value FROM OPENJSON(@participants)";
-        command.Parameters.Add("@meeting",SqlDbType.Int).Value=id;await command.ExecuteNonQueryAsync(ct);await transaction.CommitAsync(ct);
+        command.Parameters.Add("@meeting",SqlDbType.Int).Value=id;await command.ExecuteNonQueryAsync(ct);
+        command.CommandText="INSERT dbo.Notifications(UserId,Title,Message,Category,Type,ActionUrl,CreatedBy) SELECT value,N'Lịch họp mới',@title,'SYSTEM','MEETING_CREATED','meetings.html',@creator FROM OPENJSON(@participants)";
+        await command.ExecuteNonQueryAsync(ct);await transaction.CommitAsync(ct);
         // The meeting is already committed. Client cancellation must not cancel delivery to its participants.
         var delivery=await NotifyCreatedAsync(id,CancellationToken.None);
         return await LoadResponseAsync(id,delivery.Sent,delivery.Failed,CancellationToken.None);
     }
 
-    public async Task<List<MeetingResponse>> GetAllAsync(CancellationToken ct)
-    {await using var c=new SqlConnection(connectionString);await c.OpenAsync(ct);await using var q=new SqlCommand("SELECT Id FROM dbo.Meetings ORDER BY StartTime DESC,Id DESC",c);await using var r=await q.ExecuteReaderAsync(ct);var ids=new List<int>();while(await r.ReadAsync(ct))ids.Add(r.GetInt32(0));var result=new List<MeetingResponse>();foreach(var id in ids)result.Add(await LoadResponseAsync(id,0,0,ct));return result;}
+    public async Task<List<MeetingResponse>> GetAllAsync(CancellationToken ct,int? userId=null)
+    {await using var c=new SqlConnection(connectionString);await c.OpenAsync(ct);await using var q=new SqlCommand("SELECT m.Id FROM dbo.Meetings m WHERE @user IS NULL OR m.CreatedByUserId=@user OR EXISTS(SELECT 1 FROM dbo.MeetingParticipants p WHERE p.MeetingId=m.Id AND p.UserId=@user) ORDER BY m.StartTime DESC,m.Id DESC",c);q.Parameters.Add("@user",SqlDbType.Int).Value=(object?)userId??DBNull.Value;await using var r=await q.ExecuteReaderAsync(ct);var ids=new List<int>();while(await r.ReadAsync(ct))ids.Add(r.GetInt32(0));var result=new List<MeetingResponse>();foreach(var id in ids)result.Add(await LoadResponseAsync(id,0,0,ct));return result;}
     public async Task<List<MeetingParticipantOption>> GetParticipantsAsync(CancellationToken ct)
-    {await using var c=new SqlConnection(connectionString);await c.OpenAsync(ct);await using var q=new SqlCommand("SELECT Id,FullName,Email,Role FROM dbo.Users ORDER BY FullName,Id",c);await using var r=await q.ExecuteReaderAsync(ct);var result=new List<MeetingParticipantOption>();while(await r.ReadAsync(ct))result.Add(new(r.GetInt32(0),r.GetString(1),r.GetString(2),r.GetString(3)));return result;}
+    {await using var c=new SqlConnection(connectionString);await c.OpenAsync(ct);await using var q=new SqlCommand("SELECT Id,FullName,Email,Role FROM dbo.Users WHERE Role <> 'ADMIN' ORDER BY FullName,Id",c);await using var r=await q.ExecuteReaderAsync(ct);var result=new List<MeetingParticipantOption>();while(await r.ReadAsync(ct))result.Add(new(r.GetInt32(0),r.GetString(1),r.GetString(2),r.GetString(3)));return result;}
     private async Task<MeetingResponse> LoadResponseAsync(int id,int sent,int failed,CancellationToken ct)
     {
         await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);

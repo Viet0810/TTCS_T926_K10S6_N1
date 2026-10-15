@@ -31,9 +31,18 @@ internal static class ApiChecks
         using var http = new HttpClient { BaseAddress=new Uri($"http://127.0.0.1:{port}"), Timeout=TimeSpan.FromSeconds(5) };
         Process? restartedProcess = null;
         Task<string>? restartedStdout = null, restartedStderr = null;
+        var previousRestartOutput = new System.Text.StringBuilder();
         async Task RestartAsync()
         {
-            process.Kill(entireProcessTree:true); await process.WaitForExitAsync();
+            var activeProcess = restartedProcess ?? process;
+            if (!activeProcess.HasExited) activeProcess.Kill(entireProcessTree:true);
+            await activeProcess.WaitForExitAsync();
+            if (restartedProcess is not null)
+            {
+                previousRestartOutput.Append(await restartedStdout!);
+                await restartedStderr!;
+                restartedProcess.Dispose();
+            }
             restartedProcess = Process.Start(start) ?? throw new Exception("Could not restart test API.");
             restartedStdout = restartedProcess.StandardOutput.ReadToEndAsync();
             restartedStderr = restartedProcess.StandardError.ReadToEndAsync();
@@ -79,6 +88,9 @@ internal static class ApiChecks
             }
             check(ready,"application starts with routing and rate limiting enabled");
             if(Environment.GetCommandLineArgs().Contains("--tasks-only")){await InternTaskChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
+            if(Environment.GetCommandLineArgs().Contains("--ownership-only")){await Sprint3OwnershipChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
+            if(Environment.GetCommandLineArgs().Contains("--reports-only")){await TaskWeeklyReportChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
+            if(Environment.GetCommandLineArgs().Contains("--sprint3-rbac-only") || Environment.GetCommandLineArgs().Contains("--admin-rbac-only")){await Sprint3RbacChecks.RunAsync(http,connectionString,check,RestartAsync);completed=true;return;}
             await RolePermissionChecks.RunAsync(http, connectionString, check);
             if(Environment.GetCommandLineArgs().Contains("--sprint2-only")){await InternAssignmentChecks.RunAsync(http,connectionString,check,RestartAsync);await Sprint2CompletionChecks.RunAsync(http,connectionString,check);completed=true;return;}
             await Sprint1RbacChecks.RunAsync(http, connectionString, check, RestartAsync, CheckLiveBrowserAsync);
@@ -135,6 +147,8 @@ internal static class ApiChecks
                 if(response.StatusCode==HttpStatusCode.TooManyRequests) { throttled=true;break; }
             }
             check(throttled,"repeated recovery requests receive HTTP 429");
+            await Sprint3OwnershipChecks.RunAsync(http,connectionString,check,RestartAsync);
+            await TaskWeeklyReportChecks.RunAsync(http,connectionString,check,RestartAsync);
             completed=true;
         }
         finally
@@ -147,8 +161,8 @@ internal static class ApiChecks
                 restartedProcess.Dispose();
             }
             await Task.WhenAll(stdout,stderr);
-            var diagnostics = await stdout + (restartedStdout is null ? "" : await restartedStdout);
-            if(completed&&!Environment.GetCommandLineArgs().Contains("--sprint2-only")&&!Environment.GetCommandLineArgs().Contains("--tasks-only"))check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
+            var diagnostics = await stdout + previousRestartOutput + (restartedStdout is null ? "" : await restartedStdout);
+            if(completed&&!Environment.GetCommandLineArgs().Contains("--admin-rbac-only")&&!Environment.GetCommandLineArgs().Contains("--sprint2-only")&&!Environment.GetCommandLineArgs().Contains("--tasks-only")&&!Environment.GetCommandLineArgs().Contains("--ownership-only")&&!Environment.GetCommandLineArgs().Contains("--reports-only")&&!Environment.GetCommandLineArgs().Contains("--sprint3-rbac-only"))check(diagnostics.Contains("API failed.") && diagnostics.Contains("/api/users")
                 && diagnostics.Contains("trace") && diagnostics.Contains("UTC"), "backend failure logs identify endpoint, trace and time");
             if(completed)check(!diagnostics.Contains("Permission-test-9") && !diagnostics.Contains("Account-test-9")
                 && !diagnostics.Contains("Temporary-test-9") && !diagnostics.Contains("Replacement-test-9")

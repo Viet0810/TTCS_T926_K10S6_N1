@@ -3,6 +3,11 @@ namespace InternManagement.DTOs;
 
 public class FinalEvaluationResponse
 {
+    public string ProgramName { get; set; } = "";
+    public string EvaluationSource { get; set; } = "";
+    public int? EvaluatingMentorId { get; set; }
+    public decimal? MentorScore { get; set; }
+    public string MentorComment { get; set; } = "";
     public int InternId { get; set; }
     public string StudentCode { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

@@ -32,7 +32,8 @@ public sealed class UsersController : ControllerBase
             return AuthorizationResponses.Denied(decision.Status);
 
         var users = await accounts.GetAllAsync(cancellationToken);
-        return Ok(users);
+        return Ok(decision.User!.Role == "HR" ? users.Where(u => u.Role == "MENTOR")
+            : users.Where(u => u.Role != "ADMIN"));
     }
 
     [HttpGet("{id:int}")]
@@ -47,6 +48,10 @@ public sealed class UsersController : ControllerBase
             return AuthorizationResponses.Denied(decision.Status);
 
         var user = await accounts.GetByIdAsync(id, cancellationToken);
+        if (user?.Role == "ADMIN" && decision.User!.Role != "ADMIN")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        if (user is not null && decision.User!.Role == "HR" && user.Role != "MENTOR")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         return user is null
             ? NotFound(new ApiErrorResponse(false, "Không tìm thấy tài khoản.", null))
             : Ok(user);
@@ -59,7 +64,11 @@ public sealed class UsersController : ControllerBase
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
+        if (decision.User!.Role != "ADMIN" && string.Equals(request.Role, "ADMIN", StringComparison.OrdinalIgnoreCase))
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         var role = request.Role.Trim().ToUpperInvariant();
+        if (decision.User!.Role == "HR" && role != "MENTOR")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         if (role is not ("HR" or "MENTOR" or "INTERN"))
             return BadRequest(new ApiErrorResponse(false, "Vai trò không hợp lệ.", null));
 
@@ -98,9 +107,12 @@ public sealed class UsersController : ControllerBase
         var decision = authorization.Evaluate(Request, PermissionNames.DeleteUser);
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
+
+        var target = await accounts.GetByIdAsync(id, cancellationToken);
+        if (target?.Role == "ADMIN")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         if (decision.User!.Id == id)
             return BadRequest(new ApiErrorResponse(false, "Không thể xóa tài khoản đang đăng nhập.", null));
-
         var deleted = await accounts.DeleteAsync(id, cancellationToken);
         return !deleted
             ? NotFound(new ApiErrorResponse(false, "Không tìm thấy tài khoản cần xóa.", null))
@@ -112,6 +124,8 @@ public sealed class UsersController : ControllerBase
     {
         var decision = authorization.Evaluate(Request, PermissionNames.CreateUser);
         if (decision.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(decision.Status);
+        if (decision.User!.Role != "ADMIN")
+            return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         var user = await accounts.GetByIdAsync(id, cancellationToken);
         if (user is null) return NotFound(new { message = "Không tìm thấy tài khoản." });
         if (user.Role is not ("HR" or "MENTOR")) return BadRequest(new { message = "Chỉ gửi lại email đăng nhập cho HR/Mentor." });

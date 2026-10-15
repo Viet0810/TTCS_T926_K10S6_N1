@@ -16,9 +16,10 @@ window.NotificationService = (() => {
         return localUnreadCount;
       }
     } catch (err) {
-      console.warn("[NotificationService] Fallback unread count:", err.message);
+      if (err.status === 401 || err.status === 403) { localCache = []; localUnreadCount = 0; throw err; }
+      localCache = []; localUnreadCount = 0; throw err;
     }
-    return localUnreadCount;
+    throw new Error("Không tải được số thông báo.");
   }
 
   async function getNotifications(params = {}) {
@@ -32,15 +33,10 @@ window.NotificationService = (() => {
         }
       }
     } catch (err) {
-      console.warn("[NotificationService] Fallback get notifications:", err.message);
+      if (err.status === 401 || err.status === 403) { localCache = []; localUnreadCount = 0; throw err; }
+      localCache = []; localUnreadCount = 0; throw err;
     }
-    return {
-      total: localCache.length,
-      unreadCount: localUnreadCount,
-      page: params.page || 1,
-      pageSize: params.pageSize || 15,
-      items: localCache
-    };
+    throw new Error("Không tải được danh sách thông báo.");
   }
 
   async function markAsRead(id) {
@@ -56,9 +52,10 @@ window.NotificationService = (() => {
         return res;
       }
     } catch (err) {
-      console.warn("[NotificationService] Mark read error:", err.message);
+      if (err.status === 401 || err.status === 403) { localCache = []; localUnreadCount = 0; throw err; }
+      throw err;
     }
-    return { success: true, id, isRead: true };
+    throw new Error("Không thể đánh dấu thông báo.");
   }
 
   async function markAllAsRead() {
@@ -70,11 +67,10 @@ window.NotificationService = (() => {
         return res;
       }
     } catch (err) {
-      console.warn("[NotificationService] Mark all read error:", err.message);
+      if (err.status === 401 || err.status === 403) { localCache = []; localUnreadCount = 0; throw err; }
+      throw err;
     }
-    localCache.forEach(x => { x.isRead = true; });
-    localUnreadCount = 0;
-    return { success: true, updatedCount: localCache.length };
+    throw new Error("Không thể đánh dấu thông báo.");
   }
 
   async function seedSamples() {
@@ -83,9 +79,10 @@ window.NotificationService = (() => {
         return await API.seedNotifications();
       }
     } catch (err) {
-      console.warn("[NotificationService] Seed error:", err.message);
+      if (err.status === 401 || err.status === 403) { localCache = []; localUnreadCount = 0; throw err; }
+      throw err;
     }
-    return { success: true };
+    throw new Error("API thông báo chưa sẵn sàng.");
   }
 
   function formatTimeAgo(isoString) {
