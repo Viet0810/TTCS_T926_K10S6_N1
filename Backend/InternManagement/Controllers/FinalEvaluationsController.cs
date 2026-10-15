@@ -21,8 +21,27 @@ public sealed class FinalEvaluationsController : ControllerBase
         this.authorization = authorization;
     }
 
+    private static bool IsIntern(string? role) =>
+        string.Equals(
+            role,
+            "INTERN",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    private static bool CanEdit(string? role) =>
+        string.Equals(
+            role,
+            "HR",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        string.Equals(
+            role,
+            "MENTOR",
+            StringComparison.OrdinalIgnoreCase
+        );
+
     // GET: api/FinalEvaluations
-    // Lấy danh sách đánh giá cuối kỳ.
     [HttpGet]
     public async Task<IActionResult> GetAll(
         CancellationToken cancellationToken)
@@ -35,6 +54,31 @@ public sealed class FinalEvaluationsController : ControllerBase
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
+        // INTERN chỉ xem hồ sơ của mình.
+        if (IsIntern(decision.User?.Role))
+        {
+            var internId =
+                await evaluationService.GetInternIdByUserIdAsync(
+                    decision.User!.Id,
+                    cancellationToken
+                );
+
+            if (!internId.HasValue)
+            {
+                return Ok(
+                    Array.Empty<FinalEvaluationResponse>()
+                );
+            }
+
+            var ownResults =
+                await evaluationService.GetOwnAsync(
+                    internId.Value,
+                    cancellationToken
+                );
+
+            return Ok(ownResults);
+        }
+
         var results = await evaluationService.GetAllAsync(
             cancellationToken
         );
@@ -43,7 +87,6 @@ public sealed class FinalEvaluationsController : ControllerBase
     }
 
     // GET: api/FinalEvaluations/statistics
-    // Thống kê kết quả đánh giá cuối kỳ.
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics(
         CancellationToken cancellationToken)
@@ -56,15 +99,60 @@ public sealed class FinalEvaluationsController : ControllerBase
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
-        var statistics = await evaluationService.GetStatisticsAsync(
-            cancellationToken
-        );
+        if (IsIntern(decision.User?.Role))
+        {
+            var internId =
+                await evaluationService.GetInternIdByUserIdAsync(
+                    decision.User!.Id,
+                    cancellationToken
+                );
+
+            if (!internId.HasValue)
+            {
+                return Ok(new FinalEvaluationStatisticsResponse
+                {
+                    TotalInterns = 0,
+                    EvaluatedCount = 0,
+                    PendingCount = 0,
+                    AverageScore = null
+                });
+            }
+
+            var ownResults =
+                await evaluationService.GetOwnAsync(
+                    internId.Value,
+                    cancellationToken
+                );
+
+            var evaluated = ownResults
+                .Where(x => x.Status == "Đã đánh giá")
+                .ToList();
+
+            var scores = evaluated
+                .Where(x => x.FinalScore.HasValue)
+                .Select(x => x.FinalScore!.Value)
+                .ToList();
+
+            return Ok(new FinalEvaluationStatisticsResponse
+            {
+                TotalInterns = ownResults.Count,
+                EvaluatedCount = evaluated.Count,
+                PendingCount = ownResults.Count - evaluated.Count,
+                AverageScore = scores.Count > 0
+                    ? Math.Round(scores.Average(), 2)
+                    : null
+            });
+        }
+
+        var statistics =
+            await evaluationService.GetStatisticsAsync(
+                cancellationToken
+            );
 
         return Ok(statistics);
     }
 
     // GET: api/FinalEvaluations/{id}
-    // Xem đánh giá của thực tập sinh theo InternId.
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(
         int id,
@@ -81,6 +169,19 @@ public sealed class FinalEvaluationsController : ControllerBase
         if (id <= 0)
             return BadRequest("InternId phải lớn hơn 0.");
 
+        // INTERN không được truy cập hồ sơ người khác.
+        if (IsIntern(decision.User?.Role))
+        {
+            var internId =
+                await evaluationService.GetInternIdByUserIdAsync(
+                    decision.User!.Id,
+                    cancellationToken
+                );
+
+            if (!internId.HasValue || internId.Value != id)
+                return Forbid();
+        }
+
         var result = await evaluationService.GetByIdAsync(
             id,
             cancellationToken
@@ -93,7 +194,6 @@ public sealed class FinalEvaluationsController : ControllerBase
     }
 
     // POST: api/FinalEvaluations/{id}
-    // HR thêm đánh giá cho thực tập sinh chưa được đánh giá.
     [HttpPost("{id:int}")]
     public async Task<IActionResult> Create(
         int id,
@@ -108,14 +208,8 @@ public sealed class FinalEvaluationsController : ControllerBase
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
-        // Chỉ HR được phép thêm đánh giá.
-        if (!string.Equals(
-                decision.User?.Role,
-                "HR",
-                StringComparison.OrdinalIgnoreCase))
-        {
+        if (!CanEdit(decision.User?.Role))
             return Forbid();
-        }
 
         if (id <= 0)
             return BadRequest("InternId phải lớn hơn 0.");
@@ -157,7 +251,6 @@ public sealed class FinalEvaluationsController : ControllerBase
     }
 
     // PUT: api/FinalEvaluations/{id}
-    // HR cập nhật đánh giá cuối kỳ của thực tập sinh.
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
@@ -172,14 +265,8 @@ public sealed class FinalEvaluationsController : ControllerBase
         if (decision.Status != AuthorizationStatus.Authorized)
             return AuthorizationResponses.Denied(decision.Status);
 
-        // Chỉ HR được phép sửa đánh giá.
-        if (!string.Equals(
-                decision.User?.Role,
-                "HR",
-                StringComparison.OrdinalIgnoreCase))
-        {
+        if (!CanEdit(decision.User?.Role))
             return Forbid();
-        }
 
         if (id <= 0)
             return BadRequest("InternId phải lớn hơn 0.");
