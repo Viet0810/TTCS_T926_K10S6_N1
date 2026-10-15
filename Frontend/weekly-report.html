@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intern Weekly Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f7fb;color:#202b3c}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:0}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:#17243a;color:white;padding:25px 17px;flex-shrink:0}
+.logo{font-size:22px;font-weight:bold;margin:0 10px 35px}
+.logo span{color:#65a5ff}
+.menu-title{font-size:11px;color:#9ba9bd;margin:25px 10px 12px}
+.nav{display:block;width:100%;padding:13px 12px;margin:5px 0;text-align:left;
+background:transparent;color:#cbd5e1;border-radius:8px}
+.nav:hover,.nav.active{background:#2c4262;color:white}
+.main{flex:1;min-width:0;padding:30px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:28px}
+.topbar h1{font-size:26px;margin-bottom:8px}
+.muted{color:#8490a3;font-size:13px}
+.user{display:flex;align-items:center;gap:10px;background:white;padding:9px 13px;
+border-radius:12px;border:1px solid #e8ebf1}
+.avatar{width:36px;height:36px;background:#dbeafe;color:#2563eb;border-radius:50%;
+display:grid;place-items:center;font-weight:bold}
+.btn{padding:10px 15px;border-radius:8px;background:#fff;border:1px solid #dce2eb;color:#344054}
+.btn-primary{background:#356df3;color:white;border-color:#356df3}
+.btn-danger{color:#dc2626}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px}
+.card{background:white;border:1px solid #e9edf4;border-radius:13px;padding:20px}
+.stat-label{font-size:13px;color:#7c8799;margin-bottom:12px}
+.stat-number{font-size:28px;font-weight:bold}
+.stat-icon{float:right;width:38px;height:38px;border-radius:10px;background:#edf3ff;
+display:grid;place-items:center;color:#356df3;font-size:19px}
+.content-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:20px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}
+.section-head h2{font-size:17px}
+.field{margin-bottom:17px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:8px}
+.field input,.field textarea,.field select{width:100%;padding:11px 12px;border:1px solid #dce2eb;
+border-radius:8px;background:#fff;outline:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#6191ff}
+.field textarea{resize:vertical;min-height:90px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.progress-info{display:flex;justify-content:space-between;font-size:13px;margin:18px 0 9px}
+.progress{height:8px;border-radius:20px;background:#edf0f5;overflow:hidden}
+.progress-bar{height:100%;width:0;background:#356df3;border-radius:20px;transition:width .25s}
+.task-list{margin-top:15px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #edf0f4}
+.task:last-child{border-bottom:0}
+.task input[type=checkbox]{width:17px;height:17px;margin-top:3px;accent-color:#356df3}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.task.done .task-name{text-decoration:line-through;color:#9aa3b2}
+.task-meta{font-size:12px;color:#8b95a5;margin-top:7px}
+.tag{font-size:11px;padding:5px 8px;border-radius:6px;white-space:nowrap;background:#fef3c7;color:#a16207}
+.tag.done{background:#dcfce7;color:#15803d}
+.tag.progress-tag{background:#dbeafe;color:#1d4ed8}
+.task-buttons{display:flex;gap:5px}
+.small-btn{padding:5px 7px;border:1px solid #e5e7eb;border-radius:6px;background:white;color:#64748b}
+.history-item{padding:14px 0;border-bottom:1px solid #edf0f4}
+.history-item:last-child{border-bottom:0}
+.history-item h3{font-size:13px;margin-bottom:7px}
+.history-item p{font-size:12px;color:#8490a3;line-height:1.6}
+.history-item .actions{margin-top:10px}
+.empty{text-align:center;padding:28px 10px;color:#929cad;font-size:13px}
+.footer-note{font-size:12px;color:#929cad;margin-top:20px;text-align:center}
+.file-label{display:block;border:1px dashed #cbd5e1;border-radius:9px;padding:17px;
+text-align:center;color:#64748b;font-size:13px;cursor:pointer}
+#fileInput{display:none}
+.file-name{margin-top:8px;font-size:12px;color:#356df3;overflow-wrap:anywhere}
+.toast{position:fixed;right:24px;bottom:24px;background:#17243a;color:white;
+padding:13px 18px;border-radius:9px;display:none;z-index:5;font-size:14px}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.sidebar{width:62px;padding:20px 7px}.logo{font-size:0;margin:0 0 30px 7px}.logo span{font-size:20px}
+.nav{font-size:0;text-align:center;padding:14px 2px}.nav::first-letter{font-size:17px}
+.menu-title{font-size:0;margin:18px 0}.main{padding:17px 12px}.topbar{align-items:flex-start;flex-wrap:wrap}
+.topbar h1{font-size:21px}.user .user-name{display:none}.stats{gap:9px}.card{padding:14px}
+.stat-number{font-size:23px}.two-col{grid-template-columns:1fr}.task{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="logo">Intern<span>Flow</span></div>
+  <div class="menu-title">MENU CHÍNH</div>
+  <button class="nav active" onclick="showSection('dashboard')">▦ Tổng quan</button>
+  <button class="nav" onclick="showSection('report')">▤ Báo cáo tuần</button>
+  <button class="nav" onclick="showSection('tasks')">☑ Công việc</button>
+  <button class="nav" onclick="showSection('history')">◷ Lịch sử báo cáo</button>
+  <div class="menu-title">HỆ THỐNG</div>
+  <button class="nav" onclick="showSection('report')">⚙ Cài đặt báo cáo</button>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <div>
+    <h1>Quản lý báo cáo thực tập</h1>
+    <p class="muted">Theo dõi công việc và tiến độ thực tập của bạn.</p>
+  </div>
+  <div class="user">
+    <div class="avatar">IN</div>
+    <div><div class="user-name" style="font-size:13px;font-weight:bold">Intern</div>
+    <div class="muted">Thực tập sinh</div></div>
+  </div>
+</header>
+
+<section id="dashboard">
+  <div class="stats">
+    <div class="card"><div class="stat-icon">▤</div><div class="stat-label">Tổng báo cáo</div><div class="stat-number" id="statReports">0</div></div>
+    <div class="card"><div class="stat-icon">☑</div><div class="stat-label">Tổng công việc</div><div class="stat-number" id="statTasks">0</div></div>
+    <div class="card"><div class="stat-icon">✓</div><div class="stat-label">Đã hoàn thành</div><div class="stat-number" id="statDone">0</div></div>
+    <div class="card"><div class="stat-icon">◷</div><div class="stat-label">Tiến độ hiện tại</div><div class="stat-number" id="statProgress">0%</div></div>
+  </div>
+
+  <div class="content-grid">
+    <div class="card">
+      <div class="section-head">
+        <div><h2 id="formTitle">Tạo báo cáo tuần</h2><p class="muted" style="margin-top:6px">Cập nhật kết quả thực tập của bạn</p></div>
+        <button class="btn" onclick="resetForm()">Làm mới</button>
+      </div>
+      <form id="reportForm">
+        <input type="hidden" id="reportId">
+        <div class="field"><label for="reportName">Tên báo cáo *</label>
+          <input id="reportName" required placeholder="VD: Báo cáo công việc tuần 1"></div>
+        <div class="two-col">
+          <div class="field"><label for="week">Tuần thực tập</label>
+            <input id="week" type="number" min="1" value="1" required></div>
+          <div class="field"><label for="reportDate">Ngày báo cáo</label>
+            <input id="reportDate" type="date" required></div>
+        </div>
+        <div class="field"><label for="description">Mô tả công việc</label>
+          <textarea id="description" placeholder="Những công việc đã thực hiện trong tuần..."></textarea></div>
+        <div class="field"><label for="result">Kết quả đạt được</label>
+          <textarea id="result" placeholder="Kết quả, kiến thức và kỹ năng đã học được..."></textarea></div>
+        <div class="field"><label for="difficulty">Khó khăn và hướng giải quyết</label>
+          <textarea id="difficulty" placeholder="Khó khăn gặp phải và cách khắc phục..."></textarea></div>
+        <div class="field"><label>File đính kèm</label>
+          <label class="file-label" for="fileInput">＋ Chọn file báo cáo hoặc tài liệu</label>
+          <input type="file" id="fileInput" multiple>
+          <div id="fileNames" class="file-name"></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" type="submit" id="saveBtn">Lưu báo cáo</button>
+          <button class="btn" type="button" onclick="resetForm()">Hủy</button>
+        </div>
+      </form>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="section-head"><h2>Tiến độ công việc</h2><span class="muted" id="progressText">0%</span></div>
+        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-info"><span id="doneText">0 hoàn thành</span><span id="remainingText">0 còn lại</span></div>
+        <div class="muted">Đánh dấu công việc khi bạn hoàn thành.</div>
+        <div class="task-list" id="taskList"></div>
+        <button class="btn" style="width:100%;margin-top:12px" onclick="showSection('tasks')">Quản lý công việc</button>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Báo cáo gần đây</h2><button class="btn" onclick="showSection('history')">Xem tất cả</button></div>
+        <div id="recentReports"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tasks" style="display:none">
+  <div class="card">
+    <div class="section-head"><div><h2>Danh sách công việc</h2><p class="muted" style="margin-top:7px">Quản lý các đầu việc trong dự án thực tập</p></div>
+    <button class="btn btn-primary" onclick="addTask()">＋ Thêm công việc</button></div>
+    <div class="field"><label for="taskFilter">Lọc trạng thái</label>
+      <select id="taskFilter" onchange="renderTasks()">
+        <option value="all">Tất cả công việc</option>
+        <option value="todo">To Do</option>
+        <option value="progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div id="allTasks"></div>
+  </div>
+</section>
+
+<section id="history" style="display:none">
+  <div class="card">
+    <div class="section-head"><div><h2>Lịch sử báo cáo</h2><p class="muted" style="margin-top:7px">Xem lại các báo cáo đã lưu</p></div>
+    <button class="btn btn-primary" onclick="showSection('report')">＋ Tạo báo cáo</button></div>
+    <div id="allReports"></div>
+  </div>
+</section>
+
+<section id="report" style="display:none">
+  <div class="card">
+    <h2 style="margin-bottom:10px">Hướng dẫn báo cáo tuần</h2>
+    <p class="muted" style="line-height:1.8">Điền tên báo cáo, tuần thực tập, mô tả công việc, kết quả đạt được và khó khăn. Sau khi lưu, bạn có thể xem lại, chỉnh sửa hoặc xóa báo cáo trong mục Lịch sử báo cáo.</p>
+    <button class="btn btn-primary" style="margin-top:18px" onclick="showSection('dashboard')">Bắt đầu tạo báo cáo</button>
+  </div>
+</section>
+<p class="footer-note">InternFlow · Hệ thống theo dõi thực tập sinh</p>
+</main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'internflow_reports_v1';
+const TASK_KEY = 'internflow_tasks_v1';
+
+let reports = JSON.parse(localStorage.getItem(KEY) || '[]');
+let tasks = JSON.parse(localStorage.getItem(TASK_KEY) || 'null') || [
+ {id:1,name:'Phân tích nghiệp vụ: Xác định nội dung và quy trình báo cáo tuần.',status:'todo',priority:'Medium'},
+ {id:2,name:'BE: Xây API tạo và lấy báo cáo tuần.',status:'todo',priority:'Medium'},
+ {id:3,name:'FE: Làm form báo cáo và lịch sử báo cáo.',status:'todo',priority:'Medium'},
+ {id:4,name:'KT: Kiểm thử tạo báo cáo và dữ liệu lưu.',status:'todo',priority:'Medium'}
+];
+let selectedFiles = [];
+let toastTimer;
+
+function persist(){
+ localStorage.setItem(KEY,JSON.stringify(reports));
+ localStorage.setItem(TASK_KEY,JSON.stringify(tasks));
+ updateDashboard();
+}
+function notify(message){
+ $('toast').textContent=message;
+ $('toast').style.display='block';
+ clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>$('toast').style.display='none',2500);
+}
+function showSection(section){
+ ['dashboard','tasks','history','report'].forEach(id=>{
+  $(id).style.display=id===section?'block':'none';
+ });
+ document.querySelectorAll('.nav').forEach(b=>b.classList.remove('active'));
+ const index={dashboard:0,report:1,tasks:2,history:3,}[section];
+ if(index!==undefined) document.querySelectorAll('.nav')[index].classList.add('active');
+ if(section==='history')renderHistory();
+ if(section==='tasks')renderTasks();
+ if(section==='dashboard')renderRecent();
+ if(section==='report'){
+  $('dashboard').style.display='block';
+  $('report').style.display='none';
+ }
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetForm(){
+ $('reportForm').reset();
+ $('reportId').value='';
+ $('week').value=1;
+ $('reportDate').value=new Date().toISOString().slice(0,10);
+ $('formTitle').textContent='Tạo báo cáo tuần';
+ $('saveBtn').textContent='Lưu báo cáo';
+ $('fileNames').textContent='';
+ selectedFiles=[];
+}
+$('fileInput').addEventListener('change',e=>{
+ selectedFiles=Array.from(e.target.files);
+ $('fileNames').textContent=selectedFiles.map(f=>f.name).join(', ');
+});
+$('reportForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const id=$('reportId').value;
+ const old=reports.find(r=>r.id===id);
+ const report={
+  id:id||String(Date.now()),
+  name:$('reportName').value.trim(),
+  week:Number($('week').value),
+  date:$('reportDate').value,
+  description:$('description').value,
+  result:$('result').value,
+  difficulty:$('difficulty').value,
+  files:[...new Set([...(old?.files||[]),...selectedFiles.map(f=>f.name)])]
+ };
+ if(id)reports=reports.map(r=>r.id===id?report:r);
+ else reports.unshift(report);
+ persist();resetForm();renderHistory();renderRecent();
+ notify(id?'Đã cập nhật báo cáo!':'Đã lưu báo cáo thành công!');
+});
+function editReport(id){
+ const r=reports.find(x=>x.id===id);if(!r)return;
+ $('reportId').value=r.id;
+ $('reportName').value=r.name;
+ $('week').value=r.week;
+ $('reportDate').value=r.date;
+ $('description').value=r.description||'';
+ $('result').value=r.result||'';
+ $('difficulty').value=r.difficulty||'';
+ $('fileNames').textContent=(r.files||[]).join(', ');
+ $('formTitle').textContent='Chỉnh sửa báo cáo';
+ $('saveBtn').textContent='Cập nhật báo cáo';
+ showSection('dashboard');
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function deleteReport(id){
+ if(!confirm('Bạn có chắc muốn xóa báo cáo này?'))return;
+ reports=reports.filter(r=>r.id!==id);persist();renderHistory();renderRecent();
+ notify('Đã xóa báo cáo.');
+}
+function reportCard(r){
+ return `<div class="history-item">
+ <h3>${esc(r.name)}</h3>
+ <p>Tuần ${r.week} · ${esc(r.date||'Chưa có ngày')}</p>
+ <p>${esc(r.description||'Chưa có mô tả')}</p>
+ <div class="actions">
+ <button class="small-btn" onclick="editReport('${r.id}')">Sửa</button>
+ <button class="small-btn" onclick="deleteReport('${r.id}')">Xóa</button>
+ </div></div>`;
+}
+function renderHistory(){
+ $('allReports').innerHTML=reports.length?reports.map(reportCard).join(''):'<div class="empty">Chưa có báo cáo nào. Hãy tạo báo cáo đầu tiên!</div>';
+}
+function renderRecent(){
+ $('recentReports').innerHTML=reports.length?reports.slice(0,3).map(reportCard).join(''):'<div class="empty">Chưa có báo cáo gần đây.</div>';
+}
+function esc(value){
+ return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function addTask(){
+ const name=prompt('Nhập tên công việc:');
+ if(!name||!name.trim())return;
+ tasks.push({id:Date.now(),name:name.trim(),status:'todo',priority:'Medium'});
+ persist();renderTasks();notify('Đã thêm công việc.');
+}
+function changeTask(id,status){
+ tasks=tasks.map(t=>t.id===id?{...t,status}:t);
+ persist();renderTasks();
+}
+function deleteTask(id){
+ if(!confirm('Xóa công việc này?'))return;
+ tasks=tasks.filter(t=>t.id!==id);
+ persist();renderTasks();notify('Đã xóa công việc.');
+}
+function taskCard(t){
+ const statusText={todo:'To Do',progress:'In Progress',done:'Done'};
+ return `<div class="task ${t.status==='done'?'done':''}">
+ <input type="checkbox" aria-label="Hoàn thành công việc" ${t.status==='done'?'checked':''}
+ onchange="changeTask(${t.id},this.checked?'done':'todo')">
+ <div class="task-body"><div class="task-name">${esc(t.name)}</div>
+ <div class="task-meta">Ưu tiên: ${esc(t.priority||'Medium')}</div></div>
+ <select aria-label="Trạng thái công việc" class="small-btn" onchange="changeTask(${t.id},this.value)">
+ ${Object.entries(statusText).map(([v,label])=>`<option value="${v}" ${t.status===v?'selected':''}>${label}</option>`).join('')}
+ </select>
+ <button class="small-btn" onclick="deleteTask(${t.id})" title="Xóa">×</button>
+ </div>`;
+}
+function renderTasks(){
+ const filter=$('taskFilter').value;
+ const filtered=tasks.filter(t=>filter==='all'||t.status===filter);
+ $('allTasks').innerHTML=filtered.length?filtered.map(taskCard).join(''):'<div class="empty">Không có công việc phù hợp.</div>';
+ $('taskList').innerHTML=tasks.length?tasks.map(taskCard).join(''):'<div class="empty">Chưa có công việc.</div>';
+}
+function updateDashboard(){
+ const done=tasks.filter(t=>t.status==='done').length;
+ const progress=tasks.length?Math.round(done/tasks.length*100):0;
+ $('statReports').textContent=reports.length;
+ $('statTasks').textContent=tasks.length;
+ $('statDone').textContent=done;
+ $('statProgress').textContent=progress+'%';
+ $('progressText').textContent=progress+'%';
+ $('progressBar').style.width=progress+'%';
+ $('doneText').textContent=done+' hoàn thành';
+ $('remainingText').textContent=(tasks.length-done)+' còn lại';
+}
+$('reportDate').value=new Date().toISOString().slice(0,10);
+renderTasks();renderHistory();renderRecent();updateDashboard();
+</script>
+</body>
+</html>
