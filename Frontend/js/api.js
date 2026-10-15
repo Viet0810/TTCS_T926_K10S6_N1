@@ -210,4 +210,11 @@ const API = {
     method: "POST",
     headers: getAuthHeader(),
   }),
+  getMentorLeaveRequests: (status = "ALL") => requestApi(`/mentor/leave-requests?${new URLSearchParams({ status })}`, { headers: getAuthHeader() }),
+  getMentorLeaveRequest: (id) => requestApi(`/mentor/leave-requests/${encodeURIComponent(id)}`, { headers: getAuthHeader() }),
+  reviewLeaveRequest: (id, decision, note) => requestApi(`/mentor/leave-requests/${encodeURIComponent(id)}/review`, {
+    method: "POST",
+    headers: getAuthHeader(),
+    body: JSON.stringify({ decision, note }),
+  }),
 };

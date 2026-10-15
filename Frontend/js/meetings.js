@@ -47,16 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loading || !has('MEETING_READ')) return;
     loading = true; controls(); byId('meetingState').textContent = 'Đang tải lịch họp…';
     try {
-      [participants, rows] = await Promise.all([call('/meetings/participants'), call('/meetings')]);
+      [participants, rows] = await Promise.all([has('MEETING_CREATE') ? call('/meetings/participants') : Promise.resolve([]), call('/meetings')]);
       renderParticipants(); renderRows();
     } catch (error) { byId('meetingState').textContent = 'Chưa tải được lịch họp. Hãy thử tải lại.'; notify(error.message); Session.redirectIfExpired(error); }
     finally { loading = false; controls(); }
   }
   async function sessionChanged(session) {
-    grants = session.permissions || []; const allowed = session.user?.role === 'HR' && has('MEETING_READ');
+    const couldCreate = has('MEETING_CREATE');
+    grants = session.permissions || []; const allowed = has('MEETING_READ');
     byId('meetingAccess').hidden = allowed; byId('meetingAccess').textContent = 'Bạn không có quyền xem lịch họp.';
     byId('meetingList').hidden = !allowed; byId('meetingCreate').hidden = !allowed || !has('MEETING_CREATE'); controls();
-    if (allowed && !initialized) { initialized = true; await load(); }
+    if (!allowed) { initialized = false; participants = []; rows = []; renderParticipants(); renderRows(); return; }
+    if (!initialized || couldCreate !== has('MEETING_CREATE')) { initialized = true; await load(); }
   }
   byId('participantSearch').addEventListener('input', renderParticipants);
   reload.addEventListener('click', load);

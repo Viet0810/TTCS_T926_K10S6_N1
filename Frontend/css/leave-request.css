@@ -351,6 +351,28 @@ textarea.form-control {
   gap: 10px;
 }
 
+.mentor-leave-email,
+.user-table td small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+
+.mentor-leave-reason {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mentor-review-card { max-width: 620px; }
+.mentor-review-detail dl { display: grid; grid-template-columns: 110px 1fr; gap: 8px 14px; margin: 0 0 18px; }
+.mentor-review-detail dt { color: #64748b; font-weight: 600; }
+.mentor-review-detail dd { margin: 0; color: #1e293b; }
+.mentor-review-card > label { display: block; margin-bottom: 6px; font-weight: 600; }
+.mentor-review-card .modal-actions { margin-top: 18px; }
+[hidden].modal-overlay { display: none; }
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .leave-form-grid {

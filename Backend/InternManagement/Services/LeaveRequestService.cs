@@ -33,20 +33,18 @@ public sealed class LeaveRequestService : ILeaveRequestService
         await using var command = connection.CreateCommand();
         if (transaction != null) command.Transaction = transaction;
 
-        command.CommandText = "SELECT TOP (1) i.Id FROM dbo.Interns i JOIN dbo.Users u ON LOWER(RTRIM(LTRIM(i.Email))) = LOWER(RTRIM(LTRIM(u.Email))) WHERE u.Id = @userId";
+        command.CommandText = "SELECT i.Id FROM dbo.Interns i JOIN dbo.Users u ON LOWER(RTRIM(LTRIM(i.Email))) = LOWER(RTRIM(LTRIM(u.Email))) WHERE u.Id = @userId AND u.Role = 'INTERN'";
         command.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
 
-        var result = await command.ExecuteScalarAsync(ct);
-        if (result is int internId) return internId;
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        if (await reader.ReadAsync(ct))
+        {
+            var internId = reader.GetInt32(0);
+            if (!await reader.ReadAsync(ct)) return internId;
+        }
 
-        // Fallback: nếu Id của Users trùng với Id của Interns
-        command.Parameters.Clear();
-        command.CommandText = "SELECT TOP (1) Id FROM dbo.Interns WHERE Id = @userId";
-        command.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
-        result = await command.ExecuteScalarAsync(ct);
-        if (result is int fallbackId) return fallbackId;
-
-        throw new InvalidOperationException("Chưa tìm thấy thông tin hồ sơ thực tập sinh tương ứng với tài khoản.");
+        // Missing or ambiguous mapping must never fall back to unrelated identity IDs.
+        throw new UnauthorizedAccessException("T\u00e0i kho\u1ea3n kh\u00f4ng c\u00f3 li\u00ean k\u1ebft h\u1ed3 s\u01a1 th\u1ef1c t\u1eadp sinh h\u1ee3p l\u1ec7.");
     }
 
     public async Task<LeaveRequestResponseDto> CreateLeaveRequestAsync(int userId, CreateLeaveRequestDto dto, CancellationToken ct = default)
@@ -250,7 +248,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
                         Category: "ATTENDANCE",
                         Type: "LEAVE_PENDING_REVIEW",
                         Priority: "WARNING",
-                        ActionUrl: "dashboard.html"
+                        ActionUrl: "mentor-leave-requests.html"
                     ), userId, ct);
                 }
             }
@@ -308,10 +306,11 @@ public sealed class LeaveRequestService : ILeaveRequestService
             statCmd.CommandText = """
                 SELECT Status, COUNT(*) 
                 FROM dbo.LeaveRequests 
-                WHERE InternId = @internId 
+                WHERE InternId = @internId AND UserId = @userId
                 GROUP BY Status
                 """;
             statCmd.Parameters.Add("@internId", SqlDbType.Int).Value = internId;
+            statCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
             await using var statReader = await statCmd.ExecuteReaderAsync(ct);
             while (await statReader.ReadAsync(ct))
             {
@@ -338,7 +337,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
             }
         }
 
-        var countBuilder = new StringBuilder("SELECT COUNT(*) FROM dbo.LeaveRequests WHERE InternId = @internId");
+        var countBuilder = new StringBuilder("SELECT COUNT(*) FROM dbo.LeaveRequests WHERE InternId = @internId AND UserId = @userId");
         if (normalizedStatus != null)
         {
             countBuilder.Append(" AND Status = @status");
@@ -349,6 +348,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
         {
             countCmd.CommandText = countBuilder.ToString();
             countCmd.Parameters.Add("@internId", SqlDbType.Int).Value = internId;
+            countCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
             if (normalizedStatus != null)
             {
                 countCmd.Parameters.Add("@status", SqlDbType.VarChar, 20).Value = normalizedStatus;
@@ -378,7 +378,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
                 lr.UpdatedAt
             FROM dbo.LeaveRequests lr
             LEFT JOIN dbo.Users u ON lr.ReviewerId = u.Id
-            WHERE lr.InternId = @internId
+            WHERE lr.InternId = @internId AND lr.UserId = @userId
             """);
 
         if (normalizedStatus != null)
@@ -393,6 +393,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
         {
             queryCmd.CommandText = queryBuilder.ToString();
             queryCmd.Parameters.Add("@internId", SqlDbType.Int).Value = internId;
+            queryCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
             queryCmd.Parameters.Add("@offset", SqlDbType.Int).Value = offset;
             queryCmd.Parameters.Add("@pageSize", SqlDbType.Int).Value = pageSize;
             if (normalizedStatus != null)
@@ -458,7 +459,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
             UPDATE dbo.LeaveRequests 
             SET Status = 'CANCELLED', UpdatedAt = SYSUTCDATETIME()
             OUTPUT INSERTED.Id, INSERTED.Status
-            WHERE Id = @id AND (UserId = @userId OR InternId = @internId) AND Status = 'PENDING';
+            WHERE Id = @id AND UserId = @userId AND InternId = @internId AND Status = 'PENDING';
             """;
         updateCmd.Parameters.Add("@id", SqlDbType.BigInt).Value = requestId;
         updateCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
@@ -473,7 +474,7 @@ public sealed class LeaveRequestService : ILeaveRequestService
 
         // Nếu không có bản ghi nào được update, kiểm tra nguyên nhân để trả về thông báo chính xác
         await using var checkCmd = connection.CreateCommand();
-        checkCmd.CommandText = "SELECT Status FROM dbo.LeaveRequests WHERE Id = @id AND (UserId = @userId OR InternId = @internId)";
+        checkCmd.CommandText = "SELECT Status FROM dbo.LeaveRequests WHERE Id = @id AND UserId = @userId AND InternId = @internId";
         checkCmd.Parameters.Add("@id", SqlDbType.BigInt).Value = requestId;
         checkCmd.Parameters.Add("@userId", SqlDbType.Int).Value = userId;
         checkCmd.Parameters.Add("@internId", SqlDbType.Int).Value = internId;
@@ -481,6 +482,9 @@ public sealed class LeaveRequestService : ILeaveRequestService
         var statusRes = await checkCmd.ExecuteScalarAsync(ct);
         if (statusRes == null)
         {
+            checkCmd.CommandText = "SELECT COUNT(*) FROM dbo.LeaveRequests WHERE Id = @id";
+            if (Convert.ToInt32(await checkCmd.ExecuteScalarAsync(ct)) > 0)
+                throw new UnauthorizedAccessException("B\u1ea1n kh\u00f4ng c\u00f3 quy\u1ec1n h\u1ee7y \u0111\u01a1n ngh\u1ec9 ph\u00e9p n\u00e0y.");
             return new CancelLeaveRequestResponse(false, requestId, "NOT_FOUND", "Không tìm thấy đơn xin nghỉ phép.");
         }
 
@@ -491,6 +495,159 @@ public sealed class LeaveRequestService : ILeaveRequestService
             curStatus,
             $"Chỉ có thể hủy đơn xin nghỉ phép khi đơn đang ở trạng thái Chờ duyệt (đơn hiện tại là {GetStatusLabel(curStatus)})."
         );
+    }
+
+    public async Task<IReadOnlyList<MentorLeaveRequestResponseDto>> GetMentorLeaveRequestsAsync(
+        int mentorUserId, string? status = null, CancellationToken ct = default)
+    {
+        await EnsureTableExistsAsync(ct);
+        var normalizedStatus = string.IsNullOrWhiteSpace(status) || status.Equals("ALL", StringComparison.OrdinalIgnoreCase)
+            ? null : status.Trim().ToUpperInvariant();
+        if (normalizedStatus is not null && normalizedStatus is not ("PENDING" or "APPROVED" or "REJECTED" or "CANCELLED"))
+            throw new ArgumentException("Trạng thái đơn nghỉ không hợp lệ.");
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(ct);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT lr.Id,lr.InternId,i.FullName,i.Email,lr.LeaveType,lr.DurationType,
+                   CONVERT(VARCHAR(10),lr.StartDate,23),CONVERT(VARCHAR(10),lr.EndDate,23),
+                   lr.TotalDays,lr.Reason,lr.Status,lr.ReviewerNote,lr.ReviewedAt,lr.CreatedAt
+            FROM dbo.LeaveRequests lr
+            JOIN dbo.Interns i ON i.Id=lr.InternId
+            WHERE i.MentorUserId=@mentorUserId
+              AND (@status IS NULL OR lr.Status=@status)
+            ORDER BY CASE WHEN lr.Status='PENDING' THEN 0 ELSE 1 END,lr.CreatedAt DESC,lr.Id DESC
+            """;
+        command.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = mentorUserId;
+        command.Parameters.Add("@status", SqlDbType.VarChar, 20).Value = (object?)normalizedStatus ?? DBNull.Value;
+        var items = new List<MentorLeaveRequestResponseDto>();
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct)) items.Add(MapMentorLeaveRequest(reader));
+        return items;
+    }
+
+    public async Task<MentorLeaveRequestResponseDto> GetMentorLeaveRequestAsync(
+        int mentorUserId, long requestId, CancellationToken ct = default)
+    {
+        await EnsureTableExistsAsync(ct);
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(ct);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT lr.Id,lr.InternId,i.FullName,i.Email,lr.LeaveType,lr.DurationType,
+                   CONVERT(VARCHAR(10),lr.StartDate,23),CONVERT(VARCHAR(10),lr.EndDate,23),
+                   lr.TotalDays,lr.Reason,lr.Status,lr.ReviewerNote,lr.ReviewedAt,lr.CreatedAt
+            FROM dbo.LeaveRequests lr
+            JOIN dbo.Interns i ON i.Id=lr.InternId
+            WHERE lr.Id=@id AND i.MentorUserId=@mentorUserId
+            """;
+        command.Parameters.Add("@id", SqlDbType.BigInt).Value = requestId;
+        command.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = mentorUserId;
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        if (await reader.ReadAsync(ct)) return MapMentorLeaveRequest(reader);
+        await reader.CloseAsync();
+        command.CommandText = "SELECT COUNT(*) FROM dbo.LeaveRequests WHERE Id=@id";
+        if (Convert.ToInt32(await command.ExecuteScalarAsync(ct)) > 0)
+            throw new UnauthorizedAccessException("Bạn không được phân công hướng dẫn thực tập sinh của đơn nghỉ này.");
+        throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ phép.");
+    }
+
+    public async Task<ReviewLeaveRequestResponse> ReviewLeaveRequestAsync(
+        int mentorUserId, long requestId, ReviewLeaveRequestDto dto, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        await EnsureTableExistsAsync(ct);
+        var decision = (dto.Decision ?? string.Empty).Trim().ToUpperInvariant();
+        if (decision is not ("APPROVED" or "REJECTED"))
+            throw new ArgumentException("Quyết định phải là APPROVED hoặc REJECTED.");
+        var note = string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note.Trim();
+        if (note?.Length > 1000) throw new ArgumentException("Ghi chú không được vượt quá 1000 ký tự.");
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(ct);
+        await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        int internUserId;
+        string currentStatus;
+        await using (var select = connection.CreateCommand())
+        {
+            select.Transaction = transaction;
+            select.CommandText = """
+                SELECT lr.UserId,lr.Status
+                FROM dbo.LeaveRequests lr WITH(UPDLOCK,HOLDLOCK)
+                JOIN dbo.Interns i ON i.Id=lr.InternId
+                WHERE lr.Id=@id AND i.MentorUserId=@mentorUserId
+                """;
+            select.Parameters.Add("@id", SqlDbType.BigInt).Value = requestId;
+            select.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = mentorUserId;
+            await using var reader = await select.ExecuteReaderAsync(ct);
+            if (!await reader.ReadAsync(ct))
+            {
+                await reader.CloseAsync();
+                select.CommandText = "SELECT COUNT(*) FROM dbo.LeaveRequests WHERE Id=@id";
+                if (Convert.ToInt32(await select.ExecuteScalarAsync(ct)) > 0)
+                    throw new UnauthorizedAccessException("Bạn không được phân công hướng dẫn thực tập sinh của đơn nghỉ này.");
+                throw new KeyNotFoundException("Không tìm thấy đơn xin nghỉ phép.");
+            }
+            internUserId = reader.GetInt32(0);
+            currentStatus = reader.GetString(1);
+        }
+        if (currentStatus != "PENDING")
+            throw new InvalidOperationException($"Đơn đã được xử lý với trạng thái {GetStatusLabel(currentStatus)}.");
+
+        await using (var update = connection.CreateCommand())
+        {
+            update.Transaction = transaction;
+            update.CommandText = """
+                UPDATE dbo.LeaveRequests
+                SET Status=@status,ReviewerId=@mentorUserId,ReviewerNote=@note,
+                    ReviewedAt=SYSUTCDATETIME(),UpdatedAt=SYSUTCDATETIME()
+                WHERE Id=@id AND Status='PENDING'
+                """;
+            update.Parameters.Add("@status", SqlDbType.VarChar, 20).Value = decision;
+            update.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = mentorUserId;
+            update.Parameters.Add("@note", SqlDbType.NVarChar, 1000).Value = (object?)note ?? DBNull.Value;
+            update.Parameters.Add("@id", SqlDbType.BigInt).Value = requestId;
+            if (await update.ExecuteNonQueryAsync(ct) != 1)
+                throw new InvalidOperationException("Đơn nghỉ đã được xử lý.");
+        }
+        await transaction.CommitAsync(ct);
+
+        if (notificationService is not null)
+        {
+            try
+            {
+                await notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+                    internUserId,
+                    decision == "APPROVED" ? "Đơn nghỉ đã được duyệt" : "Đơn nghỉ đã bị từ chối",
+                    decision == "APPROVED"
+                        ? "Mentor đã duyệt đơn xin nghỉ phép của bạn."
+                        : $"Mentor đã từ chối đơn xin nghỉ phép của bạn.{(note is null ? string.Empty : " Lý do: " + note)}",
+                    "ATTENDANCE",
+                    decision == "APPROVED" ? "LEAVE_APPROVED" : "LEAVE_REJECTED",
+                    decision == "APPROVED" ? "SUCCESS" : "DANGER",
+                    "intern-leave-request.html"), mentorUserId, ct);
+            }
+            catch
+            {
+                // Kết quả duyệt đã commit; lỗi notification không được rollback nghiệp vụ.
+            }
+        }
+        return new ReviewLeaveRequestResponse(requestId, decision, GetStatusLabel(decision),
+            decision == "APPROVED" ? "Đã duyệt đơn xin nghỉ phép." : "Đã từ chối đơn xin nghỉ phép.");
+    }
+
+    private static MentorLeaveRequestResponseDto MapMentorLeaveRequest(SqlDataReader reader)
+    {
+        var leaveType = reader.GetString(4);
+        var durationType = reader.GetString(5);
+        var status = reader.GetString(10);
+        return new MentorLeaveRequestResponseDto(
+            reader.GetInt64(0), reader.GetInt32(1), reader.GetString(2), reader.GetString(3),
+            leaveType, GetLeaveTypeLabel(leaveType), durationType, GetDurationTypeLabel(durationType),
+            reader.GetString(6), reader.GetString(7), reader.GetDecimal(8), reader.GetString(9),
+            status, GetStatusLabel(status), reader.IsDBNull(11) ? null : reader.GetString(11),
+            reader.IsDBNull(12) ? null : reader.GetDateTime(12), reader.GetDateTime(13));
     }
 
     private static string GetLeaveTypeLabel(string type) => type switch

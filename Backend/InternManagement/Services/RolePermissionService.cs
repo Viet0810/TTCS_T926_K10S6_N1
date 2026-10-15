@@ -9,8 +9,25 @@ public static class PermissionNames
     public const string ReadMeetings = "MEETING_READ";
     public const string CreateMeeting = "MEETING_CREATE";
     public const string ReadMentorTasks = "MENTOR_TASK_READ";
+    public const string ReadWorkSchedules = "WORK_SCHEDULE_READ";
+    public const string CreateWorkSchedule = "WORK_SCHEDULE_CREATE";
+    public const string UpdateWorkSchedule = "WORK_SCHEDULE_UPDATE";
     public const string CreateTask = "TASK_CREATE";
     public const string ReadOwnTasks = "OWN_TASK_READ";
+    public const string UpdateOwnTasks = "OWN_TASK_UPDATE";
+    public const string ReadOwnWeeklyReports = "OWN_WEEKLY_REPORT_READ";
+    public const string CreateWeeklyReport = "WEEKLY_REPORT_CREATE";
+    public const string ReadMentorWeeklyReports = "MENTOR_WEEKLY_REPORT_READ";
+    public const string CreateWeeklyReportFeedback = "WEEKLY_REPORT_FEEDBACK";
+    public const string ReadMentorWorkload = "MENTOR_WORKLOAD_READ";
+    public const string ReadOwnLeaveRequests = "OWN_LEAVE_REQUEST_READ";
+    public const string CreateOwnLeaveRequest = "LEAVE_REQUEST_CREATE";
+    public const string CancelOwnLeaveRequest = "LEAVE_REQUEST_CANCEL";
+    public const string ReadMentorLeaveRequests = "MENTOR_LEAVE_REQUEST_READ";
+    public const string ReviewLeaveRequests = "LEAVE_REQUEST_REVIEW";
+    public const string ReadNotifications = "NOTIFICATION_READ";
+    public const string UpdateNotifications = "NOTIFICATION_UPDATE";
+    public const string CreateNotifications = "NOTIFICATION_CREATE";
     public const string RejectDocuments = "REJECT_DOCUMENTS";
     public const string AttendanceCheckIn = "ATTENDANCE_CHECK_IN";
     public const string AttendanceCheckOut = "ATTENDANCE_CHECK_OUT";
@@ -78,14 +95,18 @@ public sealed class RolePermissionService
                 PermissionNames.ManagePermissions,
                 PermissionNames.ReadPermissions,
 
-                // ADMIN chỉ được xem đánh giá cuối kỳ
+                // Legacy baseline; GetDefaults(ADMIN) returns the full permission catalog.
                 PermissionNames.ViewFinalEvaluations
             ],
 
             ["HR"] =
             [
+                PermissionNames.ReadWorkSchedules, PermissionNames.CreateWorkSchedule, PermissionNames.UpdateWorkSchedule,
                 PermissionNames.ReadMeetings,
                 PermissionNames.CreateMeeting,
+                PermissionNames.ManageUsers, PermissionNames.CreateUser,
+                PermissionNames.ReadMentorWorkload,
+                PermissionNames.ReadNotifications, PermissionNames.UpdateNotifications,
                 PermissionNames.ManageContracts,
                 PermissionNames.AssignMentor,
                 PermissionNames.ViewInterns,
@@ -101,6 +122,7 @@ public sealed class RolePermissionService
                 PermissionNames.CreateContract,
                 PermissionNames.UpdateContract,
                 PermissionNames.CreateProgram,
+                PermissionNames.UpdateProgram,
                 PermissionNames.DeleteProgram,
                 PermissionNames.CreateAssignment,
                 PermissionNames.UpdateAssignment,
@@ -113,6 +135,10 @@ public sealed class RolePermissionService
             ["MENTOR"] =
             [
                 PermissionNames.ReadMentorTasks, PermissionNames.CreateTask,
+                PermissionNames.ReadMentorWeeklyReports, PermissionNames.CreateWeeklyReportFeedback,
+                PermissionNames.ReadMentorLeaveRequests, PermissionNames.ReviewLeaveRequests,
+                PermissionNames.ReadMeetings,
+                PermissionNames.ReadNotifications, PermissionNames.UpdateNotifications,
                 PermissionNames.ViewInterns,
                 PermissionNames.SearchInterns,
                 PermissionNames.ViewProfile,
@@ -124,7 +150,13 @@ public sealed class RolePermissionService
 
             ["INTERN"] =
             [
+                PermissionNames.ReadWorkSchedules,
                 PermissionNames.ReadOwnTasks,
+                PermissionNames.UpdateOwnTasks,
+                PermissionNames.ReadOwnWeeklyReports, PermissionNames.CreateWeeklyReport,
+                PermissionNames.ReadMeetings,
+                PermissionNames.ReadOwnLeaveRequests, PermissionNames.CreateOwnLeaveRequest, PermissionNames.CancelOwnLeaveRequest,
+                PermissionNames.ReadNotifications, PermissionNames.UpdateNotifications,
                 PermissionNames.ViewOwnContract,
                 PermissionNames.OwnAttendance,
                 PermissionNames.AttendanceCheckIn,
@@ -142,7 +174,9 @@ public sealed class RolePermissionService
         };
 
     public IReadOnlyList<string> GetDefaults(string? role) =>
-        role is not null && DefaultPermissionsByRole.TryGetValue(role, out var permissions)
+        string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase)
+            ? PermissionCatalog.Entries.Select(p => p.Code).ToArray()
+            : role is not null && DefaultPermissionsByRole.TryGetValue(role, out var permissions)
             ? Array.AsReadOnly(permissions)
             : Array.Empty<string>();
 
@@ -239,6 +273,7 @@ public sealed class RolePermissionService
 
             entries.Add(definition with
             {
+                Roles = definition.Roles.Append("ADMIN").Distinct().ToArray(),
                 Module = reader.GetString(1),
                 Label = reader.GetString(2),
                 Action = reader.GetString(3)
@@ -280,6 +315,9 @@ public sealed class RolePermissionService
 
         if (permissions.Distinct().Count() != permissions.Count)
             throw new ArgumentException("Quyền bị trùng.");
+
+        if (role != "ADMIN" && permissions.Any(code => !PermissionCatalog.Entries.Single(p => p.Code == code).Roles.Contains(role)))
+            throw new ArgumentException("Quyền không áp dụng cho vai trò này.");
 
         if (role == "ADMIN" &&
             EssentialAdminPermissions.Any(code => !permissions.Contains(code)))

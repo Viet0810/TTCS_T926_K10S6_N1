@@ -33,7 +33,7 @@ public sealed class TasksController(InternTaskService tasks, RequestAuthorizatio
         var access = Access();
         if (access.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(access.Status);
         var result = await tasks.GetAsync(access.User!.Id, access.User.Role == "MENTOR", id, ct);
-        return result.Count == 0 ? NotFound(new { message = "Không tìm thấy nhiệm vụ." }) : Ok(result[0]);
+        return result.Count == 0 ? AuthorizationResponses.Denied(AuthorizationStatus.Forbidden) : Ok(result[0]);
     }
 
     [HttpGet("interns")]
@@ -57,6 +57,23 @@ public sealed class TasksController(InternTaskService tasks, RequestAuthorizatio
             var id = await tasks.CreateAsync(access.User!.Id, request, ct);
             return id is null ? AuthorizationResponses.Denied(AuthorizationStatus.Forbidden)
                 : CreatedAtAction(nameof(Get), new { id }, new { id, message = "Đã giao nhiệm vụ." });
+        }
+        catch (ArgumentException error) { return BadRequest(new { message = error.Message }); }
+    }
+
+    [HttpPatch("{id:int}/progress")]
+    public async Task<IActionResult> UpdateProgress(int id, UpdateTaskProgressRequest request, CancellationToken ct)
+    {
+        var access = Access();
+        if (access.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(access.Status);
+        if (access.User!.Role != "INTERN") return AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
+        access = authorization.Evaluate(Request, PermissionNames.UpdateOwnTasks);
+        if (access.Status != AuthorizationStatus.Authorized) return AuthorizationResponses.Denied(access.Status);
+        try
+        {
+            return await tasks.UpdateProgressAsync(access.User!.Id, id, request, ct)
+                ? Ok(new { message = "Đã cập nhật tiến độ." })
+                : AuthorizationResponses.Denied(AuthorizationStatus.Forbidden);
         }
         catch (ArgumentException error) { return BadRequest(new { message = error.Message }); }
     }

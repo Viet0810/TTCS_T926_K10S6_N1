@@ -1,5 +1,5 @@
 let matrix, selectedRole = "ADMIN", draft = new Set(), busy = false, canSave = false;
-const actions = { READ: "Xem", CREATE: "Tạo / nộp", UPDATE: "Sửa", APPROVE: "Duyệt", REJECT: "Từ chối", DELETE: "Xóa", CHECK_IN: "Check-in", CHECK_OUT: "Check-out", FEATURE: "Chức năng" };
+const actions = { READ: "Xem", CREATE: "Tạo / nộp", UPDATE: "Sửa", APPROVE: "Duyệt", REJECT: "Từ chối", DELETE: "Xóa", CHECK_IN: "Check-in", CHECK_OUT: "Check-out", FEATURE: "Chức năng", FEEDBACK: "Phản hồi", CANCEL: "Hủy" };
 const message = document.getElementById("permissionsMessage");
 const save = document.getElementById("savePermissionsBtn"), reset = document.getElementById("resetPermissionsBtn");
 const cancel = document.getElementById("cancelPermissionsBtn"), retry = document.getElementById("retryPermissionsBtn");

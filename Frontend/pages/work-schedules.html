@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch làm việc | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/weekly-reports.css">
+</head>
+<body class="weekly-reports-page">
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Lịch làm việc</h1></div></div>
+      <div class="dashboard-session"><span id="roleBadge" class="role-badge"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main">
+      <p id="scheduleMessage" class="dashboard-message" role="status" aria-live="polite"></p>
+<section class="card"><h2>Lịch làm việc</h2>
+<form id="scheduleForm" class="create-user-form" hidden>
+<div class="form-group"><label for="scheduleIntern">Intern</label><select id="scheduleIntern" required><option value="">Chọn Intern</option></select></div>
+<div class="form-group"><label for="scheduleDate">Ngày làm việc</label><input id="scheduleDate" type="date" required></div>
+<div class="form-group"><label for="scheduleStart">Bắt đầu (giờ Việt Nam)</label><input id="scheduleStart" type="time" value="08:00" required></div>
+<div class="form-group"><label for="scheduleEnd">Kết thúc (giờ Việt Nam)</label><input id="scheduleEnd" type="time" value="17:30" required></div>
+<div class="form-group"><label for="scheduleNote">Ghi chú</label><textarea id="scheduleNote" maxlength="1000"></textarea></div>
+<div class="form-actions"><button type="button" id="cancelSchedule" class="btn-secondary">Hủy</button><button id="saveSchedule" class="btn-primary">Lưu lịch</button></div>
+</form></section>
+<section class="card"><div class="section-heading"><h2>Danh sách lịch</h2><button id="reloadSchedules" class="btn-secondary">Tải lại</button></div><div id="scheduleList" aria-live="polite"></div></section>
+    </main>
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/work-schedules.js"></script>
+</body>
+</html>

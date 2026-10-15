@@ -20,7 +20,8 @@ public sealed class FinalEvaluationService
 
     // Lấy danh sách thực tập sinh và đánh giá mới nhất.
     public async Task<IReadOnlyList<FinalEvaluationResponse>> GetAllAsync(
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? mentorUserId = null)
     {
         var results = new List<FinalEvaluationResponse>();
 
@@ -36,7 +37,9 @@ public sealed class FinalEvaluationService
                 i.FullName AS Name,
                 i.ClassName,
                 i.Organization AS Company,
-                i.Mentor,
+                COALESCE(mu.FullName,i.Mentor) AS Mentor, p.Name AS ProgramName,
+                me.FinalScore AS MentorScore,me.Comment AS MentorComment,me.CreatedByUserId AS EvaluatingMentorId,
+                e.EvaluationSource,
 
                 ISNULL(e.Period, '') AS Period,
                 e.Attendance,
@@ -57,10 +60,12 @@ public sealed class FinalEvaluationService
                 ISNULL(e.Comment, '') AS Comment
 
             FROM dbo.Interns i
+            LEFT JOIN dbo.Users mu ON mu.Id=i.MentorUserId
+            LEFT JOIN dbo.InternshipPrograms p ON p.Id=i.InternshipProgramId
 
             OUTER APPLY (
                 SELECT TOP (1)
-                    fe.Id,
+                    fe.Id,fe.EvaluationSource,
                     fe.Period,
                     fe.Attendance,
                     fe.Attitude,
@@ -71,12 +76,16 @@ public sealed class FinalEvaluationService
                     fe.Status,
                     fe.Comment
                 FROM dbo.FinalEvaluations fe
-                WHERE fe.InternId = i.Id
-                ORDER BY fe.CreatedAt DESC, fe.Id DESC
+                WHERE fe.InternId = i.Id AND (@mentorUserId IS NULL OR (fe.EvaluationSource='MENTOR' AND fe.CreatedByUserId=@mentorUserId))
+                ORDER BY CASE WHEN @mentorUserId IS NULL AND fe.EvaluationSource='HR' THEN 0 ELSE 1 END,fe.CreatedAt DESC, fe.Id DESC
             ) e
+            OUTER APPLY(SELECT TOP(1) FinalScore,Comment,CreatedByUserId FROM dbo.FinalEvaluations WHERE InternId=i.Id AND EvaluationSource='MENTOR' ORDER BY CreatedAt DESC,Id DESC) me
 
+            WHERE (@mentorUserId IS NULL OR i.MentorUserId = @mentorUserId)
             ORDER BY i.Id DESC;
             """;
+
+        command.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = (object?)mentorUserId ?? DBNull.Value;
 
         await using var reader =
             await command.ExecuteReaderAsync(cancellationToken);
@@ -94,6 +103,8 @@ public sealed class FinalEvaluationService
                 ClassName = GetString(reader, "ClassName"),
                 Company = GetString(reader, "Company"),
                 Mentor = GetString(reader, "Mentor"),
+                ProgramName=GetString(reader,"ProgramName"),MentorScore=GetDecimal(reader,"MentorScore"),MentorComment=GetString(reader,"MentorComment"),EvaluationSource=GetString(reader,"EvaluationSource"),
+                EvaluatingMentorId=reader.IsDBNull(reader.GetOrdinal("EvaluatingMentorId"))?null:reader.GetInt32(reader.GetOrdinal("EvaluatingMentorId")),
                 Period = GetString(reader, "Period"),
 
                 Attendance = GetDecimal(reader, "Attendance"),
@@ -173,9 +184,10 @@ public sealed class FinalEvaluationService
     // Lấy chi tiết đánh giá mới nhất theo InternId.
     public async Task<FinalEvaluationResponse?> GetByIdAsync(
         int internId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? mentorUserId = null)
     {
-        var results = await GetAllAsync(cancellationToken);
+        var results = await GetAllAsync(cancellationToken, mentorUserId);
 
         return results.FirstOrDefault(
             x => x.InternId == internId
@@ -184,9 +196,10 @@ public sealed class FinalEvaluationService
 
     // Thống kê đánh giá cuối kỳ.
     public async Task<FinalEvaluationStatisticsResponse> GetStatisticsAsync(
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? mentorUserId = null)
     {
-        var results = await GetAllAsync(cancellationToken);
+        var results = await GetAllAsync(cancellationToken, mentorUserId);
 
         var evaluated = results
             .Where(x => x.Status == "Đã đánh giá")
@@ -212,7 +225,8 @@ public sealed class FinalEvaluationService
     public async Task<bool> CreateAsync(
         int internId,
         FinalEvaluationRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? mentorUserId = null, int? actorUserId = null)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -231,7 +245,7 @@ public sealed class FinalEvaluationService
                 FinalScore,
                 Classification,
                 Status,
-                Comment
+                Comment,CreatedByUserId,EvaluationSource
             )
             SELECT
                 i.Id,
@@ -243,17 +257,20 @@ public sealed class FinalEvaluationService
                 @finalScore,
                 @classification,
                 N'Đã đánh giá',
-                @comment
-            FROM dbo.Interns i
+                @comment,@actor,CASE WHEN @mentorUserId IS NULL THEN 'HR' ELSE 'MENTOR' END
+            FROM dbo.Interns i WITH (UPDLOCK, HOLDLOCK)
             WHERE i.Id = @internId
+              AND (@mentorUserId IS NULL OR i.MentorUserId = @mentorUserId)
               AND NOT EXISTS (
                   SELECT 1
                   FROM dbo.FinalEvaluations fe WITH (UPDLOCK, HOLDLOCK)
-                  WHERE fe.InternId = i.Id
+                  WHERE fe.InternId = i.Id AND ((@mentorUserId IS NULL AND fe.EvaluationSource='HR') OR (@mentorUserId IS NOT NULL AND fe.CreatedByUserId=@mentorUserId AND fe.EvaluationSource='MENTOR'))
               );
             """;
 
         AddEvaluationParameters(command, internId, request);
+        command.Parameters.Add("@actor",SqlDbType.Int).Value=(object?)(actorUserId??mentorUserId)??DBNull.Value;
+        command.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = (object?)mentorUserId ?? DBNull.Value;
 
         var affectedRows =
             await command.ExecuteNonQueryAsync(cancellationToken);
@@ -265,7 +282,8 @@ public sealed class FinalEvaluationService
     public async Task<bool> UpdateAsync(
         int internId,
         FinalEvaluationRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? mentorUserId = null, int? actorUserId = null)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -283,21 +301,27 @@ public sealed class FinalEvaluationService
                 FinalScore = @finalScore,
                 Classification = @classification,
                 Status = N'Đã đánh giá',
-                Comment = @comment
-            WHERE Id = (
+                Comment = @comment,UpdatedAt=SYSDATETIMEOFFSET()
+            WHERE (@mentorUserId IS NULL OR EXISTS (
+                SELECT 1 FROM dbo.Interns i WITH (UPDLOCK, HOLDLOCK)
+                WHERE i.Id = @internId AND i.MentorUserId = @mentorUserId
+            ))
+            AND Id = (
                 SELECT TOP (1) Id
                 FROM dbo.FinalEvaluations
-                WHERE InternId = @internId
+                WHERE InternId = @internId AND ((@mentorUserId IS NULL AND EvaluationSource='HR') OR (@mentorUserId IS NOT NULL AND CreatedByUserId=@mentorUserId AND EvaluationSource='MENTOR'))
                 ORDER BY CreatedAt DESC, Id DESC
             );
             """;
 
         AddEvaluationParameters(command, internId, request);
+        command.Parameters.Add("@actor",SqlDbType.Int).Value=(object?)(actorUserId??mentorUserId)??DBNull.Value;
+        command.Parameters.Add("@mentorUserId", SqlDbType.Int).Value = (object?)mentorUserId ?? DBNull.Value;
 
         var affectedRows =
             await command.ExecuteNonQueryAsync(cancellationToken);
 
-        return affectedRows > 0;
+        return affectedRows > 0 || await CreateAsync(internId,request,cancellationToken,mentorUserId,actorUserId);
     }
 
     // Gán tham số SQL, tránh SQL Injection.

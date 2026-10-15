@@ -39,6 +39,8 @@ builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
 // Service phân công thực tập
 builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
 builder.Services.AddScoped<InternManagement.Services.InternTaskService>();
+builder.Services.AddScoped<InternManagement.Services.WeeklyReportService>();
+builder.Services.AddScoped<InternManagement.Services.WorkScheduleService>();
 
 // K10S6N1-128: Service lấy và tổng hợp đánh giá cuối kỳ
 builder.Services.AddScoped<InternManagement.Services.FinalEvaluationService>();
@@ -163,6 +165,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+var frontendPath = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "..", "Frontend"));
+if (Directory.Exists(frontendPath))
+{
+    var frontendFiles = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(frontendPath);
+    app.Lifetime.ApplicationStopped.Register(frontendFiles.Dispose);
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = frontendFiles });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = frontendFiles });
+}
 
 app.UseRateLimiter();
 

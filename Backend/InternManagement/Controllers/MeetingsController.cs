@@ -11,17 +11,23 @@ public sealed class MeetingsController(MeetingService meetings, RequestAuthoriza
 {
     private AuthorizationDecision Access(string permission)
     {
-        var access = authorization.Evaluate(Request, permission);
-        return access.Status == AuthorizationStatus.Authorized && access.User!.Role != "HR"
-            ? access with { Status = AuthorizationStatus.Forbidden } : access;
+        return authorization.Evaluate(Request, permission);
     }
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken ct)
-    { var access=Access(PermissionNames.ReadMeetings); return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await meetings.GetAllAsync(ct)); }
+    { var access=Access(PermissionNames.ReadMeetings); return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await meetings.GetAllAsync(ct,access.User!.Id)); }
 
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> Detail(int id,CancellationToken ct)
+    {
+        var access=Access(PermissionNames.ReadMeetings);
+        if(access.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(access.Status);
+        var meeting=(await meetings.GetAllAsync(ct,access.User!.Id)).FirstOrDefault(x=>x.Id==id);
+        return meeting is null?StatusCode(403):Ok(meeting);
+    }
     [HttpGet("participants")]
     public async Task<IActionResult> Participants(CancellationToken ct)
-    { var access=Access(PermissionNames.ReadMeetings); return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await meetings.GetParticipantsAsync(ct)); }
+    { var access=Access(PermissionNames.CreateMeeting); return access.Status!=AuthorizationStatus.Authorized?AuthorizationResponses.Denied(access.Status):Ok(await meetings.GetParticipantsAsync(ct)); }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateMeetingRequest request, CancellationToken ct)

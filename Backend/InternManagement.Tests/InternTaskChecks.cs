@@ -73,7 +73,7 @@ internal static class InternTaskChecks
         await Login("task-mentor-b");
         check((await Get("/api/tasks")).GetArrayLength()==0, "other Mentor cannot list task");
         using var otherMentor = await http.GetAsync("/api/tasks/"+taskId);
-        check(otherMentor.StatusCode==HttpStatusCode.NotFound, "other Mentor cannot read task by ID");
+        check(otherMentor.StatusCode==HttpStatusCode.Forbidden, "other Mentor task read returns 403");
         await Login("task-intern-a");
         check((await Get("/api/tasks?internId="+ids[1])).GetArrayLength()==1, "Intern sees own task regardless of supplied owner query");
         await Get("/api/tasks/"+taskId);
@@ -82,7 +82,7 @@ internal static class InternTaskChecks
         await Login("task-intern-b");
         check((await Get("/api/tasks?internId="+ids[0])).GetArrayLength()==0, "Intern cannot list another Intern's tasks");
         using var otherIntern = await http.GetAsync("/api/tasks/"+taskId);
-        check(otherIntern.StatusCode==HttpStatusCode.NotFound, "Intern cannot read another Intern's task by ID");
+        check(otherIntern.StatusCode==HttpStatusCode.Forbidden, "other Intern task read returns 403");
         command.CommandText="DELETE dbo.RolePermissions WHERE Role='INTERN' AND Permission='OWN_TASK_READ'"; await command.ExecuteNonQueryAsync();
         using var noRead = await http.GetAsync("/api/tasks");
         check(noRead.StatusCode==HttpStatusCode.Forbidden, "Intern missing read permission receives 403");
@@ -92,8 +92,11 @@ internal static class InternTaskChecks
         await Login("task-mentor-a");
         using var reassigned = await http.PostAsJsonAsync("/api/tasks",new { internId=ids[0], content="Former mentor", deadline });
         check(reassigned.StatusCode==HttpStatusCode.Forbidden, "former Mentor cannot assign after US30 reassignment");
-        check((await Get("/api/tasks")).GetArrayLength()==1, "former Mentor retains own assigned task history");
+        check((await Get("/api/tasks")).GetArrayLength()==0, "former Mentor loses task read scope after reassignment");
+        using var formerRead = await http.GetAsync("/api/tasks/"+taskId);
+        check(formerRead.StatusCode==HttpStatusCode.Forbidden,"former Mentor direct task read returns 403");
         await Login("task-mentor-b");
+        check((await Get("/api/tasks")).GetArrayLength()==1, "new Mentor can see existing Intern task without changing its creator");
         using var newMentor = await http.PostAsJsonAsync("/api/tasks",new { internId=ids[0], content="New Mentor task", deadline });
         check(newMentor.StatusCode==HttpStatusCode.Created, "new Mentor reuses current US30 relationship");
         await Login("task-hr");

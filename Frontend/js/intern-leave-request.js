@@ -36,6 +36,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmCancelBtn = document.getElementById("confirmCancelBtn");
 
   // State
+  let leaveSession = {};
+  const hasLeave = code => Session.hasPermission(leaveSession, code);
+  function applyLeavePermissions(session) {
+    leaveSession = session;
+    form.hidden = !hasLeave("OWN_LEAVE_REQUEST_READ") || !hasLeave("LEAVE_REQUEST_CREATE");
+    submitBtn.disabled = isSubmitting || form.hidden;
+    if (!hasLeave("OWN_LEAVE_REQUEST_READ")) tableBody.replaceChildren();
+    tableBody.querySelectorAll(".btn-action-cancel").forEach(button => button.hidden = !hasLeave("LEAVE_REQUEST_CANCEL"));
+    if (!hasLeave("LEAVE_REQUEST_CANCEL")) closeCancelModal();
+  }
+  document.addEventListener("session-permissions-updated", event => applyLeavePermissions(event.detail));
   let currentFilter = "ALL";
   let targetCancelId = null;
   let isSubmitting = false;
@@ -136,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 7. Gửi đơn xin nghỉ phép
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!hasLeave("LEAVE_REQUEST_CREATE") || !hasLeave("OWN_LEAVE_REQUEST_READ")) return;
     if (isSubmitting) return;
 
     const leaveType = leaveTypeSelect.value;
@@ -210,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setSubmitLoading(loading) {
     isSubmitting = loading;
-    submitBtn.disabled = loading;
+    submitBtn.disabled = loading || !hasLeave("LEAVE_REQUEST_CREATE");
     const btnText = submitBtn.querySelector(".btn-text");
     if (btnText) {
       btnText.textContent = loading ? "Đang gửi đơn…" : "Gửi đơn xin nghỉ phép";
@@ -219,6 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 8. Tải danh sách đơn xin nghỉ phép
   async function loadLeaveRequests() {
+    if (!hasLeave("OWN_LEAVE_REQUEST_READ")) return;
     try {
       tableBody.innerHTML = `
         <tr>
@@ -283,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tableBody.innerHTML = items.map((item) => {
       const statusBadge = getStatusBadge(item.status, item.statusLabel);
-      const isPending = item.status === "PENDING";
+      const isPending = item.status === "PENDING" && hasLeave("LEAVE_REQUEST_CANCEL");
       const actionHtml = isPending
         ? `<button type="button" class="btn-action-cancel" data-id="${item.id}" title="Hủy đơn xin nghỉ này">Hủy đơn</button>`
         : `<span style="color: #94a3b8; font-size: 0.85rem;">—</span>`;
@@ -377,6 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   confirmCancelBtn.addEventListener("click", async () => {
+    if (!hasLeave("LEAVE_REQUEST_CANCEL") || !hasLeave("OWN_LEAVE_REQUEST_READ")) return;
     if (!targetCancelId) return;
 
     try {
@@ -422,5 +436,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // 12. Chạy khởi tạo ban đầu
   initDefaultDates();
   updateCharCount();
-  loadLeaveRequests();
+  API.getCurrentUser().then(session => { applyLeavePermissions(session); return loadLeaveRequests(); }).catch(error => { showAlert(error.message, "danger"); Session.redirectIfExpired(error); });
 });

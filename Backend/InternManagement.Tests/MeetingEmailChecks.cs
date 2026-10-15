@@ -30,6 +30,7 @@ internal static class MeetingEmailChecks
         await using var command = sql.CreateCommand();
         command.CommandText = """
             INSERT dbo.Users(Username,FullName,Email,PasswordHash,Role) VALUES
+             ('meeting-admin','Quản trị','admin@company.vn','unused','ADMIN'),
              ('meeting-creator','Người tạo','creator@company.vn','unused','HR'),
              ('meeting-gmail','Người Gmail','participant@gmail.com','unused','INTERN'),
              ('meeting-company','Người Công ty','participant@company.vn','unused','MENTOR'),
@@ -93,6 +94,16 @@ internal static class MeetingEmailChecks
         check(Convert.ToInt32(await command.ExecuteScalarAsync()) == 2, "invalid meeting creates no data");
 
         var options=await service.GetParticipantsAsync(default);
+        check(options.All(x=>x.Role!="ADMIN")&&!options.Any(x=>x.Id==users["meeting-admin"]),
+            "meeting participant options exclude ADMIN accounts at backend");
+        var adminParticipantRejected=false;
+        try
+        {
+            await service.CreateAsync(users["meeting-creator"],new CreateMeetingRequest(
+                "Admin is not a participant",start,start.AddHours(1),null,null,[users["meeting-admin"]],Guid.NewGuid()),default);
+        }
+        catch(ArgumentException){adminParticipantRejected=true;}
+        check(adminParticipantRejected,"crafted Meeting request cannot add ADMIN participant");
         var intern=options.Single(x=>x.Id==users["meeting-gmail"]);
         var mentor=options.Single(x=>x.Id==users["meeting-company"]);
         transport.Sent.Clear();

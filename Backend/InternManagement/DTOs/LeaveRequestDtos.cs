@@ -47,3 +47,27 @@ public sealed record CancelLeaveRequestResponse(
     string Status,
     string Message
 );
+
+public sealed record ReviewLeaveRequestDto(string Decision, string? Note);
+
+public sealed record MentorLeaveRequestResponseDto(
+    long Id,
+    int InternId,
+    string InternName,
+    string InternEmail,
+    string LeaveType,
+    string LeaveTypeLabel,
+    string DurationType,
+    string DurationTypeLabel,
+    string StartDate,
+    string EndDate,
+    decimal TotalDays,
+    string Reason,
+    string Status,
+    string StatusLabel,
+    string? ReviewerNote,
+    DateTime? ReviewedAt,
+    DateTime CreatedAt
+);
+
+public sealed record ReviewLeaveRequestResponse(long Id, string Status, string StatusLabel, string Message);
