@@ -58,6 +58,7 @@ builder.Services.AddScoped<
 >();
 
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
+builder.Services.AddScoped<InternManagement.Services.MeetingService>();
 
 builder.Services.AddRateLimiter(options =>
 {

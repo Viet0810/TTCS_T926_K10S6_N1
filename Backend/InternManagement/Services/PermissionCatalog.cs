@@ -49,6 +49,7 @@ public sealed record PermissionDescriptor(
         PermissionNames.UpdateFinalEvaluations
             => [PermissionNames.ViewFinalEvaluations],
 
+        PermissionNames.CreateMeeting => [PermissionNames.ReadMeetings],
         _ => []
     };
 }
@@ -60,6 +61,8 @@ public static class PermissionCatalog
 
     public static readonly PermissionDescriptor[] Entries =
     [
+        new(PermissionNames.ReadMeetings, "meetings", "Lịch họp", "READ", ["HR"]),
+        new(PermissionNames.CreateMeeting, "meetings", "Tạo lịch họp", "CREATE", ["HR"]),
         // Quản lý nhiệm vụ
         new(PermissionNames.ReadMentorTasks, "mentor-tasks", "Nhiệm vụ đã giao", "READ", ["MENTOR"]),
         new(PermissionNames.CreateTask, "mentor-tasks", "Giao nhiệm vụ", "CREATE", ["MENTOR"]),

@@ -1,6 +1,7 @@
 
 window.AppNavigation = (() => {
   const items = [
+    { label: "Lịch họp", href: "meetings.html", permissions: ["MEETING_READ"], roles: ["HR"] },
     { label: "Bảng điều khiển", href: "dashboard.html" },
     { label: "Quản lý tài khoản", href: "user-manage.html", permissions: ["MANAGE_USERS"] },
     { label: "Xem danh sách thực tập sinh", href: "intern-manage.html", permissions: ["VIEW_INTERNS"] },
@@ -52,6 +53,7 @@ window.AppNavigation = (() => {
       const page = location.pathname.split("/").pop();
 
       for (const item of items) {
+        if (item.roles && !item.roles.includes(role)) continue;
         if (
           item.permissions &&
           !item.permissions.some(permission =>

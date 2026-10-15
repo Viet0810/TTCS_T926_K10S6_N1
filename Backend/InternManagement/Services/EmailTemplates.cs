@@ -53,4 +53,15 @@ public static class EmailTemplates
         =>Layout("PASSWORD_RESET","Đặt lại mật khẩu","Đặt lại mật khẩu của bạn",
             $"<p>Xin chào,</p><p>Hệ thống nhận được yêu cầu đặt lại mật khẩu của bạn.</p><p>Liên kết có hiệu lực trong <strong>{minutes} phút</strong> và chỉ dùng được một lần.</p><p>Nếu bạn không gửi yêu cầu này, bạn có thể bỏ qua email. Mật khẩu của bạn sẽ không thay đổi.</p>",
             $"Xin chào,\nHệ thống nhận được yêu cầu đặt lại mật khẩu.\nLiên kết có hiệu lực trong {minutes} phút và chỉ dùng được một lần.\nNếu bạn không gửi yêu cầu này, hãy bỏ qua email.\n",action:"ĐẶT LẠI MẬT KHẨU",url:link);
+    public static EmailContent Meeting(string title,DateTimeOffset startTime,DateTimeOffset endTime,string? locationOrLink,string? description)
+    {
+        var when=$"{startTime.ToOffset(TimeSpan.FromHours(7)):dd/MM/yyyy HH:mm} - {endTime.ToOffset(TimeSpan.FromHours(7)):dd/MM/yyyy HH:mm}";
+        var location=string.IsNullOrWhiteSpace(locationOrLink)?null:locationOrLink.Trim();
+        var details=string.IsNullOrWhiteSpace(description)?null:description.Trim();
+        return Layout("MEETING_CREATED",$"Lịch họp: {title}","Bạn có lịch họp mới",
+            $"<p><strong>Tiêu đề:</strong> {E(title)}</p><p><strong>Thời gian:</strong> {E(when)} (GMT+7)</p>"
+            +(location is null?"":$"<p><strong>Địa điểm/Link:</strong> {E(location)}</p>")
+            +(details is null?"":$"<p><strong>Mô tả:</strong></p><div style=\"padding:16px;background:#F8FAFE;border-radius:10px\">{E(details).Replace("\n","<br>")}</div>"),
+            $"Tiêu đề: {title}\nThời gian: {when} (GMT+7)\n"+(location is null?"":$"Địa điểm/Link: {location}\n")+(details is null?"":$"Mô tả: {details}\n"));
+    }
 }
