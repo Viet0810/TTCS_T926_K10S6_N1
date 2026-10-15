@@ -142,6 +142,59 @@ public sealed class DatabaseInitializer
             END;
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
+        
+        // K10S6N1-128: Tạo bảng đánh giá cuối kỳ.
+        command.CommandText = """
+            IF OBJECT_ID(N'dbo.FinalEvaluations', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.FinalEvaluations (
+                    Id INT IDENTITY(1,1) NOT NULL
+                        CONSTRAINT PK_FinalEvaluations PRIMARY KEY,
+
+                    InternId INT NOT NULL
+                        CONSTRAINT FK_FinalEvaluations_Interns
+                        REFERENCES dbo.Interns(Id) ON DELETE CASCADE,
+
+                    Period NVARCHAR(200) NULL,
+
+                    Attendance DECIMAL(4,2) NULL,
+                    Attitude DECIMAL(4,2) NULL,
+                    ProfessionalSkills DECIMAL(4,2) NULL,
+                    WorkResult DECIMAL(4,2) NULL,
+                    FinalScore DECIMAL(4,2) NULL,
+
+                    Classification NVARCHAR(50) NULL,
+
+                    Status NVARCHAR(30) NOT NULL
+                        CONSTRAINT DF_FinalEvaluations_Status
+                        DEFAULT N'Chưa đánh giá',
+
+                    Comment NVARCHAR(MAX) NULL,
+
+                    CreatedAt DATETIMEOFFSET NOT NULL
+                        CONSTRAINT DF_FinalEvaluations_CreatedAt
+                        DEFAULT SYSDATETIMEOFFSET(),
+
+                    CONSTRAINT CK_FinalEvaluations_Scores CHECK (
+                        (Attendance IS NULL OR Attendance BETWEEN 0 AND 10)
+                        AND (Attitude IS NULL OR Attitude BETWEEN 0 AND 10)
+                        AND (ProfessionalSkills IS NULL OR ProfessionalSkills BETWEEN 0 AND 10)
+                        AND (WorkResult IS NULL OR WorkResult BETWEEN 0 AND 10)
+                        AND (FinalScore IS NULL OR FinalScore BETWEEN 0 AND 10)
+                    ),
+
+                    CONSTRAINT CK_FinalEvaluations_Status CHECK (
+                        Status IN (N'Chưa đánh giá', N'Đã đánh giá')
+                    )
+                );
+
+                CREATE INDEX IX_FinalEvaluations_InternId
+                    ON dbo.FinalEvaluations(InternId);
+            END;
+            """;
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
         await Infrastructure.InternAssignmentMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.AccountPasswordMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint2CompletionMigration.ApplyAsync(connection, cancellationToken);

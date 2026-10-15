@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using InternManagement.Infrastructure;
@@ -32,16 +33,29 @@ builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
 
-// THÊM SERVICE QUẢN LÝ THỜI GIAN CHƯƠNG TRÌNH
+// Service quản lý thời gian chương trình
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
+
+// Service phân công thực tập
 builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
+
+// K10S6N1-128: Service lấy và tổng hợp đánh giá cuối kỳ
+builder.Services.AddScoped<InternManagement.Services.FinalEvaluationService>();
+
+// Các Service hiện có
 builder.Services.AddScoped<InternManagement.Services.ContractService>();
 builder.Services.AddScoped<InternManagement.Services.OwnAttendanceService>();
+
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
 builder.Services.AddSingleton<InternManagement.Services.DatabaseInitializer>();
 builder.Services.AddScoped<InternManagement.Services.ListPagingService>();
-builder.Services.AddScoped<InternManagement.Services.IEmailService,InternManagement.Services.EmailService>();
+
+builder.Services.AddScoped<
+    InternManagement.Services.IEmailService,
+    InternManagement.Services.EmailService
+>();
+
 builder.Services.AddScoped<InternManagement.Services.PasswordResetService>();
 
 builder.Services.AddRateLimiter(options =>
@@ -79,6 +93,7 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
+
 builder.Services.AddScoped<
     InternManagement.Services.IInternService,
     InternManagement.Services.InternService
@@ -109,15 +124,18 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     var smtpSettings = builder.Configuration.GetSection("Smtp");
-    app.Logger.LogInformation("SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
-        smtpSettings["Host"], !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
-        !string.IsNullOrWhiteSpace(smtpSettings["Password"]), !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"]));
+
+    app.Logger.LogInformation(
+        "SMTP configuration: Host {Host}, UsernameConfigured {UsernameConfigured}, PasswordConfigured {PasswordConfigured}, SenderConfigured {SenderConfigured}.",
+        smtpSettings["Host"],
+        !string.IsNullOrWhiteSpace(smtpSettings["Username"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["Password"]),
+        !string.IsNullOrWhiteSpace(smtpSettings["FromAddress"])
+    );
 }
 
 var connectionString =
-    builder.Configuration.GetConnectionString(
-        "InternManagement"
-    );
+    builder.Configuration.GetConnectionString("InternManagement");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -127,26 +145,20 @@ if (string.IsNullOrWhiteSpace(connectionString))
 }
 
 await app.Services
-    .GetRequiredService<
-        InternManagement.Services.DatabaseInitializer
-    >()
+    .GetRequiredService<InternManagement.Services.DatabaseInitializer>()
     .InitializeAsync(connectionString);
 
-
 app.UseMiddleware<ApiRequestMiddleware>();
-
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-
 
 app.UseCors();
 
@@ -154,16 +166,11 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
-
 app.MapGet(
     "/api/database/status",
     async () =>
     {
-        if (
-            string.IsNullOrWhiteSpace(
-                connectionString
-            )
-        )
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
             return Results.Problem(
                 "Chưa cấu hình connection string InternManagement.",
@@ -180,8 +187,7 @@ app.MapGet(
 
             await connection.OpenAsync();
 
-            await using var command =
-                connection.CreateCommand();
+            await using var command = connection.CreateCommand();
 
             command.CommandText = "SELECT 1";
 
@@ -212,19 +218,42 @@ app.MapGet(
     }
 );
 
-// Preserve main's existing public endpoint alongside the internship APIs.
+// Giữ nguyên endpoint weatherforecast hiện có
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing",
+    "Bracing",
+    "Chilly",
+    "Cool",
+    "Mild",
+    "Warm",
+    "Balmy",
+    "Hot",
+    "Sweltering",
+    "Scorching"
 };
-app.MapGet("/weatherforecast", () => Enumerable.Range(1, 5).Select(index =>
-    new WeatherForecast(DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-        Random.Shared.Next(-20, 55), summaries[Random.Shared.Next(summaries.Length)]))
-    .ToArray()).WithName("GetWeatherForecast");
+
+app.MapGet(
+    "/weatherforecast",
+    () => Enumerable.Range(1, 5)
+        .Select(index =>
+            new WeatherForecast(
+                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                Random.Shared.Next(-20, 55),
+                summaries[Random.Shared.Next(summaries.Length)]
+            )
+        )
+        .ToArray()
+).WithName("GetWeatherForecast");
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+record WeatherForecast(
+    DateOnly Date,
+    int TemperatureC,
+    string? Summary
+)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    public int TemperatureF =>
+        32 + (int)(TemperatureC / 0.5556);
 }
