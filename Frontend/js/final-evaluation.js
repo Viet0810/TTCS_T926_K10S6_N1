@@ -146,6 +146,12 @@ function normalizeEvaluation(item) {
     evaluationSource: item.evaluationSource ?? "",
     mentorScore: item.mentorScore,
     mentorComment: item.mentorComment ?? "",
+    mentorPeriod: item.mentorPeriod ?? "",
+    mentorAttendance: item.mentorAttendance,
+    mentorAttitude: item.mentorAttitude,
+    mentorProfessionalSkills: item.mentorProfessionalSkills,
+    mentorWorkResult: item.mentorWorkResult,
+    mentorClassification: item.mentorClassification ?? "",
     period: item.period ?? "",
     attendance: item.attendance,
     attitude: item.attitude,
@@ -250,12 +256,9 @@ function renderTable() {
   filteredEvaluations.forEach(item => {
     const row = document.createElement("tr");
 
-    createCell(row, item.studentCode);
     createCell(row, item.name);
-    createCell(row, item.company);
-    createCell(row, item.period);
-    createCell(row, item.finalScore);
-    createCell(row, item.classification);
+    createCell(row, item.mentor);
+    createCell(row, item.programName);
 
     const statusCell = document.createElement("td");
     const status = document.createElement("span");
@@ -288,9 +291,9 @@ function renderTable() {
 
       editButton.type = "button";
       editButton.className = "primary-btn";
-      editButton.textContent = isEvaluated(item)
-        ? "Sửa đánh giá"
-        : "Thêm đánh giá";
+      editButton.textContent = currentRole === "MENTOR"
+        ? (isEvaluated(item) ? "Cập nhật" : "Đánh giá")
+        : (isEvaluated(item) ? "Cập nhật tổng hợp" : "Tổng hợp");
 
       editButton.style.marginLeft = "8px";
 
@@ -376,11 +379,17 @@ function showDetail(id) {
     ["Lớp", intern.className],
     ["Đơn vị thực tập", intern.company],
     ["Người hướng dẫn", intern.mentor],
-    ["Chương trình", intern.programName],
-    ["Nguồn đánh giá", intern.evaluationSource === "HR" ? "HR tổng hợp" : intern.evaluationSource === "MENTOR" ? "Mentor đánh giá" : "Dữ liệu trước đây"],
-    ["Điểm Mentor", intern.mentorScore],
-    ["Nhận xét Mentor", intern.mentorComment],
-    ["Đợt thực tập", intern.period]
+    ["Chương trình", intern.programName]
+  ]);
+
+  renderInformation("mentorEvaluationResult", [
+    ["Đợt đánh giá", intern.mentorPeriod],
+    ["Điểm chuyên cần", intern.mentorAttendance],
+    ["Điểm thái độ", intern.mentorAttitude],
+    ["Điểm chuyên môn", intern.mentorProfessionalSkills],
+    ["Kết quả công việc", intern.mentorWorkResult],
+    ["Điểm tổng kết", intern.mentorScore],
+    ["Xếp loại", intern.mentorClassification]
   ]);
 
   renderInformation("evaluationResult", [
@@ -394,7 +403,13 @@ function showDetail(id) {
   ]);
 
   getElement("mentorComment").textContent =
-    intern.comment || "Chưa có nhận xét.";
+    intern.mentorComment || "Chưa có đánh giá của Mentor.";
+
+  getElement("hrComment").textContent =
+    intern.evaluationSource === "HR" && intern.comment
+      ? intern.comment
+      : "HR chưa tổng hợp đánh giá.";
+  getElement("hrEvaluationPanel").hidden = currentRole === "MENTOR";
 
   getElement("evaluationFormSection").hidden = true;
 
@@ -410,7 +425,7 @@ function showDetail(id) {
 // Mở form thêm/sửa
 function openEvaluationForm(id) {
   if (!canEditEvaluation()) {
-    alert("Chỉ HR và MENTOR được thêm hoặc sửa đánh giá.");
+    AppUI.toast("Bạn không có quyền thêm hoặc sửa đánh giá.", "error");
     return;
   }
 
@@ -430,10 +445,19 @@ function openEvaluationForm(id) {
     evaluated ? "update" : "create";
 
   getElement("evaluationFormTitle").textContent =
-    evaluated ? "Sửa đánh giá cuối kỳ" : "Thêm đánh giá cuối kỳ";
+    currentRole === "MENTOR"
+      ? (evaluated ? "Cập nhật đánh giá Intern" : "Đánh giá Intern")
+      : (evaluated ? "Cập nhật tổng hợp của HR" : "Tạo tổng hợp của HR");
 
   getElement("evaluationInternName").textContent =
     `${intern.name} - ${intern.studentCode}`;
+
+  renderInformation("evaluationFormInternInfo", [
+    ["Họ và tên", intern.name],
+    ["Mã sinh viên", intern.studentCode],
+    ["Mentor", intern.mentor],
+    ["Chương trình", intern.programName]
+  ]);
 
   getElement("evaluationPeriod").value = intern.period || "";
 
@@ -454,6 +478,7 @@ function openEvaluationForm(id) {
   }
 
   getElement("evaluationFormMessage").textContent = "";
+  clearEvaluationErrors();
   getElement("detailSection").hidden = true;
 
   const section = getElement("evaluationFormSection");
@@ -470,6 +495,39 @@ function closeEvaluationForm() {
   getElement("evaluationFormSection").hidden = true;
   getElement("evaluationForm").reset();
   getElement("evaluationFormMessage").textContent = "";
+  clearEvaluationErrors();
+}
+
+const evaluationFields = [
+  "evaluationPeriod", "evaluationAttendance", "evaluationAttitude",
+  "evaluationProfessionalSkills", "evaluationWorkResult",
+  "evaluationFinalScore", "evaluationClassification", "evaluationComment"
+];
+
+function clearEvaluationErrors() {
+  evaluationFields.forEach(id => {
+    const field = getElement(id);
+    const error = getElement(`${id}Error`);
+    field?.removeAttribute("aria-invalid");
+    if (error) error.textContent = "";
+  });
+}
+
+function validateEvaluationForm() {
+  clearEvaluationErrors();
+  let firstInvalid = null;
+  evaluationFields.forEach(id => {
+    const field = getElement(id);
+    if (!field || field.checkValidity()) return;
+    field.setAttribute("aria-invalid", "true");
+    const error = getElement(`${id}Error`);
+    if (error) error.textContent = field.validity.valueMissing
+      ? "Vui lòng nhập trường này."
+      : "Giá trị phải nằm trong khoảng từ 0 đến 10.";
+    firstInvalid ||= field;
+  });
+  firstInvalid?.focus();
+  return !firstInvalid;
 }
 
 // Đọc dữ liệu nhập
@@ -500,7 +558,7 @@ async function saveEvaluation(event) {
   const form = getElement("evaluationForm");
   if (getElement("saveEvaluationBtn").disabled) return;
 
-  if (!form.reportValidity()) {
+  if (!validateEvaluationForm()) {
     return;
   }
 
@@ -561,7 +619,7 @@ function csvCell(value) {
 
 function exportCSV() {
   if (filteredEvaluations.length === 0) {
-    alert("Không có dữ liệu để xuất báo cáo.");
+    AppUI.toast("Không có dữ liệu để xuất báo cáo.", "error");
     return;
   }
 
@@ -622,7 +680,7 @@ async function loadEvaluations() {
   const loadingRow = document.createElement("tr");
   const loadingCell = document.createElement("td");
 
-  loadingCell.colSpan = 8;
+  loadingCell.colSpan = 5;
   loadingCell.textContent = "Đang tải dữ liệu đánh giá...";
 
   loadingRow.appendChild(loadingCell);
@@ -664,7 +722,7 @@ async function loadEvaluations() {
     const errorRow = document.createElement("tr");
     const errorCell = document.createElement("td");
 
-    errorCell.colSpan = 8;
+    errorCell.colSpan = 5;
     errorCell.textContent = error.message;
 
     errorRow.appendChild(errorCell);
@@ -673,6 +731,7 @@ async function loadEvaluations() {
     getElement("emptyMessage").hidden = true;
     getElement("resultCount").textContent =
       "Không thể tải dữ liệu từ Backend";
+    AppUI.toast(error.message, "error");
 
     return false;
   }
@@ -725,6 +784,11 @@ document.addEventListener("DOMContentLoaded", () => {
     "submit",
     saveEvaluation
   );
+  evaluationFields.forEach(id => getElement(id)?.addEventListener("input", () => {
+    const error = getElement(`${id}Error`);
+    if (error) error.textContent = "";
+    getElement(id).removeAttribute("aria-invalid");
+  }));
 
   getElement("closeEvaluationFormBtn").addEventListener(
     "click",
@@ -747,6 +811,18 @@ document.addEventListener("DOMContentLoaded", () => {
           currentRole = String(serverRole).toUpperCase();
           if (roleBadge) roleBadge.textContent = currentRole;
         }
+        const mentorView = currentRole === "MENTOR";
+        const topbarTitle = document.querySelector(".dashboard-title h1");
+        if (topbarTitle) topbarTitle.textContent = mentorView ? "Đánh giá thực tập sinh" : "Đánh giá cuối kỳ";
+        getElement("evaluationPageTitle").textContent = mentorView ? "Đánh giá thực tập sinh" : "Tổng hợp đánh giá cuối kỳ";
+        getElement("evaluationPageDescription").textContent = mentorView
+          ? "Đánh giá kỹ năng, thái độ và kết quả của Intern bạn đang hướng dẫn."
+          : "Xem đánh giá của Mentor và lưu phần tổng hợp cuối kỳ của HR riêng biệt.";
+        getElement("evaluationListTitle").textContent = mentorView ? "Intern đang hướng dẫn" : "Danh sách Intern cuối kỳ";
+        getElement("evaluationListDescription").textContent = mentorView
+          ? "Chọn Intern để tạo hoặc cập nhật đánh giá."
+          : "Tra cứu đánh giá Mentor và phần tổng hợp của HR.";
+        getElement("exportBtn").hidden = mentorView;
       }
     } catch (error) {
       console.warn("Không thể xác nhận vai trò từ Backend:", error);

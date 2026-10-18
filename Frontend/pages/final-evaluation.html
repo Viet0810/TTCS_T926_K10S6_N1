@@ -73,9 +73,9 @@
                 QUẢN LÝ THỰC TẬP SINH
               </span>
 
-              <h1>Tổng hợp đánh giá cuối kỳ</h1>
+              <h1 id="evaluationPageTitle">Tổng hợp đánh giá cuối kỳ</h1>
 
-              <p>
+              <p id="evaluationPageDescription">
                 Theo dõi kết quả thực tập và nhận xét
                 của người hướng dẫn.
               </p>
@@ -113,8 +113,8 @@
         <section class="evaluation-card">
           <div class="section-header">
             <div>
-              <h2>Danh sách kết quả đánh giá</h2>
-              <p>
+              <h2 id="evaluationListTitle">Danh sách kết quả đánh giá</h2>
+              <p id="evaluationListDescription">
                 Tra cứu và tổng hợp kết quả thực tập sinh.
               </p>
             </div>
@@ -182,12 +182,9 @@
             <table>
               <thead>
                 <tr>
-                  <th>Mã sinh viên</th>
                   <th>Họ và tên</th>
-                  <th>Đơn vị thực tập</th>
-                  <th>Đợt thực tập</th>
-                  <th>Điểm</th>
-                  <th>Xếp loại</th>
+                  <th>Mentor</th>
+                  <th>Chương trình</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
@@ -231,10 +228,11 @@
             class="detail-grid"
           ></div>
 
-          <h3>Kết quả đánh giá</h3>
+          <section class="evaluation-detail-panel mentor-panel" aria-labelledby="mentorEvaluationHeading">
+          <h3 id="mentorEvaluationHeading">Đánh giá của Mentor</h3>
 
           <div
-            id="evaluationResult"
+            id="mentorEvaluationResult"
             class="detail-grid"
           ></div>
 
@@ -244,6 +242,14 @@
             id="mentorComment"
             class="mentor-comment"
           ></p>
+          </section>
+
+          <section class="evaluation-detail-panel hr-panel" id="hrEvaluationPanel" aria-labelledby="hrEvaluationHeading">
+          <h3 id="hrEvaluationHeading">Tổng hợp của HR</h3>
+          <div id="evaluationResult" class="detail-grid"></div>
+          <h3>Nhận xét tổng hợp của HR</h3>
+          <p id="hrComment" class="mentor-comment hr-comment"></p>
+          </section>
 
           <div class="detail-actions">
             <button
@@ -296,6 +302,13 @@
               value="create"
             >
 
+            <section class="evaluation-form-block">
+              <h3>Thông tin Intern</h3>
+              <div id="evaluationFormInternInfo" class="detail-grid"></div>
+            </section>
+
+            <section class="evaluation-form-block">
+            <h3>Tiêu chí đánh giá</h3>
             <div class="filters">
 
               <div class="filter-group">
@@ -309,6 +322,7 @@
                   placeholder="Ví dụ: Đợt thực tập 2026"
                   required
                 >
+                <small class="field-error" id="evaluationPeriodError"></small>
               </div>
 
               <div class="filter-group">
@@ -323,6 +337,7 @@
                   step="0.1"
                   required
                 >
+                <small class="field-error" id="evaluationAttendanceError"></small>
               </div>
 
               <div class="filter-group">
@@ -337,6 +352,7 @@
                   step="0.1"
                   required
                 >
+                <small class="field-error" id="evaluationAttitudeError"></small>
               </div>
 
               <div class="filter-group">
@@ -351,6 +367,7 @@
                   step="0.1"
                   required
                 >
+                <small class="field-error" id="evaluationProfessionalSkillsError"></small>
               </div>
 
               <div class="filter-group">
@@ -365,6 +382,7 @@
                   step="0.1"
                   required
                 >
+                <small class="field-error" id="evaluationWorkResultError"></small>
               </div>
 
               <div class="filter-group">
@@ -379,6 +397,7 @@
                   step="0.1"
                   required
                 >
+                <small class="field-error" id="evaluationFinalScoreError"></small>
               </div>
 
               <div class="filter-group">
@@ -400,9 +419,13 @@
                   </option>
                   <option value="Yếu">Yếu</option>
                 </select>
+                <small class="field-error" id="evaluationClassificationError"></small>
               </div>
             </div>
+            </section>
 
+            <section class="evaluation-form-block">
+            <h3>Nhận xét</h3>
             <div class="filter-group">
               <label for="evaluationComment">
                 Nhận xét đánh giá
@@ -415,7 +438,9 @@
                 placeholder="Nhập nhận xét về quá trình thực tập..."
                 style="width:100%;box-sizing:border-box;"
               ></textarea>
+              <small class="field-error" id="evaluationCommentError"></small>
             </div>
+            </section>
 
             <p
               id="evaluationFormMessage"

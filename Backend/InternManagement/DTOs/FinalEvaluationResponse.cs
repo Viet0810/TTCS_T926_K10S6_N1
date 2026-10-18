@@ -8,6 +8,12 @@ public class FinalEvaluationResponse
     public int? EvaluatingMentorId { get; set; }
     public decimal? MentorScore { get; set; }
     public string MentorComment { get; set; } = "";
+    public string MentorPeriod { get; set; } = "";
+    public decimal? MentorAttendance { get; set; }
+    public decimal? MentorAttitude { get; set; }
+    public decimal? MentorProfessionalSkills { get; set; }
+    public decimal? MentorWorkResult { get; set; }
+    public string MentorClassification { get; set; } = "";
     public int InternId { get; set; }
     public string StudentCode { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

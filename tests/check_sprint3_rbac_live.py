@@ -1,6 +1,7 @@
 """Real Sprint 3 permission matrix -> Admin API -> isolated test SQL database."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 import json
 import os
@@ -20,6 +21,13 @@ def api(path, method='GET', payload=None, token=None):
     request = Request(base + path, data=None if payload is None else json.dumps(payload).encode(), headers=headers, method=method)
     with urlopen(request, timeout=20) as response:
         return json.load(response)
+
+def api_status(path, method='GET', payload=None, token=None):
+    try:
+        api(path, method, payload, token)
+        return 200
+    except HTTPError as error:
+        return error.code
 
 admin = api('/api/auth/login', 'POST', {'username': 's3-admin', 'password': 'Sprint3-rbac-test-9'})['token']
 chrome = Path(os.environ.get('PROGRAMFILES', 'C:/Program Files')) / 'Google/Chrome/Application/chrome.exe'
@@ -161,17 +169,43 @@ with TemporaryDirectory(prefix='sprint3-rbac-live-') as directory:
         smoke()
         print('PASS: Chrome US15 actual task assignment and own Intern view')
 
-        open_feature('final-evaluation.html','s3-ma')
+        mentor_token=open_feature('final-evaluation.html','s3-ma')
         wait('!!document.querySelector("#evaluationTableBody .primary-btn")')
         evaluate('document.querySelector("#evaluationTableBody .primary-btn").click();document.getElementById("evaluationPeriod").value="Live period";["evaluationAttendance","evaluationAttitude","evaluationProfessionalSkills","evaluationWorkResult","evaluationFinalScore"].forEach(id=>document.getElementById(id).value=8);document.getElementById("evaluationClassification").selectedIndex=2;document.getElementById("evaluationComment").value="Live Mentor evaluation";document.getElementById("evaluationForm").requestSubmit()')
         wait('document.getElementById("evaluationFormSection").hidden')
+        command('Page.reload');wait('typeof evaluations!=="undefined" && evaluations.some(x=>x.period==="Live period" && x.comment==="Live Mentor evaluation")')
         smoke()
-        open_feature('final-evaluation.html','s3-hr')
-        wait('document.getElementById("evaluationTableBody").textContent.includes("Live period")')
-        evaluate('const row=[...document.querySelectorAll("#evaluationTableBody tr")].find(r=>r.textContent.includes("Live period"));row.querySelector(".detail-btn").click()')
-        wait('document.getElementById("internInfo").textContent.includes("Live Mentor evaluation")')
+        other_mentor=open_feature('final-evaluation.html','s3-mb')
+        wait('evaluations.some(x=>x.name==="Intern B")')
+        assert not evaluate('evaluations.some(x=>x.name==="Intern A")'),'Mentor B can see Intern A'
+        intern_a=next(x['internId'] for x in api('/api/FinalEvaluations',token=mentor_token) if x['name']=='Intern A')
+        assert api_status('/api/FinalEvaluations/'+str(intern_a),token=other_mentor)==403,'Mentor B direct read must return 403'
+
+        hr_token=open_feature('final-evaluation.html','s3-hr')
+        wait('evaluations.some(x=>x.name==="Intern A" && x.mentorComment==="Live Mentor evaluation")')
+        evaluate('const row=[...document.querySelectorAll("#evaluationTableBody tr")].find(r=>r.textContent.includes("Intern A"));row.querySelector(".detail-btn").click()')
+        wait('document.getElementById("mentorEvaluationResult").textContent.includes("8") && document.getElementById("mentorComment").textContent.includes("Live Mentor evaluation")')
+        wait('!!([...document.querySelectorAll("#evaluationTableBody tr")].find(r=>r.textContent.includes("Intern A")))?.querySelector(".primary-btn")')
+        evaluate('([...document.querySelectorAll("#evaluationTableBody tr")].find(r=>r.textContent.includes("Intern A"))).querySelector(".primary-btn").click()')
+        wait('!document.getElementById("evaluationFormSection").hidden')
+        evaluate('document.getElementById("evaluationPeriod").value="HR final";["evaluationAttendance","evaluationAttitude","evaluationProfessionalSkills","evaluationWorkResult","evaluationFinalScore"].forEach(id=>document.getElementById(id).value=9);document.getElementById("evaluationClassification").selectedIndex=1;document.getElementById("evaluationComment").value="Live HR summary";document.getElementById("evaluationForm").requestSubmit()')
+        wait('document.getElementById("evaluationFormSection").hidden')
+        command('Page.reload');wait('typeof evaluations!=="undefined" && evaluations.some(x=>x.period==="HR final" && x.comment==="Live HR summary" && x.mentorComment==="Live Mentor evaluation")')
+        evaluate('const row=[...document.querySelectorAll("#evaluationTableBody tr")].find(r=>r.textContent.includes("Intern A"));row.querySelector(".detail-btn").click()')
+        wait('document.getElementById("mentorComment").textContent.includes("Live Mentor evaluation") && document.getElementById("hrComment").textContent.includes("Live HR summary")')
         smoke()
-        print('PASS: Chrome US19 Mentor evaluation reaches US20 HR details')
+
+        mentor_grants=api('/api/permissions/MENTOR',token=admin)['permissions']
+        api('/api/permissions/MENTOR','PUT',{'permissions':[x for x in mentor_grants if x!='UPDATE_FINAL_EVALUATIONS']},admin)
+        open_feature('final-evaluation.html','s3-ma');wait('evaluations.some(x=>x.name==="Intern A")')
+        assert not evaluate('!!document.querySelector("#evaluationTableBody .primary-btn")'),'Revoked evaluation action remains visible'
+        assert api_status('/api/FinalEvaluations/'+str(intern_a),'PUT',{'period':'Denied','attendance':8,'attitude':8,'professionalSkills':8,'workResult':8,'finalScore':8,'classification':'Khá'},mentor_token)==403,'Revoked evaluation update must return 403'
+        api('/api/permissions/MENTOR','PUT',{'permissions':[x for x in mentor_grants if x not in ('VIEW_FINAL_EVALUATIONS','UPDATE_FINAL_EVALUATIONS')]},admin)
+        open_feature('dashboard.html','s3-ma');wait('!!document.querySelector("#roleMenu a")')
+        assert not evaluate('[...document.querySelectorAll("#roleMenu a")].some(a=>a.getAttribute("href")==="final-evaluation.html")'),'Revoked evaluation menu remains visible'
+        assert api_status('/api/FinalEvaluations',token=mentor_token)==403,'Revoked evaluation read must return 403'
+        api('/api/permissions/MENTOR','PUT',{'permissions':mentor_grants},admin)
+        print('PASS: Chrome US19/US20 create, update, reload, separate Mentor/HR data, ownership, revoke and responsive')
 
         intern=open_feature('intern-leave-request.html','s3-ia')
         wait('!document.getElementById("submitLeaveBtn").disabled')

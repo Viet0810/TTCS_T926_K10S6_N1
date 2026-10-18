@@ -94,7 +94,13 @@ internal static class Sprint3OwnershipChecks
         check(reassigned.StatusCode == HttpStatusCode.OK, "US19 newly assigned Mentor can update");
         await Login("ownership-hr");
         var totalInterns = await Scalar("SELECT COUNT(*) FROM dbo.Interns");
-        check((await Get(evaluations)).GetArrayLength() == totalInterns, "US19 HR retains all-intern view");
+        var hrBeforeSummary=await Get(evaluations);
+        check(hrBeforeSummary.GetArrayLength() == totalInterns, "US19 HR retains all-intern view");
+        var mentorReadonly=hrBeforeSummary.EnumerateArray().Single(x=>x.GetProperty("internId").GetInt32()==internA);
+        check(mentorReadonly.GetProperty("status").GetString()=="Chưa đánh giá"
+            && mentorReadonly.GetProperty("mentorScore").GetDecimal()==8
+            && mentorReadonly.GetProperty("mentorAttendance").GetDecimal()==8,
+            "US20 HR sees full Mentor evaluation read-only while HR summary remains pending");
         check((await Get(evaluations + "/statistics")).GetProperty("totalInterns").GetInt32() == totalInterns, "US19 HR retains aggregate statistics");
         using var hrCreate = await http.PostAsJsonAsync($"{evaluations}/{internB}", evaluation);
         using var hrUpdate = await http.PutAsJsonAsync($"{evaluations}/{internA}", evaluation);

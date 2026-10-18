@@ -18,6 +18,7 @@ window.AppNavigation = (() => {
     { label: "Danh sách phân công", href: "mentor-assignment-list.html", permissions: ["ASSIGN_MENTOR", "MENTOR_WORKLOAD_READ"] },
     { label: "Nhiệm vụ", href: "tasks.html", permissions: ["MENTOR_TASK_READ", "OWN_TASK_READ"], roles: ["MENTOR", "INTERN"] },
     { label: "Báo cáo tuần", href: "weekly-reports.html", permissions: ["OWN_WEEKLY_REPORT_READ", "MENTOR_WEEKLY_REPORT_READ"], roles: ["INTERN", "MENTOR"] },
+    { label: "Đánh giá cuối kỳ", href: "final-evaluation.html", permissions: ["VIEW_FINAL_EVALUATIONS"] },
     { label: "Hồ sơ cá nhân", href: "profile.html", permissions: ["VIEW_PROFILE", "VIEW_OWN_PROFILE"] },
     { label: "Lịch thực tập", href: "intern-schedule.html", permissions: ["VIEW_OWN_SCHEDULE"] },
     { label: "Nộp CV và đơn xin thực tập", href: "intern-upload-cv.html", permissions: ["UPLOAD_DOCUMENTS", "VIEW_DOCUMENTS"] },
@@ -25,9 +26,6 @@ window.AppNavigation = (() => {
     { label: "Xem và duyệt tài liệu", href: "document-reviews.html", permissions: ["DOCUMENT_REVIEW_READ"] },
 
     { label: "Quản lý hợp đồng", href: "contracts.html", permissions: ["MANAGE_CONTRACTS"] },
-
-    // Đánh giá cuối kỳ: hiển thị cho cả 4 vai trò
-    { label: "Đánh giá cuối kỳ", href: "final-evaluation.html", permissions: ["VIEW_FINAL_EVALUATIONS"] },
 
     { label: "Hợp đồng thực tập", href: "intern-contract.html", permissions: ["VIEW_OWN_CONTRACT"] },
     { label: "Chấm công", href: "intern-attendance.html", permissions: ["OWN_ATTENDANCE"] },
