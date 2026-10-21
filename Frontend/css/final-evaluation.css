@@ -11,6 +11,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 button,
@@ -131,6 +132,20 @@ h1 {
   padding: 26px;
   margin-bottom: 24px;
 }
+
+.evaluation-detail-panel,
+.evaluation-form-block {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.mentor-panel { background: #f8fafc; }
+.hr-panel { background: #f5f3ff; border-color: #ddd6fe; }
+.hr-comment { border-left-color: #7c3aed; background: #faf5ff; }
+.evaluation-form-block > h3 { margin-top: 0; }
 
 .section-header {
   display: flex;
@@ -399,6 +414,18 @@ td .primary-btn {
   font-size: 14px;
 }
 
+.field-error {
+  min-height: 17px;
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#evaluationForm [aria-invalid="true"] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
 /* THÔNG BÁO */
 
 #evaluationMessage,
@@ -502,6 +529,11 @@ td .primary-btn {
 
   .evaluation-card {
     padding: 18px;
+  }
+
+  .evaluation-detail-panel,
+  .evaluation-form-block {
+    padding: 15px;
   }
 
   .detail-actions {

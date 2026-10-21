@@ -39,6 +39,9 @@ public sealed class FinalEvaluationService
                 i.Organization AS Company,
                 COALESCE(mu.FullName,i.Mentor) AS Mentor, p.Name AS ProgramName,
                 me.FinalScore AS MentorScore,me.Comment AS MentorComment,me.CreatedByUserId AS EvaluatingMentorId,
+                me.Period AS MentorPeriod,me.Attendance AS MentorAttendance,me.Attitude AS MentorAttitude,
+                me.ProfessionalSkills AS MentorProfessionalSkills,me.WorkResult AS MentorWorkResult,
+                me.Classification AS MentorClassification,
                 e.EvaluationSource,
 
                 ISNULL(e.Period, '') AS Period,
@@ -76,10 +79,12 @@ public sealed class FinalEvaluationService
                     fe.Status,
                     fe.Comment
                 FROM dbo.FinalEvaluations fe
-                WHERE fe.InternId = i.Id AND (@mentorUserId IS NULL OR (fe.EvaluationSource='MENTOR' AND fe.CreatedByUserId=@mentorUserId))
+                WHERE fe.InternId = i.Id AND
+                    ((@mentorUserId IS NULL AND fe.EvaluationSource IN ('HR','LEGACY'))
+                     OR (@mentorUserId IS NOT NULL AND fe.EvaluationSource='MENTOR' AND fe.CreatedByUserId=@mentorUserId))
                 ORDER BY CASE WHEN @mentorUserId IS NULL AND fe.EvaluationSource='HR' THEN 0 ELSE 1 END,fe.CreatedAt DESC, fe.Id DESC
             ) e
-            OUTER APPLY(SELECT TOP(1) FinalScore,Comment,CreatedByUserId FROM dbo.FinalEvaluations WHERE InternId=i.Id AND EvaluationSource='MENTOR' ORDER BY CreatedAt DESC,Id DESC) me
+            OUTER APPLY(SELECT TOP(1) Period,Attendance,Attitude,ProfessionalSkills,WorkResult,FinalScore,Classification,Comment,CreatedByUserId FROM dbo.FinalEvaluations WHERE InternId=i.Id AND EvaluationSource='MENTOR' ORDER BY CreatedAt DESC,Id DESC) me
 
             WHERE (@mentorUserId IS NULL OR i.MentorUserId = @mentorUserId)
             ORDER BY i.Id DESC;
@@ -104,6 +109,8 @@ public sealed class FinalEvaluationService
                 Company = GetString(reader, "Company"),
                 Mentor = GetString(reader, "Mentor"),
                 ProgramName=GetString(reader,"ProgramName"),MentorScore=GetDecimal(reader,"MentorScore"),MentorComment=GetString(reader,"MentorComment"),EvaluationSource=GetString(reader,"EvaluationSource"),
+                MentorPeriod=GetString(reader,"MentorPeriod"),MentorAttendance=GetDecimal(reader,"MentorAttendance"),MentorAttitude=GetDecimal(reader,"MentorAttitude"),
+                MentorProfessionalSkills=GetDecimal(reader,"MentorProfessionalSkills"),MentorWorkResult=GetDecimal(reader,"MentorWorkResult"),MentorClassification=GetString(reader,"MentorClassification"),
                 EvaluatingMentorId=reader.IsDBNull(reader.GetOrdinal("EvaluatingMentorId"))?null:reader.GetInt32(reader.GetOrdinal("EvaluatingMentorId")),
                 Period = GetString(reader, "Period"),
 
