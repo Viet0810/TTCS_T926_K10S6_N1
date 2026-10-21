@@ -1,5 +1,4 @@
 let matrix, selectedRole = "ADMIN", draft = new Set(), busy = false, canSave = false;
-const actions = { READ: "Xem", CREATE: "Tạo / nộp", UPDATE: "Sửa", APPROVE: "Duyệt", REJECT: "Từ chối", DELETE: "Xóa", CHECK_IN: "Check-in", CHECK_OUT: "Check-out", FEATURE: "Chức năng", FEEDBACK: "Phản hồi", CANCEL: "Hủy" };
 const message = document.getElementById("permissionsMessage");
 const save = document.getElementById("savePermissionsBtn"), reset = document.getElementById("resetPermissionsBtn");
 const cancel = document.getElementById("cancelPermissionsBtn"), retry = document.getElementById("retryPermissionsBtn");
@@ -13,45 +12,91 @@ function setBusy(value) {
   document.querySelectorAll("[data-role], #roleSelect").forEach(el => el.disabled = value);
   if (value) document.querySelectorAll("[data-permission]").forEach(el => el.disabled = true);
 }
-function render() {
-  document.querySelector('.dashboard-main').dataset.selectedRole = selectedRole;
-  const target = document.getElementById("permissionMatrix"); target.replaceChildren();
-  document.querySelectorAll("[data-role]").forEach(el => el.setAttribute("aria-pressed", String(el.dataset.role === selectedRole)));
-  document.getElementById("roleSelect").value = selectedRole;
-  document.getElementById("selectedRoleLabel").textContent = selectedRole;
-  if (window.AppVisual) document.getElementById('selectedRoleLabel').prepend(AppVisual.icon(AppVisual.roleIcons[selectedRole]));
-  document.getElementById("permissionCount").textContent = `${draft.size} quyền đang bật`;
-  document.getElementById("permissionDirtyStatus").textContent = changeCount() ? `${changeCount()} thay đổi chưa lưu` : "Chưa có thay đổi";
-  const table = document.createElement("table"); table.className = "permission-matrix-table";
-  const head = table.createTHead().insertRow();
-  for (const title of ["Chức năng", ...Object.values(actions)]) { const cell = document.createElement("th"); cell.scope = "col"; cell.textContent = title; head.append(cell); }
-  const body = table.createTBody();
-  const keyword = document.getElementById("permissionSearch").value.trim().toLocaleLowerCase("vi");
-  for (const module of [...new Set(matrix.catalog.filter(item => item.label.toLocaleLowerCase("vi").includes(keyword)).map(item => item.module))]) {
-    const entries = matrix.catalog.filter(item => item.module === module), row = body.insertRow();
-    const title = document.createElement("th"); title.scope = "row"; title.textContent = entries[0].label; row.append(title);
-    for (const [action, label] of Object.entries(actions)) {
-      const cell = row.insertCell(); cell.dataset.label = label;
-      const entry = entries.find(item => item.action === action && item.roles.includes(selectedRole));
-      if (!entry) { cell.textContent = "—"; cell.setAttribute("aria-label", label + ": không áp dụng"); continue; }
-      const field = document.createElement("label"), checkbox = document.createElement("input"); checkbox.type = "checkbox";
-      checkbox.dataset.permission = entry.code; checkbox.checked = draft.has(entry.code);
-      const protectedAdmin = selectedRole === "ADMIN" && matrix.essentialAdminPermissions.includes(entry.code);
-      checkbox.disabled = busy || !canSave || !entry.editable || protectedAdmin;
-      checkbox.setAttribute("aria-label", entry.label + ": " + label);
-      checkbox.addEventListener("change", () => {
-        if (checkbox.checked) draft.add(entry.code); else draft.delete(entry.code);
-        if (checkbox.checked) (entry.requires || []).forEach(code => draft.add(code));
-        if (!checkbox.checked) matrix.catalog.filter(child => child.requires?.includes(entry.code)).forEach(child => draft.delete(child.code));
-        message.hidden = false; message.textContent = "Có thay đổi chưa lưu."; render();
-      });
-      field.append(checkbox);
-      if (protectedAdmin || !entry.editable) { const hint = document.createElement("span"); hint.className = "permission-lock"; hint.textContent = protectedAdmin ? "Bảo vệ" : "Cố định"; field.append(hint); }
-      cell.append(field);
-    }
+function configurablePermissions() {
+  const groups = new Map();
+  for (const entry of matrix.catalog) {
+    if (!entry.roles.includes(selectedRole) || !entry.editable) continue;
+    const protectedAdmin = selectedRole === "ADMIN" && matrix.essentialAdminPermissions.includes(entry.code);
+    if (!groups.has(entry.module)) groups.set(entry.module, { module: entry.module, label: entry.label, entries: [], protected: false });
+    const group = groups.get(entry.module);
+    group.entries.push(entry);
+    group.protected ||= protectedAdmin;
+    if (entry.action === "READ" || entry.action === "FEATURE") group.label = entry.label;
   }
-  if (!body.rows.length) { const cell = body.insertRow().insertCell(); cell.colSpan = Object.keys(actions).length + 1; cell.className = "permission-empty"; if (window.AppVisual) cell.append(AppVisual.illustration(keyword ? 'search' : 'shield')); cell.append(keyword ? "Không có chức năng phù hợp." : "Chưa có quyền được cấu hình."); }
-  target.append(table); setBusy(busy);
+  return [...groups.values()].filter(group => !group.protected);
+}
+
+function render() {
+  document.querySelector(".dashboard-main").dataset.selectedRole = selectedRole;
+  document.querySelectorAll("[data-role]").forEach(element => {
+    element.setAttribute("aria-pressed", String(element.dataset.role === selectedRole));
+  });
+  document.getElementById("roleSelect").value = selectedRole;
+
+  const roleLabel = document.getElementById("selectedRoleLabel");
+  roleLabel.textContent = selectedRole;
+  if (window.AppVisual) roleLabel.prepend(AppVisual.icon(AppVisual.roleIcons[selectedRole]));
+
+  const keyword = document.getElementById("permissionSearch").value.trim().toLocaleLowerCase("vi");
+  const groups = configurablePermissions();
+  const entries = groups.filter(group =>
+    `${group.module} ${group.label} ${group.entries.map(entry => entry.code).join(" ")}`.toLocaleLowerCase("vi").includes(keyword)
+  );
+  const enabledCount = groups.filter(group => group.entries.every(entry => draft.has(entry.code))).length;
+  document.getElementById("permissionCount").textContent = `${enabledCount}/${groups.length} quyền chính đang bật`;
+  document.getElementById("permissionDirtyStatus").textContent = changeCount()
+    ? `${changeCount()} thay đổi chưa lưu`
+    : "Chưa có thay đổi";
+
+  const target = document.getElementById("permissionMatrix");
+  target.replaceChildren();
+  const list = document.createElement("div");
+  list.className = "permission-card-grid";
+
+  for (const group of entries) {
+    const card = document.createElement("label");
+    card.className = "permission-card";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.dataset.permission = group.module;
+    checkbox.checked = group.entries.every(entry => draft.has(entry.code));
+    checkbox.indeterminate = !checkbox.checked && group.entries.some(entry => draft.has(entry.code));
+    checkbox.disabled = busy || !canSave;
+    checkbox.setAttribute("aria-label", group.label);
+
+    const content = document.createElement("span");
+    content.className = "permission-card-content";
+    const title = document.createElement("strong");
+    title.textContent = group.label;
+    const description = document.createElement("span");
+    description.textContent = `Cho phép sử dụng chức năng ${group.label.toLocaleLowerCase("vi")}.`;
+    content.append(title, description);
+    card.append(checkbox, content);
+
+    checkbox.addEventListener("change", () => {
+      for (const entry of group.entries) {
+        if (checkbox.checked) {
+          draft.add(entry.code);
+          (entry.requires || []).forEach(code => draft.add(code));
+        } else draft.delete(entry.code);
+      }
+      message.hidden = false;
+      message.textContent = "Có thay đổi chưa lưu.";
+      render();
+    });
+    list.append(card);
+  }
+
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "permission-empty";
+    if (window.AppVisual) empty.append(AppVisual.illustration(keyword ? "search" : "shield"));
+    empty.append(keyword ? "Không có quyền phù hợp." : "Vai trò này không có quyền chính cần cấu hình.");
+    target.append(empty);
+  } else {
+    target.append(list);
+  }
+  setBusy(busy);
 }
 async function switchRole(role) {
   if (busy || !matrix) return;

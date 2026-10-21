@@ -21,6 +21,17 @@
 .permission-empty{text-align:center!important;padding:32px!important;color:var(--muted)}
 .permission-lock{font-size:11px;color:#596b85}
 .permission-help{font-size:13px;color:#596b85;line-height:1.7}
+.permission-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.permission-card{display:flex;align-items:flex-start;gap:16px;min-height:116px;padding:22px;border:1px solid #dfe6ef;border-radius:14px;background:#fff;cursor:pointer;transition:border-color 150ms,box-shadow 150ms,transform 150ms}
+.permission-card:hover{border-color:#9eb6e8;box-shadow:0 8px 22px #173b7510;transform:translateY(-1px)}
+.permission-card:has(input:checked){border-color:#7ea2ed;background:#f8faff}
+.permission-card input{appearance:none;width:22px;height:22px;margin:1px 0 0;border:1.5px solid #94a3b8;border-radius:4px;background:#fff;display:grid;place-content:center;flex:0 0 auto;cursor:pointer}
+.permission-card input:checked{background:var(--primary);border-color:var(--primary)}
+.permission-card input:checked::after{content:"";width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.permission-card input:disabled{cursor:not-allowed;opacity:.6}
+.permission-card-content{display:grid;gap:8px;min-width:0}
+.permission-card-content strong{color:#253b59;font-size:15px;line-height:1.4}
+.permission-card-content span{color:#748298;font-size:13px;line-height:1.55}
 @media(max-width:760px){
 .permission-tabs{display:none}.permission-role-select{display:grid;gap:8px;width:100%}
 .permission-role-select select{width:100%;min-height:44px}.permission-actions{width:100%}
@@ -28,4 +39,4 @@
 .permission-matrix-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #e3eaf4;border-radius:16px;padding:12px;margin-bottom:16px;background:white}
 .permission-matrix-table th:first-child{width:auto;grid-column:1/-1;padding:12px;text-align:left}
 .permission-matrix-table td{display:flex;justify-content:space-between;gap:8px;padding:12px;border:0;align-items:center}
-.permission-matrix-table td::before{content:attr(data-label);font-size:13px;color:#596b85}}
+.permission-matrix-table td::before{content:attr(data-label);font-size:13px;color:#596b85}.permission-card-grid{grid-template-columns:1fr}.permission-card{min-height:auto}}

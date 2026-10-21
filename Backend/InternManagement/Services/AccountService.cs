@@ -7,10 +7,16 @@ namespace InternManagement.Services;
 
 public sealed class AccountService(IConfiguration configuration, PasswordHasher passwords)
 {
+    public const string AccountNotFoundErrorCode = "ACCOUNT_NOT_FOUND";
+    public const string InvalidPasswordErrorCode = "INVALID_PASSWORD";
+
     private readonly string connectionString = configuration.GetConnectionString("InternManagement")
         ?? throw new InvalidOperationException("Chưa cấu hình kết nối cơ sở dữ liệu.");
 
     public async Task<User?> AuthenticateAsync(LoginRequest request, CancellationToken cancellationToken)
+        => (await AuthenticateWithStatusAsync(request, cancellationToken)).User;
+
+    public async Task<(User? User, string? ErrorCode)> AuthenticateWithStatusAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
@@ -21,7 +27,7 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
             """;
         command.Parameters.AddWithValue("@identifier", request.Username!.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken)) return null;
+        if (!await reader.ReadAsync(cancellationToken)) return (null, AccountNotFoundErrorCode);
 
         var user = new User
         {
@@ -33,7 +39,9 @@ public sealed class AccountService(IConfiguration configuration, PasswordHasher 
             Role = reader.GetString(5),
             MustChangePassword = reader.GetBoolean(6)
         };
-        return passwords.Verify(request.Password!, user.PasswordHash) ? user : null;
+        return passwords.Verify(request.Password!, user.PasswordHash)
+            ? (user, null)
+            : (null, InvalidPasswordErrorCode);
     }
 
     public async Task<IReadOnlyList<UserResponse>> GetAllAsync(CancellationToken cancellationToken)

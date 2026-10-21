@@ -10,7 +10,9 @@
 .ui-toast.is-warning { --toast-accent: #b7790a; --toast-bg: #fff8e6; }
 .ui-toast.is-info { --toast-accent: #2563eb; --toast-bg: #eff4ff; }
 .ui-toast-icon { flex-shrink: 0; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid currentColor; border-radius: 50%; color: var(--toast-accent); font-weight: 700; }
-.ui-toast-text { flex: 1; min-width: 0; }
+.ui-toast-text { display: grid; flex: 1; min-width: 0; gap: 1px; }
+.ui-toast-title { color: var(--toast-accent); font-size: 13px; line-height: 1.35; }
+.ui-toast-message { min-width: 0; }
 .ui-toast.is-leaving { opacity: 0; transform: translateY(-6px); transition: opacity 150ms,transform 150ms; }
 .ui-toast button { flex-shrink: 0; border: 0; background: transparent; color: var(--muted); font-size: 24px; padding: 4px; }
 .ui-skeleton { display: block; height: 20px; margin: 16px 0; border-radius: 6px; background: var(--line); animation: skeleton-pulse 1.2s ease-in-out infinite alternate; }

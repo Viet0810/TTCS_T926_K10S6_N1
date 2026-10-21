@@ -54,9 +54,12 @@ public sealed class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrEmpty(request.Password))
             return BadRequest(new { message = "Vui lòng nhập tên đăng nhập và mật khẩu." });
 
-        var user = await accounts.AuthenticateAsync(request, cancellationToken);
-        if (user is null)
-            return Unauthorized(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
+        var authentication = await accounts.AuthenticateWithStatusAsync(request, cancellationToken);
+        if (authentication.User is null)
+            return Unauthorized(authentication.ErrorCode == AccountService.AccountNotFoundErrorCode
+                ? new { code = AccountService.AccountNotFoundErrorCode, message = "Tài khoản không tồn tại." }
+                : new { code = AccountService.InvalidPasswordErrorCode, message = "Mật khẩu không đúng." });
+        var user = authentication.User;
 
         var responseUser = new UserResponse(user.Id, user.Username, user.FullName, user.Email, user.Role, user.MustChangePassword);
         return Ok(new LoginResponse(tokens.Issue(user), responseUser));

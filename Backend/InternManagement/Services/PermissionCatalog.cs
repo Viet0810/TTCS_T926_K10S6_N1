@@ -68,7 +68,7 @@ public static class PermissionCatalog
 
     public static readonly PermissionDescriptor[] Entries =
     [
-        new(PermissionNames.ReadWorkSchedules, "work-schedules", "Lịch làm việc", "READ", ["HR", "INTERN"]),
+        new(PermissionNames.ReadWorkSchedules, "work-schedules", "Lịch làm việc", "READ", ["HR", "MENTOR", "INTERN"]),
         new(PermissionNames.CreateWorkSchedule, "work-schedules", "Lịch làm việc", "CREATE", ["HR"]),
         new(PermissionNames.UpdateWorkSchedule, "work-schedules", "Lịch làm việc", "UPDATE", ["HR"]),
         new(PermissionNames.ReadMeetings, "meetings", "Lịch họp liên quan", "READ", Staff),
@@ -93,24 +93,24 @@ public static class PermissionCatalog
         new(PermissionNames.CreateNotifications, "notifications", "Thông báo", "CREATE", ["ADMIN", "HR"]),
 
         // Quản lý thực tập sinh
-        new(PermissionNames.ViewInterns, "interns", "Hồ sơ thực tập sinh", "READ", Staff),
-        new(PermissionNames.ManageInterns, "interns", "Hồ sơ thực tập sinh", "CREATE", Staff),
-        new(PermissionNames.EditInterns, "interns", "Hồ sơ thực tập sinh", "UPDATE", Staff),
-        new(PermissionNames.SearchInterns, "search", "Tìm kiếm hồ sơ", "READ", Staff),
+        new(PermissionNames.ViewInterns, "interns", "Hồ sơ thực tập sinh", "READ", ["HR", "MENTOR"]),
+        new(PermissionNames.ManageInterns, "interns", "Hồ sơ thực tập sinh", "CREATE", ["HR"]),
+        new(PermissionNames.EditInterns, "interns", "Hồ sơ thực tập sinh", "UPDATE", ["HR"]),
+        new(PermissionNames.SearchInterns, "search", "Tìm kiếm hồ sơ", "READ", ["HR", "MENTOR"]),
 
         // Duyệt tài liệu
-        new(PermissionNames.ReadDocumentReviews, "reviews", "Duyệt tài liệu", "READ", Staff),
-        new(PermissionNames.ApproveDocuments, "reviews", "Duyệt tài liệu", "APPROVE", Staff),
-        new(PermissionNames.RejectDocuments, "reviews", "Duyệt tài liệu", "REJECT", Staff),
+        new(PermissionNames.ReadDocumentReviews, "reviews", "Duyệt tài liệu", "READ", ["HR"]),
+        new(PermissionNames.ApproveDocuments, "reviews", "Duyệt tài liệu", "APPROVE", ["HR"]),
+        new(PermissionNames.RejectDocuments, "reviews", "Duyệt tài liệu", "REJECT", ["HR"]),
 
         // Tài liệu thực tập sinh
-        new(PermissionNames.ViewDocuments, "documents", "Tài liệu của tôi", "READ", Staff),
-        new(PermissionNames.UploadDocuments, "documents", "Tài liệu của tôi", "CREATE", Staff),
+        new(PermissionNames.ViewDocuments, "documents", "Tài liệu của tôi", "READ", ["INTERN"]),
+        new(PermissionNames.UploadDocuments, "documents", "Tài liệu của tôi", "CREATE", ["INTERN"]),
 
         // Quản lý tài khoản
-        new(PermissionNames.ManageUsers, "accounts", "Quản lý tài khoản", "READ", Staff),
-        new(PermissionNames.CreateUser, "accounts", "Quản lý tài khoản", "CREATE", Staff),
-        new(PermissionNames.DeleteUser, "accounts", "Quản lý tài khoản", "DELETE", Staff),
+        new(PermissionNames.ManageUsers, "accounts", "Quản lý tài khoản", "READ", ["ADMIN", "HR"]),
+        new(PermissionNames.CreateUser, "accounts", "Quản lý tài khoản", "CREATE", ["ADMIN", "HR"]),
+        new(PermissionNames.DeleteUser, "accounts", "Quản lý tài khoản", "DELETE", ["ADMIN"]),
 
         // Phân quyền RBAC
         new(PermissionNames.ReadPermissions, "rbac", "Cấu hình RBAC", "READ", ["ADMIN"]),
@@ -118,34 +118,34 @@ public static class PermissionCatalog
 
         // Hồ sơ cá nhân
         new(PermissionNames.ViewProfile, "profile", "Thông tin tài khoản", "READ", Staff),
-        new(PermissionNames.ViewOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "READ", Staff),
-        new(PermissionNames.EditOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "UPDATE", Staff),
-        new(PermissionNames.ViewOwnSchedule, "own-schedule", "Lịch thực tập của tôi", "READ", Staff),
+        new(PermissionNames.ViewOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "READ", ["INTERN"]),
+        new(PermissionNames.EditOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "UPDATE", ["INTERN"]),
+        new(PermissionNames.ViewOwnSchedule, "own-schedule", "Lịch thực tập của tôi", "READ", ["INTERN"]),
 
         // Hợp đồng
-        new(PermissionNames.ManageContracts, "contracts", "Quản lý hợp đồng", "READ", Staff),
-        new(PermissionNames.CreateContract, "contracts", "Quản lý hợp đồng", "CREATE", Staff),
-        new(PermissionNames.UpdateContract, "contracts", "Quản lý hợp đồng", "UPDATE", Staff),
-        new(PermissionNames.DeleteContract, "contracts", "Quản lý hợp đồng", "DELETE", Staff),
-        new(PermissionNames.ViewOwnContract, "own-contract", "Hợp đồng của tôi", "FEATURE", Staff),
+        new(PermissionNames.ManageContracts, "contracts", "Quản lý hợp đồng", "READ", ["HR"]),
+        new(PermissionNames.CreateContract, "contracts", "Quản lý hợp đồng", "CREATE", ["HR"]),
+        new(PermissionNames.UpdateContract, "contracts", "Quản lý hợp đồng", "UPDATE", ["HR"]),
+        new(PermissionNames.DeleteContract, "contracts", "Quản lý hợp đồng", "DELETE", ["HR"]),
+        new(PermissionNames.ViewOwnContract, "own-contract", "Hợp đồng của tôi", "FEATURE", ["INTERN"]),
 
         // Phân công Mentor
-        new(PermissionNames.AssignMentor, "assignment", "Phân công Mentor", "READ", Staff),
-        new(PermissionNames.CreateAssignment, "assignment", "Phân công Mentor", "CREATE", Staff),
-        new(PermissionNames.UpdateAssignment, "assignment", "Phân công Mentor", "UPDATE", Staff),
-        new(PermissionNames.DeleteAssignment, "assignment", "Phân công Mentor", "DELETE", Staff),
+        new(PermissionNames.AssignMentor, "assignment", "Phân công Mentor", "READ", ["HR"]),
+        new(PermissionNames.CreateAssignment, "assignment", "Phân công Mentor", "CREATE", ["HR"]),
+        new(PermissionNames.UpdateAssignment, "assignment", "Phân công Mentor", "UPDATE", ["HR"]),
+        new(PermissionNames.DeleteAssignment, "assignment", "Phân công Mentor", "DELETE", ["HR"]),
 
         // Quản lý chương trình
-        new(PermissionNames.ManagePrograms, "programs", "Quản lý chương trình", "READ", Staff),
-        new(PermissionNames.CreateProgram, "programs", "Quản lý chương trình", "CREATE", Staff),
-        new(PermissionNames.UpdateProgram, "programs", "Quản lý chương trình", "UPDATE", Staff),
-        new(PermissionNames.DeleteProgram, "programs", "Quản lý chương trình", "DELETE", Staff),
+        new(PermissionNames.ManagePrograms, "programs", "Quản lý chương trình", "READ", ["HR"]),
+        new(PermissionNames.CreateProgram, "programs", "Quản lý chương trình", "CREATE", ["HR"]),
+        new(PermissionNames.UpdateProgram, "programs", "Quản lý chương trình", "UPDATE", ["HR"]),
+        new(PermissionNames.DeleteProgram, "programs", "Quản lý chương trình", "DELETE", ["HR"]),
 
         // Báo cáo và chấm công
-        new(PermissionNames.ViewAttendanceReport, "reports", "Báo cáo chuyên cần", "READ", Staff),
-        new(PermissionNames.OwnAttendance, "attendance", "Chấm công của tôi", "READ", Staff),
-        new(PermissionNames.AttendanceCheckIn, "attendance", "Chấm công của tôi", "CHECK_IN", Staff),
-        new(PermissionNames.AttendanceCheckOut, "attendance", "Chấm công của tôi", "CHECK_OUT", Staff),
+        new(PermissionNames.ViewAttendanceReport, "reports", "Báo cáo chuyên cần", "READ", ["HR"]),
+        new(PermissionNames.OwnAttendance, "attendance", "Chấm công của tôi", "READ", ["INTERN"]),
+        new(PermissionNames.AttendanceCheckIn, "attendance", "Chấm công của tôi", "CHECK_IN", ["INTERN"]),
+        new(PermissionNames.AttendanceCheckOut, "attendance", "Chấm công của tôi", "CHECK_OUT", ["INTERN"]),
 
         // Đánh giá cuối kỳ
         new(
@@ -161,7 +161,7 @@ public static class PermissionCatalog
             "final-evaluations",
             "Đánh giá cuối kỳ",
             "UPDATE",
-            ["HR", "MENTOR"]
+            ["MENTOR"]
         )
     ];
 }

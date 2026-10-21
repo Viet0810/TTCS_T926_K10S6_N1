@@ -35,6 +35,24 @@ window.AppNavigation = (() => {
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
     { label: "Thông báo", href: "notifications.html", permissions: ["NOTIFICATION_READ"] }
   ];
+  const groups = [
+    { id: "overview", label: "Tổng quan" },
+    { id: "calendar", label: "Lịch & công việc" },
+    { id: "internship", label: "Quản lý thực tập" },
+    { id: "administration", label: "Quản trị hệ thống" },
+    { id: "account", label: "Cá nhân" }
+  ];
+  const groupByPage = new Map([
+    ["dashboard.html", "overview"],
+    ["work-schedules.html", "calendar"], ["meetings.html", "calendar"], ["tasks.html", "calendar"], ["weekly-reports.html", "calendar"],
+    ["intern-manage.html", "internship"], ["hr-search-filter.html", "internship"], ["mentor-assignment.html", "internship"],
+    ["mentor-assignment-list.html", "internship"], ["final-evaluation.html", "internship"], ["intern-schedule.html", "internship"],
+    ["intern-upload-cv.html", "internship"], ["internship-profile.html", "internship"], ["document-reviews.html", "internship"],
+    ["contracts.html", "internship"], ["intern-contract.html", "internship"], ["intern-attendance.html", "internship"],
+    ["intern-leave-request.html", "internship"], ["mentor-leave-requests.html", "internship"], ["attendance-report.html", "internship"],
+    ["user-manage.html", "administration"], ["permissions.html", "administration"], ["program-setting.html", "administration"],
+    ["profile.html", "account"], ["notifications.html", "account"]
+  ]);
 
   function render(session) {
     const role = session.user?.role;
@@ -59,6 +77,7 @@ window.AppNavigation = (() => {
 
       const page = location.pathname.split("/").pop();
 
+      const visibleGroups = new Map(groups.map(group => [group.id, []]));
       for (const item of items) {
         if (role === "ADMIN" && !adminMenu.has(item.href)) continue;
         if (item.roles && !item.roles.includes(role)) continue;
@@ -90,7 +109,33 @@ window.AppNavigation = (() => {
           link.setAttribute("aria-current", "page");
         }
 
-        nav.append(link);
+        visibleGroups.get(groupByPage.get(item.href) || "internship").push(link);
+      }
+      const storageKey = `sidebar-groups:${role}`;
+      let savedOpen = [];
+      try { savedOpen = JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch {}
+      for (const group of groups) {
+        const links = visibleGroups.get(group.id);
+        if (!links.length) continue;
+        const section = document.createElement("section");
+        section.className = "role-menu-group"; section.dataset.group = group.id;
+        const containsCurrent = links.some(link => link.hasAttribute("aria-current"));
+        const isOpen = containsCurrent || savedOpen.includes(group.id) || (!savedOpen.length && group.id === "overview");
+        section.classList.toggle("is-open", isOpen);
+        const heading = document.createElement("button"); heading.type = "button"; heading.className = "role-menu-group-title";
+        heading.setAttribute("aria-expanded", String(isOpen));
+        const label = document.createElement("span"); label.textContent = group.label;
+        heading.append(label);
+        const content = document.createElement("div"); content.className = "role-menu-group-links"; content.hidden = !isOpen; content.append(...links);
+        section.append(heading,content);
+        heading.addEventListener("click", () => {
+          const nextOpen = !section.classList.contains("is-open");
+          section.classList.toggle("is-open", nextOpen); content.hidden = !nextOpen;
+          heading.setAttribute("aria-expanded", String(nextOpen));
+          const open = [...nav.querySelectorAll(".role-menu-group.is-open")].map(item => item.dataset.group);
+          localStorage.setItem(storageKey, JSON.stringify(open));
+        });
+        nav.append(section);
       }
     }
 

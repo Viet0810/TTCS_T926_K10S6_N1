@@ -39,7 +39,7 @@ window.AppUI = (() => {
       item.classList.add("is-leaving");
       toastTimers.set(item, setTimeout(() => { item.remove(); toastTimers.delete(item); }, 160));
     }
-    [...region.children].filter(item => (key && item.dataset.feedbackKey === key) || item.querySelector(".ui-toast-text")?.textContent === String(message)).forEach(item => remove(item));
+    [...region.children].filter(item => (key && item.dataset.feedbackKey === key) || item.querySelector(".ui-toast-message")?.textContent === String(message)).forEach(item => remove(item));
     const toast = document.createElement("div"); toast.className = `ui-toast is-${type}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
     toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
@@ -47,10 +47,13 @@ window.AppUI = (() => {
     toast.dataset.feedbackKey = key;
     const icon = document.createElement("span"); icon.className = "ui-toast-icon"; icon.setAttribute("aria-hidden", "true");
     icon.textContent = {success: "✓", error: "!", warning: "!", info: "i"}[type];
-    const text = document.createElement("span"); text.textContent = message;
-    text.className = "ui-toast-text";
+    const content = document.createElement("span"); content.className = "ui-toast-text";
+    const title = document.createElement("strong"); title.className = "ui-toast-title";
+    title.textContent = {success: "Thành công", error: "Thất bại", warning: "Cảnh báo", info: "Thông tin"}[type];
+    const text = document.createElement("span"); text.textContent = message; text.className = "ui-toast-message";
+    content.append(title,text);
     const close = document.createElement("button"); close.type = "button"; close.textContent = "×"; close.setAttribute("aria-label", "Đóng thông báo");
-    close.onclick = () => remove(toast, true); toast.append(icon, text, close); region.prepend(toast);
+    close.onclick = () => remove(toast, true); toast.append(icon, content, close); region.prepend(toast);
     while (region.children.length > 3) remove(region.lastElementChild);
     // Promote above native dialogs without changing their placement or behavior.
     if (region.showPopover && region.matches(":popover-open")) region.hidePopover();
@@ -90,6 +93,89 @@ window.AppUI = (() => {
   function flash(message, type = "success") {
     sessionStorage.setItem("app-toast-flash", JSON.stringify({ message, type }));
   }
+
+  const obsoleteHelperSelector = [
+    ".form-hint",
+    ".meeting-optional",
+    ".meeting-action-note",
+    ".meeting-guide",
+    ".form-helper > span:not(.char-counter)"
+  ].join(", ");
+
+  function findControlLabel(control) {
+    const wrappingLabel = control.closest("label");
+    if (wrappingLabel || !control.id) return wrappingLabel;
+    return document.querySelector(`label[for="${CSS.escape(control.id)}"]`);
+  }
+
+  function syncRequiredFieldMarkers(root = document) {
+    const controls = root.querySelectorAll?.("input, select, textarea") || [];
+
+    for (const control of controls) {
+      const label = findControlLabel(control);
+      if (!label) continue;
+
+      const existingMarker = label.querySelector(":scope > .required-marker, .file-picker-title > .required-marker");
+      if (!control.required) {
+        existingMarker?.remove();
+        continue;
+      }
+      if (existingMarker || label.textContent.trim().endsWith("*")) continue;
+
+      const marker = document.createElement("span");
+      marker.className = "required-marker";
+      marker.textContent = " *";
+      marker.setAttribute("aria-hidden", "true");
+
+      const fileTitle = label.querySelector(".file-picker-title");
+      if (fileTitle) {
+        fileTitle.append(marker);
+      } else if (label.contains(control)) {
+        let directChild = control;
+        while (directChild.parentElement !== label) directChild = directChild.parentElement;
+        label.insertBefore(marker, directChild);
+      } else {
+        label.append(marker);
+      }
+    }
+  }
+
+  function initializeFormLabels() {
+    document.querySelectorAll(obsoleteHelperSelector).forEach(element => element.remove());
+    document.querySelectorAll("summary, label").forEach(element => {
+      for (const node of element.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          node.textContent = node.textContent.replace(/\s*\(không bắt buộc\)/gi, "");
+        }
+      }
+    });
+
+    syncRequiredFieldMarkers();
+    new MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        if (mutation.type === "attributes") {
+          syncRequiredFieldMarkers(mutation.target.parentElement || document);
+        }
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType !== Node.ELEMENT_NODE) continue;
+          const root = node.matches("input, select, textarea") ? node.parentElement : node;
+          syncRequiredFieldMarkers(root);
+        }
+      }
+    }).observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["required"]
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeFormLabels);
+  } else {
+    initializeFormLabels();
+  }
+
   const pending = sessionStorage.getItem("app-toast-flash");
   sessionStorage.removeItem("app-toast-flash");
   if (pending) { try { const item = JSON.parse(pending); setTimeout(() => toast(item.message, item.type), 0); } catch {} }

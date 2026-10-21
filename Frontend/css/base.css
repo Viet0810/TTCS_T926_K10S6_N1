@@ -1,4 +1,8 @@
 
+.required-marker {
+  color: #dc2626;
+}
+
 :root {
   --page: #f4f7fb;
   --surface: #fff;
