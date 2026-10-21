@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nhiệm vụ | Hệ thống quản lý thực tập sinh</title>
-  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261021-sidebar-3">
   <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
-  <link rel="stylesheet" href="../css/tasks.css">
+  <link rel="stylesheet" href="../css/tasks.css"><link rel="stylesheet" href="../css/meeting-datetime.css?v=20261021-2">
 </head>
 <body class="tasks-page">
   <div class="dashboard">
@@ -20,7 +20,7 @@
         <h2>Giao nhiệm vụ</h2>
         <form id="taskForm" class="create-user-form">
           <div class="form-group"><label for="taskIntern">Thực tập sinh đang hướng dẫn</label><select id="taskIntern" required><option value="">Chọn thực tập sinh</option></select></div>
-          <div class="form-group"><label for="taskDeadline">Deadline (giờ Việt Nam)</label><input id="taskDeadline" type="datetime-local" required></div>
+          <div class="form-group meeting-datetime-field"><label for="taskDeadline">Deadline (giờ Việt Nam)</label><input id="taskDeadline" type="datetime-local" required></div>
           <div class="form-group task-content-field"><label for="taskContent">Nội dung nhiệm vụ</label><textarea id="taskContent" required maxlength="2000" rows="3" placeholder="Nhập nội dung và yêu cầu cần hoàn thành"></textarea></div>
           <div class="form-actions"><button id="saveTask" class="btn-primary" type="submit">Giao nhiệm vụ</button></div>
         </form>
@@ -42,6 +42,6 @@
     </main>
     <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
   </div>
-  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/tasks.js"></script>
+  <script src="../js/ui.js?v=20261021-6"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261021-sidebar-3"></script><script src="../js/meeting-datetime.js?v=20261021-2"></script><script src="../js/tasks.js?v=20261021-2"></script>
 </body>
 </html>

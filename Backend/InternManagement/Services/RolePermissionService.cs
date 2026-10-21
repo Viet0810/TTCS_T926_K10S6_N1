@@ -87,10 +87,6 @@ public sealed class RolePermissionService
                 PermissionNames.ManageUsers,
                 PermissionNames.CreateUser,
                 PermissionNames.DeleteUser,
-                PermissionNames.ViewInterns,
-                PermissionNames.ManageInterns,
-                PermissionNames.SearchInterns,
-                PermissionNames.EditInterns,
                 PermissionNames.ViewProfile,
                 PermissionNames.ManagePermissions,
                 PermissionNames.ReadPermissions,
@@ -127,13 +123,13 @@ public sealed class RolePermissionService
                 PermissionNames.CreateAssignment,
                 PermissionNames.UpdateAssignment,
 
-                // HR được xem, thêm và sửa đánh giá
-                PermissionNames.ViewFinalEvaluations,
-                PermissionNames.UpdateFinalEvaluations
+                // HR tổng hợp và theo dõi kết quả đánh giá cuối kỳ.
+                PermissionNames.ViewFinalEvaluations
             ],
 
             ["MENTOR"] =
             [
+                PermissionNames.ReadWorkSchedules,
                 PermissionNames.ReadMentorTasks, PermissionNames.CreateTask,
                 PermissionNames.ReadMentorWeeklyReports, PermissionNames.CreateWeeklyReportFeedback,
                 PermissionNames.ReadMentorLeaveRequests, PermissionNames.ReviewLeaveRequests,
@@ -206,7 +202,9 @@ public sealed class RolePermissionService
         while (reader.Read())
             result.Add(reader.GetString(0));
 
-        return result;
+        return result
+            .Where(code => IsAllowedForRole(role, code))
+            .ToArray();
     }
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> GetRolePermissions()
@@ -246,9 +244,18 @@ public sealed class RolePermissionService
 
         return roles.ToDictionary(
             p => p.Key,
-            p => (IReadOnlyList<string>)p.Value,
+            p => (IReadOnlyList<string>)p.Value
+                .Where(code => IsAllowedForRole(p.Key, code))
+                .ToArray(),
             StringComparer.OrdinalIgnoreCase
         );
+    }
+
+    private static bool IsAllowedForRole(string role, string code)
+    {
+        var definition = PermissionCatalog.Entries.SingleOrDefault(entry => entry.Code == code);
+        return definition is not null &&
+            (role.Equals("ADMIN", StringComparison.OrdinalIgnoreCase) || definition.Roles.Contains(role, StringComparer.OrdinalIgnoreCase));
     }
 
     public IReadOnlyList<PermissionDescriptor> GetCatalog()

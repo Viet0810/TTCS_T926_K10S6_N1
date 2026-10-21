@@ -1,4 +1,4 @@
-// Enhance only the Meeting datetime fields. The original ISO values remain the form's start/end values.
+// Shared Vietnamese datetime picker. The original ISO value remains the submitted form value.
 document.addEventListener('DOMContentLoaded', () => {
   const pad = value => String(value).padStart(2, '0');
   const dayValue = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;

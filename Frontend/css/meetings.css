@@ -2,6 +2,7 @@
 
 /* Meeting composition and participant presentation. */
 .meeting-compose{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr);gap:24px;align-items:start;margin-bottom:24px}
+.meeting-compose:not(:has(.meeting-guide)){grid-template-columns:minmax(0,1fr)}
 .meeting-compose:has(#meetingCreate[hidden]){display:none}
 .meeting-compose>.meeting-card{margin-bottom:0;padding:28px;background:#fff;border:1px solid #e6ebf2;border-radius:18px}
 .meeting-form-heading{padding-bottom:20px;border-bottom:1px solid #edf0f5}
@@ -39,7 +40,7 @@
 .meeting-person-role[data-role=INTERN]{background:#e2f7fb;color:#1d8da3}
 .meeting-grid .meeting-actions{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid #edf0f5;padding-top:20px;margin-top:2px}
 .meeting-action-note{max-width:260px;color:#94a3b8;font-size:12px;line-height:1.5}
-.meeting-action-buttons{display:flex;gap:10px;flex-shrink:0}
+.meeting-action-buttons{display:flex;gap:10px;flex-shrink:0;margin-left:auto}
 .meeting-action-buttons button{min-height:42px;padding:10px 18px;border-radius:10px;font-size:13px;white-space:nowrap}
 .meeting-action-buttons .btn-primary{background:#3568e8;box-shadow:0 4px 12px #3568e826}
 .meeting-guide{display:grid;gap:20px;min-width:0}

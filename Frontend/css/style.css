@@ -495,6 +495,14 @@
 .btn-secondary { border: 1px solid var(--line); background: #f7f9fc; color: #354563; }
 .btn-secondary:hover { background: #eaf0fa; }
 .role-menu a[aria-current="page"] { background: #edf3ff; color: var(--primary); }
+.role-menu-group { width: 100%; margin: 0; }
+.role-menu-group-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 38px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: #64748b; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .03em; text-align: left; text-transform: uppercase; user-select: none; }
+.role-menu-group-title::after { content: ""; width: 7px; height: 7px; margin-left: 2px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .16s ease; }
+.role-menu-group.is-open > .role-menu-group-title::after { transform: rotate(225deg) translate(-2px,-1px); }
+.role-menu-group-title:hover { background: #f3f6fb; color: #334155; }
+.role-menu-group-title > span { margin-right: auto; }
+.role-menu-group-links { display: grid; gap: 4px; padding: 3px 0 8px; }
+.role-menu-group-links[hidden] { display: none; }
 .profile-details > div { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--input); }
 .user-search input:focus { outline: 3px solid #dbe7ff; border-color: var(--primary); }
 .user-table .empty-state { padding: 40px 20px; color: var(--muted); text-align: center; }

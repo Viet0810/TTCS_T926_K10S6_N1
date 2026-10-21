@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lịch họp | Quản lý thực tập sinh</title>
-  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261021-sidebar-3">
   <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css"><link rel="stylesheet" href="../css/meetings.css">
   <link rel="stylesheet" href="../css/meeting-datetime.css">
 </head>
@@ -26,7 +26,7 @@
           <label class="meeting-wide">Địa điểm hoặc link cuộc họp<span class="meeting-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><input name="location" maxlength="500" placeholder="Phòng họp hoặc đường dẫn cuộc họp trực tuyến"></span></label>
           <fieldset class="meeting-wide meeting-participants"><legend>Người tham gia</legend><div class="meeting-participants-heading"><span>Chọn người dùng trong hệ thống</span><span id="participantCount" class="meeting-count" aria-live="polite">Đã chọn 0 người</span></div><div class="meeting-input meeting-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input id="participantSearch" type="search" placeholder="Tìm tên, email hoặc vai trò…" aria-label="Tìm người tham gia"></div><div id="participantOptions" class="meeting-people"></div></fieldset>
           <label class="meeting-wide"><span>Mô tả <span class="meeting-optional">Không bắt buộc</span></span><span class="meeting-input meeting-textarea"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14M5 10h14M5 15h14M5 20h9"/></svg><textarea name="description" maxlength="2000" rows="3" placeholder="Nội dung trao đổi, tài liệu cần chuẩn bị…"></textarea></span></label>
-          <div class="meeting-actions meeting-wide"><span class="meeting-action-note">Email sẽ được gửi đến người tham gia sau khi tạo.</span><div class="meeting-action-buttons"><button type="reset" class="btn-secondary">Hủy</button><button id="meetingSave" class="btn-primary" disabled>Tạo cuộc họp</button></div></div>
+          <div class="meeting-actions meeting-wide"><div class="meeting-action-buttons"><button type="reset" class="btn-secondary">Hủy</button><button id="meetingSave" class="btn-primary" disabled>Tạo cuộc họp</button></div></div>
         </form>
       </section>
       <aside class="meeting-guide" aria-label="Hướng dẫn tạo lịch họp">
@@ -41,6 +41,6 @@
       </section>
     </main>
   </div>
-  <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/meeting-datetime.js"></script><script src="../js/meetings.js"></script>
+  <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261021-sidebar-3"></script><script src="../js/meeting-datetime.js"></script><script src="../js/meetings.js"></script>
 </body>
 </html>
