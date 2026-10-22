@@ -26,3 +26,5 @@ Desktop.ini
 
 # macOS
 .DS_Store
+docs/demo-accounts.md
+.runtime/

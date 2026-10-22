@@ -67,6 +67,9 @@ public static class PermissionNames
     // Quyền đánh giá cuối kỳ
     public const string ViewFinalEvaluations = "VIEW_FINAL_EVALUATIONS";
     public const string UpdateFinalEvaluations = "UPDATE_FINAL_EVALUATIONS";
+    public const string ViewEvaluationSummaries = "EVALUATION_SUMMARY_READ";
+    public const string FinalizeEvaluationSummaries = "EVALUATION_SUMMARY_FINALIZE";
+    public const string PublishEvaluationSummaries = "EVALUATION_SUMMARY_PUBLISH";
 }
 
 public sealed class RolePermissionService
@@ -89,10 +92,7 @@ public sealed class RolePermissionService
                 PermissionNames.DeleteUser,
                 PermissionNames.ViewProfile,
                 PermissionNames.ManagePermissions,
-                PermissionNames.ReadPermissions,
-
-                // Legacy baseline; GetDefaults(ADMIN) returns the full permission catalog.
-                PermissionNames.ViewFinalEvaluations
+                PermissionNames.ReadPermissions
             ],
 
             ["HR"] =
@@ -124,7 +124,10 @@ public sealed class RolePermissionService
                 PermissionNames.UpdateAssignment,
 
                 // HR tổng hợp và theo dõi kết quả đánh giá cuối kỳ.
-                PermissionNames.ViewFinalEvaluations
+                PermissionNames.ViewFinalEvaluations,
+                PermissionNames.ViewEvaluationSummaries,
+                PermissionNames.FinalizeEvaluationSummaries,
+                PermissionNames.PublishEvaluationSummaries
             ],
 
             ["MENTOR"] =
@@ -170,9 +173,7 @@ public sealed class RolePermissionService
         };
 
     public IReadOnlyList<string> GetDefaults(string? role) =>
-        string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase)
-            ? PermissionCatalog.Entries.Select(p => p.Code).ToArray()
-            : role is not null && DefaultPermissionsByRole.TryGetValue(role, out var permissions)
+        role is not null && DefaultPermissionsByRole.TryGetValue(role, out var permissions)
             ? Array.AsReadOnly(permissions)
             : Array.Empty<string>();
 
@@ -255,7 +256,9 @@ public sealed class RolePermissionService
     {
         var definition = PermissionCatalog.Entries.SingleOrDefault(entry => entry.Code == code);
         return definition is not null &&
-            (role.Equals("ADMIN", StringComparison.OrdinalIgnoreCase) || definition.Roles.Contains(role, StringComparer.OrdinalIgnoreCase));
+            (role.Equals("ADMIN", StringComparison.OrdinalIgnoreCase)
+                ? DefaultPermissionsByRole["ADMIN"].Contains(code, StringComparer.OrdinalIgnoreCase)
+                : definition.Roles.Contains(role, StringComparer.OrdinalIgnoreCase));
     }
 
     public IReadOnlyList<PermissionDescriptor> GetCatalog()
@@ -280,7 +283,7 @@ public sealed class RolePermissionService
 
             entries.Add(definition with
             {
-                Roles = definition.Roles.Append("ADMIN").Distinct().ToArray(),
+                Roles = definition.Roles,
                 Module = reader.GetString(1),
                 Label = reader.GetString(2),
                 Action = reader.GetString(3)
@@ -323,7 +326,7 @@ public sealed class RolePermissionService
         if (permissions.Distinct().Count() != permissions.Count)
             throw new ArgumentException("Quyền bị trùng.");
 
-        if (role != "ADMIN" && permissions.Any(code => !PermissionCatalog.Entries.Single(p => p.Code == code).Roles.Contains(role)))
+        if (permissions.Any(code => !IsAllowedForRole(role, code)))
             throw new ArgumentException("Quyền không áp dụng cho vai trò này.");
 
         if (role == "ADMIN" &&

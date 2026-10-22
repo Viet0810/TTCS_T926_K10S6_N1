@@ -75,9 +75,16 @@
       [task.internName, task.mentorName, task.content, formatDeadline(task.deadline),
         ({ ASSIGNED: 'Đã giao', IN_PROGRESS: 'Đang thực hiện', COMPLETED: 'Hoàn thành' })[task.status] || task.status].forEach((value, index) => {
         const cell = document.createElement('td');
-        if (index === 2 || index === 4) {
+        if (index === 0 || index === 1) {
+          const person = document.createElement('span'); person.className = 'task-person';
+          const avatar = document.createElement('span'); avatar.className = 'task-person-avatar';
+          avatar.textContent = String(value || '?').trim().split(/\s+/).slice(-2).map(part => part[0]).join('').toUpperCase();
+          const name = document.createElement('strong'); name.textContent = value;
+          person.append(avatar, name); cell.append(person);
+        } else if (index === 2 || index === 4) {
           const text = document.createElement('span'); text.textContent = value;
           text.className = index === 2 ? 'task-content-preview' : 'task-status';
+          if (index === 4) text.classList.add('is-' + String(task.status || 'assigned').toLowerCase().replace('_', '-'));
           if (index === 2) text.title = value;
           cell.append(text);
           if (index === 4) {
@@ -102,7 +109,16 @@
             const note = document.createElement('small'); note.className = 'task-content-preview task-progress-label';
             note.textContent = 'Tiến độ: ' + task.progressNote; cell.append(note);
           }
-        } else { cell.textContent = value; if (index === 3) cell.className = 'task-deadline'; }
+        } else {
+          cell.textContent = value;
+          if (index === 3) {
+            cell.className = 'task-deadline';
+            const deadline = new Date(task.deadline);
+            if (task.status !== 'COMPLETED' && !Number.isNaN(deadline.getTime()) && deadline < new Date()) {
+              cell.classList.add('is-overdue'); cell.title = 'Nhiệm vụ đã quá hạn';
+            }
+          }
+        }
         row.append(cell);
       });
       rows.append(row);

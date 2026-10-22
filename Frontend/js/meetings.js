@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const has = code => grants.includes(code);
   const call = (path, options = {}) => requestApi(path, { ...options, headers: getAuthHeader() });
   const notify = (message, type = 'error') => AppUI.toast(message, type, 'meeting-feedback');
-  const formatDate = value => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(value));
   function controls() {
     save.disabled = saving || loading || !has('MEETING_CREATE') || !participants.length;
     save.textContent = saving ? 'Đang tạo cuộc họp…' : 'Tạo cuộc họp';
@@ -35,12 +34,46 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function renderRows() {
     const body = byId('meetingRows'); body.replaceChildren();
-    const names = new Map(participants.map(p => [p.id, p.fullName]));
     byId('meetingState').textContent = rows.length ? `${rows.length} cuộc họp` : 'Chưa có cuộc họp nào.';
     for (const meeting of rows) {
-      const row = body.insertRow(), title = row.insertCell(); title.textContent = meeting.title;
+      const row = body.insertRow();
+      const title = row.insertCell(); title.className = 'meeting-title-cell';
+      const titleText = document.createElement('strong'); titleText.textContent = meeting.title; title.append(titleText);
       if (meeting.description) { const description = document.createElement('small'); description.textContent = meeting.description; title.append(description); }
-      for (const text of [`${formatDate(meeting.startTime)} – ${formatDate(meeting.endTime)}`, meeting.locationOrLink || '—', meeting.participantUserIds.map(id => names.get(id) || `#${id}`).join(', '), `${meeting.emailsSent}/${meeting.participantUserIds.length}`]) row.insertCell().textContent = text;
+
+      const start = new Date(meeting.startTime), end = new Date(meeting.endTime);
+      const timeCell = row.insertCell(); timeCell.className = 'meeting-time-cell';
+      const dateLine = document.createElement('strong');
+      dateLine.textContent = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }).format(start);
+      const timeLine = document.createElement('span');
+      const timeFormat = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false });
+      timeLine.textContent = `${timeFormat.format(start)} – ${timeFormat.format(end)}`;
+      timeCell.append(dateLine, timeLine);
+
+      const locationCell = row.insertCell(); locationCell.className = 'meeting-location-cell';
+      if (/^https?:\/\//i.test(meeting.locationOrLink || '')) {
+        const link = document.createElement('a'); link.href = meeting.locationOrLink; link.target = '_blank'; link.rel = 'noopener'; link.className = 'meeting-join-link'; link.textContent = 'Mở link họp ↗'; locationCell.append(link);
+      } else locationCell.textContent = meeting.locationOrLink || 'Chưa cập nhật';
+
+      const peopleCell = row.insertCell(); peopleCell.className = 'meeting-attendee-cell';
+      const attendees = meeting.participants || [];
+      if (!attendees.length) peopleCell.textContent = 'Chưa có người tham gia';
+      else {
+        const stack = document.createElement('div'); stack.className = 'meeting-attendee-stack';
+        attendees.slice(0, 3).forEach(person => {
+          const chip = document.createElement('span'); chip.className = 'meeting-attendee-chip'; chip.title = `${person.fullName} · ${person.email}`;
+          const avatar = document.createElement('i'); avatar.textContent = person.fullName.trim().split(/\s+/).slice(-2).map(part => part[0]).join('').toLocaleUpperCase('vi');
+          const name = document.createElement('span'); name.textContent = person.fullName; chip.append(avatar, name); stack.append(chip);
+        });
+        if (attendees.length > 3) { const more = document.createElement('span'); more.className = 'meeting-attendee-more'; more.textContent = `+${attendees.length - 3} người`; more.title = attendees.slice(3).map(person => person.fullName).join(', '); stack.append(more); }
+        peopleCell.append(stack);
+      }
+
+      const emailCell = row.insertCell();
+      const delivered = meeting.emailsSent === meeting.participantUserIds.length;
+      const emailBadge = document.createElement('span'); emailBadge.className = `meeting-email-badge ${delivered ? 'is-complete' : 'is-pending'}`;
+      emailBadge.textContent = delivered ? `Đã gửi ${meeting.emailsSent}/${meeting.participantUserIds.length}` : `Đã gửi ${meeting.emailsSent}/${meeting.participantUserIds.length}`;
+      emailCell.append(emailBadge);
     }
   }
   async function load() {

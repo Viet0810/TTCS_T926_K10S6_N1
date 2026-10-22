@@ -9,8 +9,16 @@
       if (!Session.hasPermission(session, "VIEW_OWN_PROFILE")) {
         message.textContent = "Bạn không có quyền xem hồ sơ thực tập cá nhân."; return;
       }
-      const profile = await API.getMyInternProfile();
+      const [profile, schedule] = await Promise.all([API.getMyInternProfile(), API.getMySchedule()]);
       if (!profile) { message.textContent = "Chưa có hồ sơ thực tập."; return; }
+      if (schedule) {
+        profile.department = schedule.departmentName || profile.department;
+        profile.mentor = schedule.mentorName || profile.mentor;
+        profile.mentorEmail = schedule.mentorEmail || profile.mentorEmail;
+        profile.startDate = schedule.startDate || profile.startDate;
+        profile.endDate = schedule.endDate || profile.endDate;
+        profile.status = ({ UPCOMING: "Chờ tiếp nhận", ACTIVE: "Đang thực tập", ENDED: "Đã hoàn thành" })[schedule.status] || profile.status;
+      }
       document.getElementById("internName").textContent = profile.fullName;
       document.getElementById("internEmail").textContent = profile.email;
       InternProfile.details(document.getElementById("internDetails"), profile);

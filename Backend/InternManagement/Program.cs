@@ -32,6 +32,8 @@ builder.Services.AddSingleton<InternManagement.Services.RolePermissionService>()
 builder.Services.AddScoped<InternManagement.Services.RequestAuthorizationService>();
 builder.Services.AddScoped<InternManagement.Services.AccountService>();
 builder.Services.AddScoped<InternManagement.Services.InternDocumentService>();
+builder.Services.AddScoped<InternManagement.Services.DemoAccountService>();
+builder.Services.AddScoped<InternManagement.Services.DemoDataSeeder>();
 
 // Service quản lý thời gian chương trình
 builder.Services.AddScoped<InternManagement.Services.ProgramScheduleService>();
@@ -41,9 +43,11 @@ builder.Services.AddScoped<InternManagement.Services.InternAssignmentService>();
 builder.Services.AddScoped<InternManagement.Services.InternTaskService>();
 builder.Services.AddScoped<InternManagement.Services.WeeklyReportService>();
 builder.Services.AddScoped<InternManagement.Services.WorkScheduleService>();
+builder.Services.AddScoped<InternManagement.Services.MentorScheduleService>();
 
 // K10S6N1-128: Service lấy và tổng hợp đánh giá cuối kỳ
 builder.Services.AddScoped<InternManagement.Services.FinalEvaluationService>();
+builder.Services.AddScoped<InternManagement.Services.EvaluationSummaryService>();
 
 // Các Service hiện có
 builder.Services.AddScoped<InternManagement.Services.ContractService>();
@@ -151,6 +155,26 @@ if (string.IsNullOrWhiteSpace(connectionString))
 await app.Services
     .GetRequiredService<InternManagement.Services.DatabaseInitializer>()
     .InitializeAsync(connectionString);
+
+if (args.Contains("--seed-demo", StringComparer.OrdinalIgnoreCase))
+{
+    var explicitlyEnabled = bool.TryParse(
+        builder.Configuration["ENABLE_DEMO_SEED"],
+        out var enabled) && enabled;
+
+    if (!app.Environment.IsDevelopment() && !explicitlyEnabled)
+    {
+        throw new InvalidOperationException(
+            "Demo Seeder chỉ được chạy trong Development hoặc khi ENABLE_DEMO_SEED=true.");
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var result = await scope.ServiceProvider
+        .GetRequiredService<InternManagement.Services.DemoDataSeeder>()
+        .SeedAsync();
+    app.Logger.LogInformation("Demo Seeder result: {@Result}", result);
+    return;
+}
 
 app.UseMiddleware<ApiRequestMiddleware>();
 

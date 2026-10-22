@@ -1,3 +1,33 @@
-<!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hợp đồng thực tập | Hệ thống quản lý thực tập sinh</title><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261021-sidebar-3"><link rel="stylesheet" href="../css/visuals.css">
-<link rel="stylesheet" href="../css/ui.css">
-</head><body><div class="dashboard"><header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Hợp đồng thực tập</h1></div></div><div class="dashboard-session"><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a><button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button></div></header><nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav><main class="dashboard-main"><section class="card"><div class="section-heading"><div><span class="section-label">HỢP ĐỒNG CÁ NHÂN</span><h2>Hợp đồng thực tập</h2><p>Đọc hợp đồng trước khi xác nhận đồng ý.</p></div><button id="contractRefreshBtn" type="button" class="btn-secondary">↻ Tải lại</button></div><p id="contractMessage" role="status" aria-live="polite">Đang tải hợp đồng…</p><div id="contractDetails" hidden><dl class="profile-details"><div><dt>Tệp hợp đồng</dt><dd id="contractFileName"></dd></div><div><dt>Ngày tải lên</dt><dd id="contractUploaded"></dd></div><div><dt>Ngày xác nhận</dt><dd id="contractConfirmed"></dd></div></dl><div class="document-actions"><button id="contractDownloadBtn" type="button" class="btn-secondary">Tải để xem</button></div><p><label><input id="acceptContract" type="checkbox"> Tôi đã đọc và đồng ý với hợp đồng này.</label></p><button id="confirmContractBtn" type="button" class="btn-primary">Xác nhận hợp đồng</button></div></section></main><footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer></div><script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261021-sidebar-3"></script><script src="../js/contracts.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hợp đồng thực tập | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261022-13">
+  <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/intern-contract.css?v=20261022-1">
+</head>
+<body class="intern-contract-page"><div class="dashboard">
+  <header class="dashboard-header"><div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Hợp đồng thực tập</h1></div></div><div class="dashboard-session"><a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a><button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button></div></header>
+  <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+  <main class="dashboard-main">
+    <section class="card contract-card">
+      <div class="section-heading"><div><span class="section-label">HỢP ĐỒNG CÁ NHÂN</span><h2>Hợp đồng thực tập</h2><p>Kiểm tra kỹ nội dung tài liệu trước khi xác nhận đồng ý.</p></div><button id="contractRefreshBtn" type="button" class="btn-secondary">↻ Tải lại</button></div>
+      <p id="contractMessage" role="status" aria-live="polite">Đang tải hợp đồng…</p>
+      <div id="contractDetails" hidden>
+        <div class="contract-overview">
+          <div class="contract-file-panel"><span class="contract-file-icon" aria-hidden="true">PDF</span><div class="contract-file-copy"><span>Tệp hợp đồng</span><strong id="contractFileName"></strong><small>Nhấn “Tải và xem hợp đồng” để kiểm tra nội dung.</small></div><button id="contractDownloadBtn" type="button" class="btn-secondary">Tải và xem hợp đồng</button></div>
+          <div class="contract-meta-grid"><div><span>Ngày tải lên</span><strong id="contractUploaded"></strong></div><div><span>Ngày xác nhận</span><strong id="contractConfirmed"></strong></div></div>
+        </div>
+        <div class="contract-confirm-panel">
+          <div class="contract-confirm-heading"><div><span class="contract-shield" aria-hidden="true">✓</span><div><h3>Xác nhận hợp đồng</h3><p id="contractStateText">Vui lòng đọc kỹ tài liệu trước khi xác nhận.</p></div></div><span id="contractState" class="contract-state is-pending">Chờ xác nhận</span></div>
+          <label id="contractAcceptRow" class="contract-accept"><input id="acceptContract" type="checkbox"><span>Tôi đã đọc, hiểu và đồng ý với các điều khoản trong hợp đồng này.</span></label>
+          <div class="contract-confirm-actions"><button id="confirmContractBtn" type="button" class="btn-primary">Xác nhận hợp đồng</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+</div>
+<script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script><script src="../js/contracts.js?v=20261022-1"></script>
+</body></html>

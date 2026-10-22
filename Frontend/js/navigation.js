@@ -35,6 +35,10 @@ window.AppNavigation = (() => {
     { label: "Báo cáo chuyên cần", href: "attendance-report.html", permissions: ["VIEW_ATTENDANCE_REPORT"] },
     { label: "Thông báo", href: "notifications.html", permissions: ["NOTIFICATION_READ"] }
   ];
+  items.push(
+    { label: "Tổng hợp đánh giá", href: "evaluation-summary.html", permissions: ["EVALUATION_SUMMARY_READ"], roles: ["ADMIN", "HR"] },
+    { label: "Kết quả đánh giá", href: "evaluation-result.html", permissions: ["VIEW_FINAL_EVALUATIONS"], roles: ["INTERN"] }
+  );
   const groups = [
     { id: "overview", label: "Tổng quan" },
     { id: "calendar", label: "Lịch & công việc" },
@@ -52,6 +56,7 @@ window.AppNavigation = (() => {
     ["intern-leave-request.html", "internship"], ["mentor-leave-requests.html", "internship"], ["attendance-report.html", "internship"],
     ["user-manage.html", "administration"], ["permissions.html", "administration"], ["program-setting.html", "administration"],
     ["profile.html", "account"], ["notifications.html", "account"]
+    ,["evaluation-summary.html", "internship"], ["evaluation-result.html", "internship"]
   ]);
 
   function render(session) {
@@ -79,6 +84,7 @@ window.AppNavigation = (() => {
 
       const visibleGroups = new Map(groups.map(group => [group.id, []]));
       for (const item of items) {
+        if (item.href === "final-evaluation.html" && role !== "MENTOR") continue;
         if (role === "ADMIN" && !adminMenu.has(item.href)) continue;
         if (item.roles && !item.roles.includes(role)) continue;
         if (
@@ -247,7 +253,7 @@ window.AppNavigation = (() => {
 
   if (localStorage.getItem("token")) {
     API.getCurrentUser()
-      .then(render)
+      .then(() => {})
       .catch(error => {
         Session.redirectIfExpired(error);
 

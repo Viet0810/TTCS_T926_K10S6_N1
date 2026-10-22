@@ -16,7 +16,22 @@
       document.getElementById("scheduleProgram").textContent = schedule.programName || "Chương trình thực tập";
       document.getElementById("scheduleDuration").textContent = schedule.durationDays ? `${schedule.durationDays} ngày` : "—";
       document.getElementById("scheduleEnd").textContent = date(schedule.endDate);
-      document.getElementById("scheduleStatus").textContent = { UPCOMING: "Sắp bắt đầu", ACTIVE: "Đang diễn ra", ENDED: "Đã kết thúc" }[schedule.status] || "—";
+      const status = document.getElementById("scheduleStatus");
+      status.textContent = { UPCOMING: "Sắp bắt đầu", ACTIVE: "Đang diễn ra", ENDED: "Đã kết thúc" }[schedule.status] || "—";
+      status.className = `schedule-status is-${String(schedule.status || "unknown").toLowerCase()}`;
+      const start = new Date(`${schedule.startDate.slice(0, 10)}T00:00:00`);
+      const end = new Date(`${schedule.endDate.slice(0, 10)}T23:59:59`);
+      const now = new Date();
+      const total = Math.max(1, end - start);
+      const progress = Math.max(0, Math.min(100, Math.round(((now - start) / total) * 100)));
+      document.getElementById("scheduleProgressText").textContent = `${progress}%`;
+      document.getElementById("scheduleProgressBar").style.width = `${progress}%`;
+      const progressElement = document.querySelector(".schedule-progress");
+      progressElement.setAttribute("aria-valuenow", String(progress));
+      const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+      document.getElementById("scheduleProgressNote").textContent = schedule.status === "ENDED"
+        ? "Chương trình thực tập đã hoàn thành."
+        : schedule.status === "UPCOMING" ? "Chương trình chưa bắt đầu." : `Còn ${daysLeft} ngày đến khi kết thúc chương trình.`;
       for (const [field, value] of [["Department", schedule.departmentName], ["Mentor", schedule.mentorName]]) {
         document.getElementById(`schedule${field}Field`).hidden = !value;
         if (value) document.getElementById(`schedule${field}`).textContent = value;

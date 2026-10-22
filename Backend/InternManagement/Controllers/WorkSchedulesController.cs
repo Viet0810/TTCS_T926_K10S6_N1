@@ -1,35 +1,15 @@
-using InternManagement.DTOs;
-using InternManagement.Infrastructure;
-using InternManagement.Services;
-using Microsoft.AspNetCore.Mvc;
+using InternManagement.DTOs;using InternManagement.Infrastructure;using InternManagement.Services;using Microsoft.AspNetCore.Mvc;
 namespace InternManagement.Controllers;
 [ApiController,Route("api/work-schedules")]
-public sealed class WorkSchedulesController(WorkScheduleService schedules,RequestAuthorizationService authorization):ControllerBase
+public sealed class WorkSchedulesController(MentorScheduleService schedules,RequestAuthorizationService authorization):ControllerBase
 {
-    [HttpGet] public async Task<IActionResult> List(CancellationToken ct) {
-        var a=authorization.Evaluate(Request,PermissionNames.ReadWorkSchedules);
-        if(a.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(a.Status);
-        return Ok(await schedules.ListAsync(a.User!.Id,a.User.Role=="INTERN",null,ct));
-    }
-    [HttpGet("{id:int}")] public async Task<IActionResult> Get(int id,CancellationToken ct) {
-        var a=authorization.Evaluate(Request,PermissionNames.ReadWorkSchedules);
-        if(a.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(a.Status);
-        var rows=await schedules.ListAsync(a.User!.Id,a.User.Role=="INTERN",id,ct);
-        return rows.Count==0?StatusCode(403):Ok(rows[0]);
-    }
-    [HttpGet("interns")] public async Task<IActionResult> Interns(CancellationToken ct) {
-        var a=authorization.Evaluate(Request,PermissionNames.ReadWorkSchedules);
-        if(a.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(a.Status);
-        if(a.User!.Role=="INTERN")return StatusCode(403);
-        return Ok(await schedules.InternsAsync(ct));
-    }
-    [HttpPost] public Task<IActionResult> Create(WorkScheduleRequest request,CancellationToken ct)=>Save(null,request,ct);
-    [HttpPut("{id:int}")] public Task<IActionResult> Update(int id,WorkScheduleRequest request,CancellationToken ct)=>Save(id,request,ct);
-    private async Task<IActionResult> Save(int? id,WorkScheduleRequest request,CancellationToken ct) {
-        var a=authorization.Evaluate(Request,id is null?PermissionNames.CreateWorkSchedule:PermissionNames.UpdateWorkSchedule);
-        if(a.Status!=AuthorizationStatus.Authorized)return AuthorizationResponses.Denied(a.Status);
-        try {var result=await schedules.SaveAsync(a.User!.Id,id,request,ct);return result is null?StatusCode(403):Ok(new{id=result});}
-        catch(ArgumentException e){return BadRequest(new{message=e.Message});}
-        catch(InvalidOperationException e){return Conflict(new{message=e.Message});}
-    }
+ IActionResult? Guard(string permission,out AuthorizationDecision decision){decision=authorization.Evaluate(Request,permission);return decision.Status==AuthorizationStatus.Authorized?null:AuthorizationResponses.Denied(decision.Status);}
+ static bool Manager(AuthorizationDecision a)=>a.User!.Role is "HR" or "ADMIN";
+ [HttpGet] public async Task<IActionResult> List([FromQuery]DateOnly? from,[FromQuery]DateOnly? to,[FromQuery]int? mentorId,[FromQuery]int? internId,[FromQuery]string? type,[FromQuery]string? status,CancellationToken ct){var denied=Guard(PermissionNames.ReadWorkSchedules,out var a);if(denied!=null)return denied;try{return Ok(await schedules.ListAsync(a.User!.Id,a.User.Role,from??DateOnly.FromDateTime(DateTime.Today.AddMonths(-1)),to??DateOnly.FromDateTime(DateTime.Today.AddMonths(2)),mentorId,internId,type,status,ct));}catch(ArgumentException e){return BadRequest(new{message=e.Message});}}
+ [HttpGet("mentors")] public async Task<IActionResult> Mentors(CancellationToken ct){var denied=Guard(PermissionNames.ReadWorkSchedules,out var a);if(denied!=null)return denied;if(!Manager(a))return StatusCode(403);return Ok(await schedules.MentorsAsync(ct));}
+ [HttpGet("mentors/{mentorId:int}/interns")] public async Task<IActionResult> Interns(int mentorId,CancellationToken ct){var denied=Guard(PermissionNames.ReadWorkSchedules,out var a);if(denied!=null)return denied;if(!(Manager(a)||a.User!.Role=="MENTOR"&&a.User.Id==mentorId))return StatusCode(403);return Ok(await schedules.InternsAsync(mentorId,ct));}
+ [HttpPost] public async Task<IActionResult> Create(MentorWorkScheduleRequest request,CancellationToken ct){var denied=Guard(PermissionNames.CreateWorkSchedule,out var a);if(denied!=null)return denied;if(!Manager(a))return StatusCode(403);return await Execute(async()=>Ok(new{id=await schedules.CreateAsync(a.User!.Id,request,ct)}));}
+ [HttpPut("{id:int}")] public async Task<IActionResult> Update(int id,ScheduleChangeRequest request,CancellationToken ct){var denied=Guard(PermissionNames.UpdateWorkSchedule,out var a);if(denied!=null)return denied;if(!Manager(a))return StatusCode(403);return await Execute(async()=>Ok(new{id=await schedules.UpdateAsync(a.User!.Id,id,request,ct)}));}
+ [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id,[FromQuery]string scope="ALL",[FromQuery]DateOnly? occurrenceDate=null,CancellationToken ct=default){var denied=Guard(PermissionNames.UpdateWorkSchedule,out var a);if(denied!=null)return denied;if(!Manager(a))return StatusCode(403);return await Execute(async()=>{await schedules.DeleteAsync(a.User!.Id,id,scope,occurrenceDate,ct);return NoContent();});}
+ async Task<IActionResult> Execute(Func<Task<IActionResult>> action){try{return await action();}catch(ArgumentException e){return BadRequest(new{message=e.Message});}catch(InvalidOperationException e){return Conflict(new{message=e.Message});}catch(KeyNotFoundException){return NotFound(new{message="Không tìm thấy lịch làm việc."});}}
 }

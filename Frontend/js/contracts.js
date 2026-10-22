@@ -38,7 +38,18 @@
       document.getElementById("contractFileName").title=current.fileName;
       document.getElementById("contractUploaded").textContent=date(current.uploadedAt);
       document.getElementById("contractConfirmed").textContent=date(current.confirmedAt);
-      document.getElementById("confirmContractBtn").disabled=!!current.confirmedAt;
+      const confirmed = !!current.confirmedAt;
+      const confirmButton = document.getElementById("confirmContractBtn");
+      const accept = document.getElementById("acceptContract");
+      const acceptRow = document.getElementById("contractAcceptRow");
+      const state = document.getElementById("contractState");
+      confirmButton.hidden = acceptRow.hidden = confirmed;
+      confirmButton.disabled = confirmed || !accept.checked;
+      state.textContent = confirmed ? "Đã xác nhận" : "Chờ xác nhận";
+      state.className = `contract-state ${confirmed ? "is-confirmed" : "is-pending"}`;
+      document.getElementById("contractStateText").textContent = confirmed
+        ? "Bạn đã hoàn tất xác nhận hợp đồng này."
+        : "Vui lòng đọc kỹ tài liệu trước khi xác nhận.";
     }
   }
   document.getElementById("contractSearch")?.addEventListener("input",event=>{TableUI.filter(document.getElementById("contractRows"),event.target.value);});
@@ -55,6 +66,9 @@
   const fileInput=document.getElementById("contractFile");
   fileInput?.addEventListener("change",()=>{const file=fileInput.files[0];document.getElementById("contractSelected").textContent=file?`${file.name} · ${(file.size/1024/1024).toFixed(2)} MB`:"";});
   document.getElementById("contractDownloadBtn")?.addEventListener("click",event=>{if(current&&allowed)download(current,event.currentTarget);});
+  document.getElementById("acceptContract")?.addEventListener("change", event => {
+    document.getElementById("confirmContractBtn").disabled = !event.currentTarget.checked || !!current?.confirmedAt;
+  });
   document.getElementById("confirmContractBtn")?.addEventListener("click",async event=>{
     if(!allowed||busy||!current||current.confirmedAt||!document.getElementById("acceptContract").checked){notice("Vui lòng đọc và đánh dấu đồng ý trước khi xác nhận.");return;}
     busy=true;const button=event.currentTarget;button.disabled=true;button.textContent="Đang xác nhận…";

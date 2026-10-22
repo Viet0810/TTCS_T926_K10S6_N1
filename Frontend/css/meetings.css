@@ -59,3 +59,32 @@
 .meeting-tips li::marker{color:#97a9d2}
 @media(max-width:1050px){.meeting-compose{grid-template-columns:minmax(0,1fr)}.meeting-guide{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.meeting-compose{gap:18px}.meeting-compose>.meeting-card{padding:18px}.meeting-guide{grid-template-columns:minmax(0,1fr)}.meeting-grid .meeting-actions{align-items:stretch;flex-direction:column}.meeting-action-note{max-width:none}.meeting-action-buttons{justify-content:flex-end}.meeting-action-buttons button{width:auto}.meeting-participants-heading{align-items:flex-start;flex-direction:column;gap:8px}.meeting-grid .meeting-person{gap:8px;padding:10px 6px}.meeting-person-avatar{width:32px;height:32px}}
+
+/* Polished meeting list. */
+#meetingList{padding:30px;border:1px solid #e3eaf4;box-shadow:0 10px 28px #1e3a5f0a}
+#meetingList .meeting-heading{margin-bottom:4px}
+#meetingList .meeting-heading h2{font-size:24px;letter-spacing:-.35px}
+#meetingState{margin:0 0 18px;font-size:14px}
+.meeting-table{border:1px solid #e4eaf3;border-radius:14px;border-collapse:separate;border-spacing:0;overflow:hidden}
+.meeting-table th{padding:16px 18px;background:#f5f8fc;color:#42536d;font-size:12px;letter-spacing:.035em;text-transform:uppercase}
+.meeting-table td{padding:18px;border-bottom:1px solid #e8edf4;color:#263750;font-size:14px;line-height:1.45}
+.meeting-table tbody tr:last-child td{border-bottom:0}
+.meeting-table tbody tr{transition:background .15s ease}
+.meeting-table tbody tr:hover{background:#f9fbff}
+.meeting-title-cell strong{display:block;color:#10213f;font-size:15px;font-weight:700}
+.meeting-title-cell small{display:-webkit-box;margin-top:6px;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:#718097;line-height:1.45}
+.meeting-time-cell strong,.meeting-time-cell span{display:block;white-space:nowrap}
+.meeting-time-cell strong{margin-bottom:5px;color:#253b5b;font-size:13px;text-transform:capitalize}
+.meeting-time-cell span{color:#64748b;font-weight:600}
+.meeting-location-cell{color:#64748b}
+.meeting-join-link{display:inline-flex;align-items:center;min-height:34px;padding:7px 11px;border:1px solid #cbdcff;border-radius:9px;background:#f3f7ff;color:#285fc7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.meeting-join-link:hover{background:#e8f0ff;border-color:#9ebcff}
+.meeting-attendee-stack{display:flex;flex-wrap:wrap;gap:7px}
+.meeting-attendee-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 9px 5px 5px;border:1px solid #e0e7f0;border-radius:999px;background:#fff;color:#42536d;font-size:12px}
+.meeting-attendee-chip i{display:grid;place-items:center;flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#e8efff;color:#3568e8;font-style:normal;font-size:9px;font-weight:800}
+.meeting-attendee-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meeting-attendee-more{align-self:center;padding:6px 9px;border-radius:999px;background:#eef2f7;color:#52627a;font-size:11px;font-weight:700}
+.meeting-email-badge{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+.meeting-email-badge.is-complete{background:#e7f8ef;color:#148253}
+.meeting-email-badge.is-pending{background:#fff3df;color:#b66810}
+@media(max-width:900px){#meetingList{padding:20px}.meeting-table{min-width:920px}}

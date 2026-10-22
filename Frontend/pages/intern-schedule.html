@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lịch thực tập | Hệ thống quản lý thực tập sinh</title>
-  <link rel="stylesheet" href="../css/base.css" /><link rel="stylesheet" href="../css/style.css?v=20261021-sidebar-3" />
+  <link rel="stylesheet" href="../css/base.css" /><link rel="stylesheet" href="../css/style.css?v=20261022-13" />
 <link rel="stylesheet" href="../css/visuals.css">
 <link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/intern-schedule.css?v=20261022-1">
 </head>
 <body>
   <div class="dashboard">
@@ -16,22 +17,26 @@
     </header>
     <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
     <main class="dashboard-main">
-      <section class="card">
+      <section class="card schedule-card">
         <div class="section-heading"><div><span class="section-label">LỊCH CÁ NHÂN</span><h2>Lịch thực tập của tôi</h2><p>Thời gian và thông tin hướng dẫn trong chương trình thực tập.</p></div></div>
         <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải lịch thực tập...</p>
-        <div id="scheduleDetails" class="create-user-form" hidden>
-          <div class="form-group"><h3>Chương trình</h3><p id="scheduleProgram"></p></div>
-          <div class="form-group"><h3>Thời lượng</h3><p id="scheduleDuration"></p></div>
-          <div class="form-group"><h3>Ngày bắt đầu</h3><p id="scheduleStart"></p></div>
-          <div class="form-group"><h3>Ngày kết thúc</h3><p id="scheduleEnd"></p></div>
-          <div class="form-group" id="scheduleDepartmentField" hidden><h3>Phòng ban</h3><p id="scheduleDepartment"></p></div>
-          <div class="form-group" id="scheduleMentorField" hidden><h3>Mentor phụ trách</h3><p id="scheduleMentor"></p></div>
-          <div class="form-group"><h3>Trạng thái chương trình</h3><p id="scheduleStatus"></p></div>
+        <div id="scheduleDetails" class="schedule-grid" hidden>
+          <div class="schedule-info-card schedule-program"><span class="schedule-info-icon" aria-hidden="true">CT</span><div><h3>Chương trình</h3><p id="scheduleProgram"></p></div></div>
+          <div class="schedule-info-card"><span class="schedule-info-icon" aria-hidden="true">84</span><div><h3>Thời lượng</h3><p id="scheduleDuration"></p></div></div>
+          <div class="schedule-info-card"><span class="schedule-info-icon" aria-hidden="true">BD</span><div><h3>Ngày bắt đầu</h3><p id="scheduleStart"></p></div></div>
+          <div class="schedule-info-card"><span class="schedule-info-icon" aria-hidden="true">KT</span><div><h3>Ngày kết thúc</h3><p id="scheduleEnd"></p></div></div>
+          <div class="schedule-info-card" id="scheduleDepartmentField" hidden><span class="schedule-info-icon" aria-hidden="true">PB</span><div><h3>Phòng ban</h3><p id="scheduleDepartment"></p></div></div>
+          <div class="schedule-info-card" id="scheduleMentorField" hidden><span class="schedule-info-icon" aria-hidden="true">MT</span><div><h3>Mentor phụ trách</h3><p id="scheduleMentor"></p></div></div>
+          <div class="schedule-summary">
+            <div class="schedule-summary-top"><div><span class="schedule-summary-label">Tiến độ chương trình</span><strong id="scheduleProgressText">0%</strong></div><span id="scheduleStatus" class="schedule-status"></span></div>
+            <div class="schedule-progress" role="progressbar" aria-label="Tiến độ chương trình" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="scheduleProgressBar"></span></div>
+            <p id="scheduleProgressNote" class="schedule-progress-note"></p>
+          </div>
         </div>
       </section>
     </main>
     <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
   </div>
-  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261021-sidebar-3"></script><script src="../js/intern-schedule.js"></script>
+  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script><script src="../js/intern-schedule.js?v=20261022-1"></script>
 </body>
 </html>

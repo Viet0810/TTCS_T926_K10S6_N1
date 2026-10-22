@@ -107,12 +107,22 @@ function saveDownload(blob, fileName) {
 }
 
 const API = {
+  getEvaluationSummaries: (params) => requestApi(`/evaluation-summaries?${new URLSearchParams(params)}`, { headers: getAuthHeader() }),
+  getEvaluationSummaryFilters: () => requestApi("/evaluation-summaries/filters", { headers: getAuthHeader() }),
+  getEvaluationSummary: (internId) => requestApi(`/evaluation-summaries/${encodeURIComponent(internId)}`, { headers: getAuthHeader() }),
+  saveEvaluationSummary: (internId, data) => requestApi(`/evaluation-summaries/${encodeURIComponent(internId)}`, { method: "PUT", headers: getAuthHeader(), body: JSON.stringify(data) }),
+  finalizeEvaluationSummary: (internId, data) => requestApi(`/evaluation-summaries/${encodeURIComponent(internId)}/finalize`, { method: "POST", headers: getAuthHeader(), body: JSON.stringify(data) }),
+  publishEvaluationSummary: (internId) => requestApi(`/evaluation-summaries/${encodeURIComponent(internId)}/publish`, { method: "POST", headers: getAuthHeader() }),
+  exportEvaluationSummaries: (params) => requestApi(`/evaluation-summaries/export?${new URLSearchParams(params)}`, { headers: getAuthHeader() }, "blob"),
+  getMyPublishedEvaluation: () => requestApi("/evaluation-summaries/my-result", { headers: getAuthHeader() }),
   getPermissionMatrix: () => requestApi("/permissions", { headers: getAuthHeader() }),
   getPermissionDefaults: (role) => requestApi(`/permissions/${encodeURIComponent(role)}/defaults`, { headers: getAuthHeader() }),
   savePermissions: (role, permissions) => requestApi(`/permissions/${encodeURIComponent(role)}`, { method: "PUT", headers: getAuthHeader(), body: JSON.stringify({ permissions }) }),
   changePassword: (data) => requestApi("/account/change-password", { method: "PUT", headers: getAuthHeader(), body: JSON.stringify(data) }),
   getAccountProfile: () => requestApi('/account/profile',{headers:getAuthHeader()}),
   resendLoginEmail: (id) => requestApi(`/users/${encodeURIComponent(id)}/resend-login-email`, { method: "POST", headers: getAuthHeader() }),
+  getDemoAccounts: (paging) => requestApi(`/admin/demo-accounts?${new URLSearchParams(paging)}`, { headers: getAuthHeader() }),
+  resetDemoPassword: (id) => requestApi(`/admin/demo-accounts/${encodeURIComponent(id)}/reset-password`, { method: "POST", headers: getAuthHeader() }),
   getAssignments: () => requestApi("/intern-assignments", { headers: getAuthHeader() }),
   getAssignmentInterns: () => requestApi("/intern-assignments/interns", { headers: getAuthHeader() }),
   getAssignmentMentors: () => requestApi("/intern-assignments/mentors", { headers: getAuthHeader() }),

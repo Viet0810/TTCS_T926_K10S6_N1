@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Báo cáo tuần | Hệ thống quản lý thực tập sinh</title>
-  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261022-13">
   <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
-  <link rel="stylesheet" href="../css/weekly-reports.css">
+  <link rel="stylesheet" href="../css/weekly-reports.css?v=20261022-3">
 </head>
 <body class="weekly-reports-page">
   <div class="dashboard">
@@ -17,14 +17,17 @@
     <main class="dashboard-main">
       <p id="reportsMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải báo cáo...</p>
       <section id="createReportSection" class="card" hidden>
-        <h2>Gửi báo cáo tuần</h2>
+        <div class="report-form-heading">
+          <span class="report-form-icon" aria-hidden="true">✓</span>
+          <div><h2>Gửi báo cáo tuần</h2><p>Tóm tắt tiến độ, kết quả và kế hoạch làm việc của bạn.</p></div>
+        </div>
         <form id="reportForm" class="create-user-form">
           <div class="form-group"><label for="reportWeek">Tuần báo cáo</label><input type="date" id="reportWeek" required><small>Chọn một ngày trong tuần. Hệ thống lưu tuần từ thứ Hai đến Chủ nhật.</small></div>
-          <div class="form-group report-content-field"><label for="reportContent">Công việc đã làm</label><textarea id="reportContent" required maxlength="4000" rows="5" placeholder="Công việc đã thực hiện, kết quả và khó khăn trong tuần"></textarea></div>
-<div class="form-group"><label for="reportResults">Kết quả</label><textarea id="reportResults" required maxlength="1000" rows="3"></textarea></div>
-<div class="form-group"><label for="reportDifficulties">Khó khăn</label><textarea id="reportDifficulties" required maxlength="1000" rows="3"></textarea></div>
-<div class="form-group"><label for="reportNextPlan">Kế hoạch tiếp theo</label><textarea id="reportNextPlan" required maxlength="1000" rows="3"></textarea></div>
-          <p>Mỗi tuần gửi một báo cáo; báo cáo đã gửi được giữ trong lịch sử.</p>
+          <div class="form-group report-content-field report-field-work"><label for="reportContent">Công việc đã làm</label><textarea id="reportContent" required maxlength="4000" rows="3" placeholder="Mô tả những công việc bạn đã thực hiện trong tuần"></textarea></div>
+<div class="form-group report-field-result"><label for="reportResults">Kết quả</label><textarea id="reportResults" required maxlength="1000" rows="3" placeholder="Kết quả hoặc sản phẩm đã hoàn thành"></textarea></div>
+<div class="form-group report-field-difficulty"><label for="reportDifficulties">Khó khăn</label><textarea id="reportDifficulties" required maxlength="1000" rows="3" placeholder="Vấn đề đang gặp phải hoặc cần hỗ trợ"></textarea></div>
+<div class="form-group report-field-plan"><label for="reportNextPlan">Kế hoạch tiếp theo</label><textarea id="reportNextPlan" required maxlength="1000" rows="3" placeholder="Công việc dự kiến thực hiện trong tuần tới"></textarea></div>
+          <p class="report-form-note">Mỗi tuần gửi một báo cáo; báo cáo đã gửi sẽ được lưu trong lịch sử.</p>
           <div class="form-actions"><button type="submit" id="submitReport" class="btn-primary">Gửi báo cáo</button></div>
         </form>
       </section>
@@ -36,6 +39,6 @@
     </main>
     <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
   </div>
-  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js"></script><script src="../js/weekly-reports.js"></script>
+  <script src="../js/ui.js"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script><script src="../js/weekly-reports.js?v=20261022-2"></script>
 </body>
 </html>
