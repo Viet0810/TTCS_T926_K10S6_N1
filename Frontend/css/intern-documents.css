@@ -1,0 +1,27 @@
+.intern-documents-page .dashboard-main { min-width: 0; }
+.intern-documents-page .dashboard-main > .card { min-width: 0; overflow: hidden; border-top: 4px solid #356bea; }
+.intern-documents-page .section-heading { margin-bottom: 24px; }
+.intern-documents-page .section-heading h2 { margin: 7px 0 6px; color: #10234a; }
+.intern-documents-page .section-heading p { max-width: 980px; margin: 0; color: #64748b; line-height: 1.55; }
+.intern-documents-page .document-grid { gap: 18px; align-items: stretch; }
+.intern-documents-page .document-card { position: relative; overflow: hidden; padding: 22px; border-color: #dfe7f2; border-radius: 16px; box-shadow: 0 5px 18px rgba(23, 43, 77, .045); }
+.intern-documents-page .document-card::before { position: absolute; inset: 0 0 auto; height: 4px; background: #356bea; content: ''; }
+.intern-documents-page .document-card:nth-child(2)::before { background: #8b5cf6; }
+.intern-documents-page .document-card h3 { margin: 7px 0 6px; color: #13294f; font-size: 18px; }
+.intern-documents-page .document-card > p { min-height: 0; margin: 0 0 15px; color: #64748b; font-size: 14px; }
+.intern-documents-page .document-card .document-info { min-height: 100px; margin: 0 0 16px; padding: 14px 16px; border: 1px solid #e4eaf3; border-radius: 12px; background: #f8faff; }
+.intern-documents-page .document-filename { display: -webkit-box; margin-bottom: 8px; color: #172b4d; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.intern-documents-page .document-meta { margin-top: 5px; color: #64748b; }
+.intern-documents-page .file-picker { min-height: 104px; gap: 5px; padding: 15px 12px; border-width: 1.5px; background: #fbfcff; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.intern-documents-page .file-picker:hover, .intern-documents-page .file-picker.is-dragging, .intern-documents-page .file-picker:focus-within { background: #f1f6ff; transform: translateY(-1px); }
+.intern-documents-page .file-picker-title { font-size: 14px; }
+.intern-documents-page .file-picker small { font-size: 11px; }
+.intern-documents-page .document-card [id$=Selected] { min-height: 20px; margin: 8px 0; padding: 0; border: 0; background: transparent; color: #39557e; font-size: 12px; }
+.intern-documents-page .document-actions { gap: 10px; }
+.intern-documents-page .document-actions button { min-height: 42px; }
+.intern-documents-page .document-card form > [role=status] { min-height: 20px; margin: 8px 0 0; font-size: 12px; }
+@media (max-width: 720px) {
+  .intern-documents-page .dashboard-main > .card { border-top-width: 3px; }
+  .intern-documents-page .document-card { padding: 18px; }
+  .intern-documents-page .document-actions { grid-template-columns: minmax(0, 1fr); }
+}

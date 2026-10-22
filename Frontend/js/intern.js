@@ -124,7 +124,11 @@ async function initializeInternPage() {
   if (!localStorage.getItem("token")) { location.href = "../index.html"; return; }
   try {
     const session = await API.getCurrentUser();
-    document.getElementById("userRole").textContent = session.user.role;
+    const roleBadge = document.getElementById("roleBadge");
+    if (roleBadge) {
+      roleBadge.textContent = session.user.role;
+      roleBadge.className = `badge ${session.user.role.toLowerCase()}`;
+    }
     if (!Session.hasPermission(session, "VIEW_INTERNS")) { location.href = "dashboard.html"; return; }
     canCreate = Session.hasPermission(session, "MANAGE_INTERNS");
     canEdit = Session.hasPermission(session, "EDIT_INTERNS");

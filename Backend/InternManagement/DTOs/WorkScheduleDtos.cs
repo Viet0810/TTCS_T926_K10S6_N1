@@ -3,3 +3,8 @@ namespace InternManagement.DTOs;
 public sealed record WorkScheduleRequest([Range(1,int.MaxValue)] int InternId,DateOnly WorkDate,TimeOnly StartTime,TimeOnly EndTime,[StringLength(1000)] string? Note);
 public sealed record WorkScheduleResponse(int Id,int InternId,string InternName,DateOnly WorkDate,TimeOnly StartTime,TimeOnly EndTime,string? Note);
 public sealed record ScheduleInternOption(int Id,string FullName);
+public sealed record MentorWorkScheduleRequest([Range(1,int.MaxValue)] int MentorId,[Required,StringLength(200)] string Title,[Required] string ScheduleType,DateOnly StartDate,DateOnly EndDate,TimeOnly StartTime,TimeOnly EndTime,[Required] string RecurrenceType,int[] WeekDays,[StringLength(1000)] string? Note,[Required] string Status);
+public sealed record ScheduleChangeRequest(string Scope,DateOnly? OccurrenceDate,MentorWorkScheduleRequest? Schedule);
+public sealed record SchedulePerson(int Id,string FullName,string Email);
+public sealed record MentorWorkScheduleResponse(int Id,int SeriesId,int MentorId,string MentorName,string Title,string ScheduleType,DateOnly Date,DateOnly SeriesStartDate,DateOnly SeriesEndDate,TimeOnly StartTime,TimeOnly EndTime,string RecurrenceType,int[] WeekDays,string? Note,string Status,IReadOnlyList<SchedulePerson> Interns);
+public sealed record ScheduleMentorOption(int Id,string FullName,int InternCount);

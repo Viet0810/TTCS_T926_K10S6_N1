@@ -207,6 +207,9 @@ public sealed class DatabaseInitializer
         await Infrastructure.MeetingMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.Sprint3PermissionMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.WorkScheduleMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.MentorScheduleMigration.ApplyAsync(connection, cancellationToken);
         await Infrastructure.EvaluationAuditMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.DemoSeederMigration.ApplyAsync(connection, cancellationToken);
+        await Infrastructure.EvaluationSummaryMigration.ApplyAsync(connection, cancellationToken);
     }
 }

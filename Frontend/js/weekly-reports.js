@@ -37,12 +37,27 @@
     if (!visible.length) { state('Intern này chưa có báo cáo.'); return; }
     visible.forEach(report => {
       const article = element('article', '', 'weekly-report'); article.dataset.reportId = report.id;
-      article.append(element('h3', `${report.internName} · ${date(report.weekStartDate)} – ${date(report.weekEndDate)}`));
-      article.append(element('p', `${report.programName || 'Chưa có chương trình'} · Gửi ngày ${date(report.createdAt)}`, 'report-meta'));
-      article.append(element('span', report.feedback.length ? 'Đã phản hồi' : 'Chưa phản hồi',
+      const header = element('header', '', 'report-card-header');
+      const identity = element('div');
+      identity.append(element('h3', report.internName), element('p', `${date(report.weekStartDate)} – ${date(report.weekEndDate)} · ${report.programName || 'Chưa có chương trình'}`, 'report-meta'));
+      header.append(identity, element('span', report.feedback.length ? 'Đã phản hồi' : 'Chưa phản hồi',
         'report-feedback-status ' + (report.feedback.length ? 'is-reviewed' : 'is-pending')));
-      article.append(element('p', report.content, 'report-text'));
-      article.append(element('h4', 'Phản hồi từ Mentor'));
+      article.append(header);
+      const sections = element('div', '', 'report-section-grid');
+      const reportParts = [
+        ['Công việc đã làm', report.workDone], ['Kết quả', report.results],
+        ['Khó khăn', report.difficulties], ['Kế hoạch tiếp theo', report.nextPlan]
+      ];
+      if (reportParts.some(([, value]) => value)) reportParts.forEach(([label, value], index) => {
+        const block = element('section', '', `report-section report-section-${index + 1}`);
+        block.append(element('span', label, 'report-section-label'), element('p', value || 'Không có', 'report-text'));
+        sections.append(block);
+      });
+      else { const block = element('section', '', 'report-section report-section-full'); block.append(element('span', 'Nội dung báo cáo', 'report-section-label'), element('p', report.content, 'report-text')); sections.append(block); }
+      article.append(sections);
+      const feedbackHeading = element('div', '', 'report-feedback-heading');
+      feedbackHeading.append(element('h4', 'Phản hồi từ Mentor'), element('small', `Gửi ngày ${date(report.createdAt)}`, 'report-meta'));
+      article.append(feedbackHeading);
       if (!report.feedback.length) article.append(element('p', 'Chưa có phản hồi.', 'report-meta'));
       report.feedback.forEach(feedback => {
         const box = element('div', '', 'report-feedback');

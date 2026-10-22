@@ -6,7 +6,6 @@ let users = [];
 let creatingUser = false;
 let canCreateUser = false;
 let canDeleteUser = false;
-let canResendLoginEmail = false;
 let mentorOnly = false;
 
 function accountMessage(text, type = "error") {
@@ -60,15 +59,13 @@ function renderUsers() {
           <td>${escapeHtml(user.fullName)}</td>
           <td>${escapeHtml(user.email)}</td>
           <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
-          <td>
-            ${canResendLoginEmail && ["HR", "MENTOR"].includes(user.role) ? `<button type="button" class="btn-secondary" data-resend-id="${user.id}">Gửi lại email đăng nhập</button>` : ""}
-            ${!canDeleteUser || user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}
-          </td>
+          <td>${escapeHtml(user.employeeCode || user.studentCode || "-")}</td>
+          ${canDeleteUser ? `<td>${user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}</td>` : ""}
         </tr>`,
     )
     .join("");
   if (!visibleUsers.length) {
-    const cell = tableBody.insertRow().insertCell(); cell.colSpan = 4; cell.className = "empty-state";
+    const cell = tableBody.insertRow().insertCell(); cell.colSpan = canDeleteUser ? 5 : 4; cell.className = "empty-state";
     cell.textContent = keyword ? "Không tìm thấy tài khoản phù hợp." : "Chưa có tài khoản.";
   }
 }
@@ -86,7 +83,8 @@ async function initializePage() {
       return;
     }
     canCreateUser = Session.hasPermission(session, "CREATE_USER");
-    canResendLoginEmail = session.user?.role === "ADMIN" && canCreateUser;
+    canDeleteUser = Session.hasPermission(session, "DELETE_USER");
+    document.getElementById("deleteColumnHeader").hidden = !canDeleteUser;
     if (createForm && session.user?.role !== "ADMIN") {
       const adminOption = document.querySelector('#role option[value="ADMIN"]');
       if (adminOption) adminOption.remove();
@@ -111,7 +109,6 @@ async function initializePage() {
       [...roleSelect.options].forEach(option => { option.disabled = option.value !== "MENTOR"; });
       roleSelect.value = "MENTOR"; updateAccountPasswordFields();
     }
-    canDeleteUser = Session.hasPermission(session, "DELETE_USER");
     if (createForm && !canCreateUser) {
       window.location.href = "user-manage.html";
       return;
@@ -121,7 +118,7 @@ async function initializePage() {
   } catch (error) {
     if (tableBody && !users.length) {
       tableBody.replaceChildren(); const cell = tableBody.insertRow().insertCell();
-      cell.colSpan = 4; cell.className = "empty-state"; cell.textContent = "Chưa thể tải danh sách tài khoản.";
+      cell.colSpan = canDeleteUser ? 5 : 4; cell.className = "empty-state"; cell.textContent = "Chưa thể tải danh sách tài khoản.";
     }
     if (!Session.redirectIfExpired(error)) accountMessage(error.message);
   }
@@ -130,29 +127,21 @@ async function initializePage() {
 
 let userSearchTimer;searchInput?.addEventListener("input",()=>{clearTimeout(userSearchTimer);userSearchTimer=setTimeout(()=>userPager.load(true).catch(error=>accountMessage(error.message)),250);});
 
-tableBody?.addEventListener("click", async (event) => {
-  const resend = event.target.closest("[data-resend-id]");
-  if (resend) {
-    if (!canResendLoginEmail || resend.disabled || !await AppUI.confirm("Gửi lại email sẽ thay mật khẩu bằng mật khẩu tạm mới và yêu cầu người dùng đổi mật khẩu. Tiếp tục?", "Gửi lại email đăng nhập")) return;
-    resend.disabled = true;
-    try { const result = await API.resendLoginEmail(resend.dataset.resendId); accountMessage(result.message, result.emailSent === false ? "warning" : "success"); }
-    catch (error) { accountMessage(error.message); Session.redirectIfExpired(error); }
-    finally { resend.disabled = false; }
-    return;
-  }
+tableBody?.addEventListener("click", async event => {
   const button = event.target.closest("[data-user-id]");
-  if (!button || button.disabled || !canDeleteUser || !await AppUI.confirm("Bạn có chắc muốn xóa tài khoản này?", "Xóa tài khoản", "Xóa tài khoản")) return;
-
+  if (!button || button.disabled || !canDeleteUser) return;
+  if (!await AppUI.confirm("Bạn có chắc muốn xóa tài khoản này?", "Xóa tài khoản", "Xóa tài khoản")) return;
   button.disabled = true;
   try {
     await API.deleteUser(button.dataset.userId);
     accountMessage("Đã xóa tài khoản.", "success");
-    try { await loadUsers(); }
-    catch (error) { accountMessage(`Đã xóa tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+    await loadUsers();
   } catch (error) {
     accountMessage(error.message);
+    Session.redirectIfExpired(error);
+  } finally {
+    button.disabled = false;
   }
-  finally { button.disabled = false; }
 });
 
 initializePage();

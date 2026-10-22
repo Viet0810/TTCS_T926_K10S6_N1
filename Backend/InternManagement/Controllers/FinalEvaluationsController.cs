@@ -33,13 +33,6 @@ public sealed class FinalEvaluationsController : ControllerBase
         );
 
     private static bool CanEdit(string? role) =>
-        string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(
-            role,
-            "HR",
-            StringComparison.OrdinalIgnoreCase
-        )
-        ||
         string.Equals(
             role,
             "MENTOR",
@@ -62,26 +55,7 @@ public sealed class FinalEvaluationsController : ControllerBase
         // INTERN chỉ xem hồ sơ của mình.
         if (IsIntern(decision.User?.Role))
         {
-            var internId =
-                await evaluationService.GetInternIdByUserIdAsync(
-                    decision.User!.Id,
-                    cancellationToken
-                );
-
-            if (!internId.HasValue)
-            {
-                return Ok(
-                    Array.Empty<FinalEvaluationResponse>()
-                );
-            }
-
-            var ownResults =
-                await evaluationService.GetOwnAsync(
-                    internId.Value,
-                    cancellationToken
-                );
-
-            return Ok(ownResults);
+            return Ok(Array.Empty<FinalEvaluationResponse>());
         }
 
         var results = await evaluationService.GetAllAsync(
@@ -107,46 +81,12 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         if (IsIntern(decision.User?.Role))
         {
-            var internId =
-                await evaluationService.GetInternIdByUserIdAsync(
-                    decision.User!.Id,
-                    cancellationToken
-                );
-
-            if (!internId.HasValue)
-            {
-                return Ok(new FinalEvaluationStatisticsResponse
-                {
-                    TotalInterns = 0,
-                    EvaluatedCount = 0,
-                    PendingCount = 0,
-                    AverageScore = null
-                });
-            }
-
-            var ownResults =
-                await evaluationService.GetOwnAsync(
-                    internId.Value,
-                    cancellationToken
-                );
-
-            var evaluated = ownResults
-                .Where(x => x.Status == "Đã đánh giá")
-                .ToList();
-
-            var scores = evaluated
-                .Where(x => x.FinalScore.HasValue)
-                .Select(x => x.FinalScore!.Value)
-                .ToList();
-
             return Ok(new FinalEvaluationStatisticsResponse
             {
-                TotalInterns = ownResults.Count,
-                EvaluatedCount = evaluated.Count,
-                PendingCount = ownResults.Count - evaluated.Count,
-                AverageScore = scores.Count > 0
-                    ? Math.Round(scores.Average(), 2)
-                    : null
+                TotalInterns = 0,
+                EvaluatedCount = 0,
+                PendingCount = 0,
+                AverageScore = null
             });
         }
 
@@ -178,16 +118,7 @@ public sealed class FinalEvaluationsController : ControllerBase
 
         // INTERN không được truy cập hồ sơ người khác.
         if (IsIntern(decision.User?.Role))
-        {
-            var internId =
-                await evaluationService.GetInternIdByUserIdAsync(
-                    decision.User!.Id,
-                    cancellationToken
-                );
-
-            if (!internId.HasValue || internId.Value != id)
-                return StatusCode(StatusCodes.Status403Forbidden);
-        }
+            return StatusCode(StatusCodes.Status403Forbidden);
 
         var result = await evaluationService.GetByIdAsync(
             id,

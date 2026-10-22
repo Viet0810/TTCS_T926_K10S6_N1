@@ -37,3 +37,27 @@
 .tasks-page .task-update-action { margin-top: 10px; padding: 7px 9px; min-height: 36px; font-size: 12px; white-space: normal; }
 .tasks-page #progressStatusHelp { color: #64748b; line-height: 1.5; }
 .tasks-page #progressStatus { background: #f1f5f9; }
+
+.tasks-page #createTaskSection { border-top: 4px solid #356bea; }
+.tasks-page #createTaskSection h2, .tasks-page #taskListTitle { color: #10234a; }
+.tasks-page #taskForm label { color: #263b5f; font-weight: 650; }
+.tasks-page #taskForm select, .tasks-page #taskForm input, .tasks-page #taskForm textarea { transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.tasks-page #taskForm select:focus, .tasks-page #taskForm input:focus, .tasks-page #taskForm textarea:focus { border-color: #4f7df0; background: #fff; box-shadow: 0 0 0 3px rgba(53, 107, 234, .11); outline: 0; }
+.tasks-page .table-container { border: 1px solid #e1e8f2; border-radius: 14px; background: #fff; }
+.tasks-page .task-table th { padding-top: 15px; padding-bottom: 15px; color: #516787; font-size: 12px; letter-spacing: .035em; text-transform: uppercase; }
+.tasks-page .task-table tbody tr { transition: background-color .18s ease; }
+.tasks-page .task-table tbody tr:hover { background: #f8faff; }
+.tasks-page .task-person { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tasks-page .task-person-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; background: #eaf1ff; color: #2f63d8; font-size: 12px; font-weight: 750; }
+.tasks-page .task-person strong { min-width: 0; color: #172b4d; font-size: 13px; line-height: 1.35; }
+.tasks-page .task-deadline { color: #415575; font-weight: 600; }
+.tasks-page .task-deadline.is-overdue { color: #c93f51; }
+.tasks-page .task-status { gap: 6px; }
+.tasks-page .task-status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ''; }
+.tasks-page .task-status.is-in-progress { background: #fff5df; color: #9a6100; }
+.tasks-page .task-status.is-completed { background: #e9f8ef; color: #147347; }
+.tasks-page .task-progress-bar { overflow: hidden; border-radius: 999px; }
+.tasks-page .task-progress-label { font-size: 11px; font-weight: 600; }
+@media (max-width: 640px) {
+  .tasks-page #createTaskSection { border-top-width: 3px; }
+}

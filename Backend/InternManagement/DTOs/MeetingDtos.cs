@@ -25,6 +25,7 @@ public sealed record MeetingResponse(
     string? Description,
     int CreatedByUserId,
     IReadOnlyList<int> ParticipantUserIds,
+    IReadOnlyList<MeetingParticipantOption> Participants,
     int EmailsSent,
     int EmailsFailed,
     DateTimeOffset CreatedAt = default);

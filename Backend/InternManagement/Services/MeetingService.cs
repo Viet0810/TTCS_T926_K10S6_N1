@@ -55,18 +55,26 @@ public sealed class MeetingService(IConfiguration configuration,IEmailService em
     {
         await using var connection=new SqlConnection(connectionString);await connection.OpenAsync(ct);
         await using var command=new SqlCommand("""
-            SELECT m.Title,m.StartTime,m.EndTime,m.LocationOrLink,m.Description,m.CreatedByUserId,p.UserId,m.CreatedAt,
+            SELECT m.Title,m.StartTime,m.EndTime,m.LocationOrLink,m.Description,m.CreatedByUserId,p.UserId,
+                u.FullName,u.Email,u.Role,m.CreatedAt,
                 (SELECT COUNT(*) FROM dbo.MeetingEmailDeliveries d WHERE d.MeetingId=m.Id AND d.Status='SENT')
-            FROM dbo.Meetings m LEFT JOIN dbo.MeetingParticipants p ON p.MeetingId=m.Id WHERE m.Id=@id ORDER BY p.UserId
+            FROM dbo.Meetings m
+            LEFT JOIN dbo.MeetingParticipants p ON p.MeetingId=m.Id
+            LEFT JOIN dbo.Users u ON u.Id=p.UserId
+            WHERE m.Id=@id ORDER BY u.FullName,p.UserId
             """,connection);
         command.Parameters.Add("@id",SqlDbType.Int).Value=id;
-        await using var reader=await command.ExecuteReaderAsync(ct);MeetingResponse? result=null;var people=new List<int>();
+        await using var reader=await command.ExecuteReaderAsync(ct);MeetingResponse? result=null;var people=new List<int>();var participants=new List<MeetingParticipantOption>();
         while(await reader.ReadAsync(ct))
         {
-            if(!reader.IsDBNull(6))people.Add(reader.GetInt32(6));
+            if(!reader.IsDBNull(6))
+            {
+                var userId=reader.GetInt32(6);people.Add(userId);
+                participants.Add(new(userId,reader.GetString(7),reader.GetString(8),reader.GetString(9)));
+            }
             result??=new(id,reader.GetString(0),reader.GetFieldValue<DateTimeOffset>(1),reader.GetFieldValue<DateTimeOffset>(2),
-                reader.IsDBNull(3)?null:reader.GetString(3),reader.IsDBNull(4)?null:reader.GetString(4),reader.GetInt32(5),people,
-                Math.Max(sent,reader.GetInt32(8)),failed,reader.GetFieldValue<DateTimeOffset>(7));
+                reader.IsDBNull(3)?null:reader.GetString(3),reader.IsDBNull(4)?null:reader.GetString(4),reader.GetInt32(5),people,participants,
+                Math.Max(sent,reader.GetInt32(11)),failed,reader.GetFieldValue<DateTimeOffset>(10));
         }
         return result??throw new KeyNotFoundException("Không tìm thấy lịch họp.");
     }

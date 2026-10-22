@@ -338,6 +338,11 @@
   background: #edf3ff;
   color: var(--primary);
 }
+.role-menu a .app-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
 .role-menu-unavailable {
   color: #8d9ab0;
 }
@@ -634,6 +639,34 @@
 .dashboard-main .btn-compact { min-height: 36px; padding-inline: 12px; font-size: 12px; }
 .dashboard-main button:disabled { transform: none; box-shadow: none; }
 .dashboard-main .section-heading { flex-wrap: wrap; }
+
+/* Phân trang thống nhất cho toàn bộ các trang danh sách. */
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  color: #53647b;
+  font-size: 14px;
+}
+.table-pagination[hidden] { display: none; }
+.table-pagination nav { display: flex; align-items: center; gap: 14px; }
+.table-pagination .pagination-summary { min-width: 78px; color: var(--ink); text-align: center; font-size: 15px; }
+.table-pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  color: #1f3555;
+  background: #fff;
+  cursor: pointer;
+}
+.table-pagination button:hover:not(:disabled):not(.is-active) { border-color: var(--primary); color: var(--primary); }
+.table-pagination button.is-active { border-color: var(--primary); color: #fff; background: var(--primary); font-weight: 700; }
+.table-pagination button:disabled { opacity: .4; cursor: default; }
 .card, .table-container, .program-table-wrapper { min-width: 0; max-width: 100%; }
 .user-table th { font-size: 12px; color: #52647e; }
 .user-table td { line-height: 1.6; }

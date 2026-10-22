@@ -17,4 +17,5 @@ public sealed record InternAssignmentResponse(
 
 public sealed record InternScheduleResponse(
     int InternId, int? InternshipProgramId, DateOnly? StartDate, DateOnly? EndDate,
-    string? DepartmentName, string? MentorName, string? Status, string? ProgramName = null, int? DurationDays = null);
+    string? DepartmentName, string? MentorName, string? MentorEmail, string? Status,
+    string? ProgramName = null, int? DurationDays = null);

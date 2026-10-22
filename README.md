@@ -199,3 +199,26 @@ Hồ sơ tiếp nhận dùng bản ghi Intern và đơn thực tập (`applicati
 Admin có thể cấp/thu hồi riêng `REJECT_DOCUMENTS`, `ATTENDANCE_CHECK_IN`, `ATTENDANCE_CHECK_OUT`. Migration mới chỉ chuyển quyền gộp một lần, không phục hồi quyền đã bị thu hồi khi restart. Nghỉ phép chỉ tổng hợp trạng thái chấm công đã lưu; chưa triển khai Leave Request (US24).
 
 Kiểm thử riêng: `dotnet run --project Backend/InternManagement.Tests -- --sprint2-only`. Kiểm thử đầy đủ: `dotnet run --project Backend/InternManagement.Tests` (SQL database tạm được xóa sau test).
+
+# Demo Seeder
+
+Seeder tạo bộ dữ liệu trình diễn gồm 1 Admin, 1 HR, 5 Mentor, 50 Intern và các dữ liệu liên kết về chương trình, phân công, hợp đồng, điểm danh, tài liệu và đánh giá. Seeder idempotent và không xóa dữ liệu người dùng.
+
+Chạy trong môi trường Development:
+
+```powershell
+dotnet run --project Backend/InternManagement/InternManagement.csproj -- --seed-demo
+```
+
+Ngoài Development, phải bật cờ rõ ràng:
+
+```powershell
+$env:ENABLE_DEMO_SEED = "true"
+dotnet run --project Backend/InternManagement/InternManagement.csproj -- --seed-demo
+```
+
+Sau khi seed thành công, danh sách đăng nhập được ghi vào `docs/demo-accounts.md`. File này bị bỏ qua bởi Git. Tài khoản mặc định: `admin@demo.intern.local` / `Admin@123`.
+
+Admin có thể xem danh sách an toàn qua `GET /api/admin/demo-accounts` và đặt lại mật khẩu theo vai trò qua `POST /api/admin/demo-accounts/{id}/reset-password`. API không trả mật khẩu hay hash.
+
+> Không bật Demo Seeder và không dùng tài khoản/mật khẩu demo trên Production.

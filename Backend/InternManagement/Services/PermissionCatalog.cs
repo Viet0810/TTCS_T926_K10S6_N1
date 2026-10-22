@@ -49,6 +49,9 @@ public sealed record PermissionDescriptor(
         PermissionNames.UpdateFinalEvaluations
             => [PermissionNames.ViewFinalEvaluations],
 
+        PermissionNames.FinalizeEvaluationSummaries or PermissionNames.PublishEvaluationSummaries
+            => [PermissionNames.ViewEvaluationSummaries],
+
         PermissionNames.CreateWorkSchedule or PermissionNames.UpdateWorkSchedule => [PermissionNames.ReadWorkSchedules],
         PermissionNames.CreateMeeting => [PermissionNames.ReadMeetings],
         PermissionNames.UpdateOwnTasks => [PermissionNames.ReadOwnTasks],
@@ -64,7 +67,7 @@ public sealed record PermissionDescriptor(
 public static class PermissionCatalog
 {
     private static readonly string[] Staff =
-        ["ADMIN", "HR", "MENTOR", "INTERN"];
+        ["HR", "MENTOR", "INTERN"];
 
     public static readonly PermissionDescriptor[] Entries =
     [
@@ -90,7 +93,7 @@ public static class PermissionCatalog
         new(PermissionNames.ReviewLeaveRequests, "mentor-leave-requests", "Duyệt đơn nghỉ", "APPROVE", ["MENTOR"]),
         new(PermissionNames.ReadNotifications, "notifications", "Thông báo", "READ", Staff),
         new(PermissionNames.UpdateNotifications, "notifications", "Thông báo", "UPDATE", Staff),
-        new(PermissionNames.CreateNotifications, "notifications", "Thông báo", "CREATE", ["ADMIN", "HR"]),
+        new(PermissionNames.CreateNotifications, "notifications", "Thông báo", "CREATE", ["HR"]),
 
         // Quản lý thực tập sinh
         new(PermissionNames.ViewInterns, "interns", "Hồ sơ thực tập sinh", "READ", ["HR", "MENTOR"]),
@@ -117,7 +120,7 @@ public static class PermissionCatalog
         new(PermissionNames.ManagePermissions, "rbac", "Cấu hình RBAC", "UPDATE", ["ADMIN"]),
 
         // Hồ sơ cá nhân
-        new(PermissionNames.ViewProfile, "profile", "Thông tin tài khoản", "READ", Staff),
+        new(PermissionNames.ViewProfile, "profile", "Thông tin tài khoản", "READ", ["ADMIN", "HR", "MENTOR", "INTERN"]),
         new(PermissionNames.ViewOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "READ", ["INTERN"]),
         new(PermissionNames.EditOwnProfile, "own-profile", "Hồ sơ thực tập của tôi", "UPDATE", ["INTERN"]),
         new(PermissionNames.ViewOwnSchedule, "own-schedule", "Lịch thực tập của tôi", "READ", ["INTERN"]),
@@ -153,7 +156,7 @@ public static class PermissionCatalog
             "final-evaluations",
             "Đánh giá cuối kỳ",
             "READ",
-            ["ADMIN", "HR", "MENTOR", "INTERN"]
+            ["HR", "MENTOR", "INTERN"]
         ),
 
         new(
@@ -162,6 +165,9 @@ public static class PermissionCatalog
             "Đánh giá cuối kỳ",
             "UPDATE",
             ["MENTOR"]
-        )
+        ),
+        new(PermissionNames.ViewEvaluationSummaries, "evaluation-summaries", "Tổng hợp đánh giá", "READ", ["HR"]),
+        new(PermissionNames.FinalizeEvaluationSummaries, "evaluation-summaries", "Tổng hợp đánh giá", "FINALIZE", ["HR"]),
+        new(PermissionNames.PublishEvaluationSummaries, "evaluation-summaries", "Tổng hợp đánh giá", "PUBLISH", ["HR"])
     ];
 }

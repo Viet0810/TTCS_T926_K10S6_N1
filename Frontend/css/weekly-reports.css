@@ -4,7 +4,7 @@
 .weekly-reports-page .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .weekly-reports-page textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; padding: 12px 14px; border: 1px solid #dce3ed; border-radius: 11px; background: #f8fafc; color: #172b4d; font: inherit; line-height: 1.6; }
 .weekly-reports-page textarea:focus { outline: 2px solid #6c94ed; outline-offset: 2px; }
-.weekly-reports-page #reportForm { grid-template-columns: minmax(0,1fr); }
+.weekly-reports-page #reportForm { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px 20px; }
 .weekly-reports-page .form-actions { justify-content: flex-end; }
 .weekly-reports-page small, .weekly-reports-page .report-meta { color: #64748b; }
 .weekly-reports-page .weekly-report { min-width: 0; padding: 20px 0; border-bottom: 1px solid #edf1f7; }
@@ -21,3 +21,56 @@
 .weekly-reports-page .report-feedback-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .weekly-reports-page .report-feedback-status.is-pending { background: #fff7e6; color: #8a5700; }
 .weekly-reports-page .report-feedback-status.is-reviewed { background: #eaf8f0; color: #17663c; }
+
+.weekly-reports-page #reportList { display: grid; gap: 18px; }
+.weekly-reports-page .weekly-report {
+  padding: 22px;
+  border: 1px solid #e1e8f2;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(23, 43, 77, .05);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.weekly-reports-page .weekly-report:hover { border-color: #cbd9ee; box-shadow: 0 10px 26px rgba(23, 43, 77, .08); transform: translateY(-1px); }
+.weekly-reports-page .report-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.weekly-reports-page .report-card-header h3 { margin-bottom: 5px; color: #10234a; font-size: 18px; }
+.weekly-reports-page .report-card-header .report-meta { margin: 0; }
+.weekly-reports-page .report-section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.weekly-reports-page .report-section { min-width: 0; min-height: 92px; padding: 15px 16px; border: 1px solid #e6ebf3; border-left: 4px solid #356bea; border-radius: 12px; background: #f8faff; }
+.weekly-reports-page .report-section-2 { border-left-color: #16a36a; background: #f5fcf8; }
+.weekly-reports-page .report-section-3 { border-left-color: #e59a18; background: #fffbf3; }
+.weekly-reports-page .report-section-4 { border-left-color: #8757e8; background: #faf8ff; }
+.weekly-reports-page .report-section-full { grid-column: 1 / -1; }
+.weekly-reports-page .report-section-label { display: block; margin-bottom: 7px; color: #526789; font-size: 12px; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
+.weekly-reports-page .report-section .report-text { margin: 0; color: #172b4d; line-height: 1.55; }
+.weekly-reports-page .report-feedback-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #e8edf5; }
+.weekly-reports-page .report-feedback-heading h4 { margin: 0; color: #172b4d; font-size: 14px; }
+.weekly-reports-page .report-feedback { border: 1px solid #dce7fa; background: #f4f8ff; }
+.weekly-reports-page .report-feedback strong { display: block; margin-bottom: 5px; color: #214f9c; font-size: 13px; }
+.weekly-reports-page .report-feedback .report-text { margin: 0; }
+.weekly-reports-page #internFilter { background-color: #f8fafc; }
+.weekly-reports-page #createReportSection { overflow: hidden; border-top: 4px solid #356bea; }
+.weekly-reports-page .report-form-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
+.weekly-reports-page .report-form-heading h2 { margin: 0 0 4px; color: #10234a; font-size: 20px; }
+.weekly-reports-page .report-form-heading p { margin: 0; color: #64748b; font-size: 14px; }
+.weekly-reports-page .report-form-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; background: #eaf1ff; color: #2f63d8; font-size: 20px; font-weight: 800; }
+.weekly-reports-page #reportForm > .form-group:first-child { grid-column: 1 / -1; }
+.weekly-reports-page #reportForm label { color: #263b5f; font-weight: 700; }
+.weekly-reports-page #reportForm input, .weekly-reports-page #reportForm textarea { transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.weekly-reports-page #reportForm input:focus, .weekly-reports-page #reportForm textarea:focus { border-color: #4f7df0; background: #fff; box-shadow: 0 0 0 3px rgba(53, 107, 234, .11); outline: 0; }
+.weekly-reports-page #reportForm textarea { min-height: 112px; }
+.weekly-reports-page .report-field-work, .weekly-reports-page .report-field-plan { grid-column: 1 / -1; }
+.weekly-reports-page .report-form-note { align-self: center; margin: 0; padding-left: 22px; color: #64748b; font-size: 13px; line-height: 1.5; position: relative; }
+.weekly-reports-page .report-form-note::before { position: absolute; left: 0; top: 1px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #edf4ff; color: #356bea; content: 'i'; font-size: 11px; font-weight: 800; }
+.weekly-reports-page #reportForm .form-actions { margin: 0; align-self: center; }
+.weekly-reports-page #submitReport { min-width: 160px; min-height: 46px; }
+@media (max-width: 760px) {
+  .weekly-reports-page #reportForm { grid-template-columns: minmax(0, 1fr); }
+  .weekly-reports-page #reportForm > .form-group:first-child, .weekly-reports-page .report-field-work, .weekly-reports-page .report-field-plan { grid-column: 1; }
+  .weekly-reports-page #reportForm .form-actions { justify-content: stretch; }
+  .weekly-reports-page #submitReport { width: 100%; }
+  .weekly-reports-page .report-section-grid { grid-template-columns: minmax(0, 1fr); }
+  .weekly-reports-page .report-section-full { grid-column: 1; }
+  .weekly-reports-page .report-card-header, .weekly-reports-page .report-feedback-heading { align-items: flex-start; flex-direction: column; }
+  .weekly-reports-page .weekly-report { padding: 17px; }
+}

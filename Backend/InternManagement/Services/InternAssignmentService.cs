@@ -116,7 +116,7 @@ public sealed class InternAssignmentService(IConfiguration configuration)
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using var command = new SqlCommand("""
-            SELECT i.Id, p.Id, p.StartDate, p.EndDate, COALESCE(p.Department,i.Department), m.FullName, p.Name
+            SELECT i.Id, p.Id, p.StartDate, p.EndDate, COALESCE(p.Department,i.Department), m.FullName, m.Email, p.Name
             FROM dbo.Users u
             INNER JOIN dbo.Interns i ON i.Email = u.Email
             LEFT JOIN dbo.InternshipPrograms p ON p.Id = i.InternshipProgramId
@@ -131,8 +131,9 @@ public sealed class InternAssignmentService(IConfiguration configuration)
         var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).Date);
         var status = start is null || end is null ? null : today < start ? "UPCOMING" : today > end ? "ENDED" : "ACTIVE";
         return new(reader.GetInt32(0), reader.IsDBNull(1) ? null : reader.GetInt32(1), start, end,
-            reader.IsDBNull(4) ? null : reader.GetString(4), reader.IsDBNull(5) ? null : reader.GetString(5), status,
-            reader.IsDBNull(6) ? null : reader.GetString(6), start is not null && end is not null ? end.Value.DayNumber-start.Value.DayNumber+1 : null);
+            reader.IsDBNull(4) ? null : reader.GetString(4), reader.IsDBNull(5) ? null : reader.GetString(5),
+            reader.IsDBNull(6) ? null : reader.GetString(6), status, reader.IsDBNull(7) ? null : reader.GetString(7),
+            start is not null && end is not null ? end.Value.DayNumber-start.Value.DayNumber+1 : null);
     }
 }
 

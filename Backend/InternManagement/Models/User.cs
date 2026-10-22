@@ -9,4 +9,5 @@ public sealed class User
     public string PasswordHash { get; init; } = "";
     public string Role { get; init; } = "";
     public bool MustChangePassword { get; init; }
+    public bool IsDemoAccount { get; init; }
 }
