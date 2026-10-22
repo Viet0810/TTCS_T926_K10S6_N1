@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ma trận phân quyền | Hệ thống quản lý thực tập sinh</title>
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css?v=20261022-13" />
+    <link rel="stylesheet" href="../css/permissions.css?v=20261022-1" />
+      <link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/visuals.css">
+</head>
+  <body>
+    <div class="dashboard">
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
+          <div class="dashboard-title">
+            <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+            <h1>Ma trận quyền theo vai trò</h1>
+          </div>
+        </div>
+        <div class="dashboard-session">
+          <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button type="button" id="logoutBtn" class="btn-danger">
+            Đăng xuất
+          </button>
+        </div>
+      </header>
+      <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+      <main class="dashboard-main">
+        <section class="card permission-role-island">
+          <div class="section-heading">
+            <div>
+              <span class="section-label">QUẢN TRỊ HỆ THỐNG</span>
+              <h2>Phân quyền hệ thống</h2>
+              <p>
+                Mỗi vai trò chỉ được truy cập các chức năng được cấp quyền.
+              </p>
+            </div>
+          </div>
+          <div class="permission-toolbar">
+            <div class="permission-tabs" aria-label="Chọn vai trò">
+              <button type="button" class="btn-secondary" data-role="ADMIN">Admin</button>
+              <button type="button" class="btn-secondary" data-role="HR">HR</button>
+              <button type="button" class="btn-secondary" data-role="MENTOR">Mentor</button>
+              <button type="button" class="btn-secondary" data-role="INTERN">Intern</button>
+            </div>
+            <label class="permission-role-select">Vai trò<select id="roleSelect"><option>ADMIN</option><option>HR</option><option>MENTOR</option><option>INTERN</option></select></label>
+          </div>
+        </section>
+        <section class="card permission-matrix-island">
+          <div class="permission-matrix-header">
+            <div class="permission-filter"><label for="permissionSearch">Tìm chức năng</label><input type="search" id="permissionSearch" placeholder="Tìm chức năng…" maxlength="200"></div>
+            <p class="permission-selection">Đang cấu hình: <strong id="selectedRoleLabel">ADMIN</strong> <span id="permissionCount" class="badge">Đang tải…</span></p>
+          </div>
+          <div id="permissionMatrix" aria-label="Ma trận quyền"></div>
+          <div class="permission-footer">
+            <span id="permissionDirtyStatus" role="status">Chưa có thay đổi</span>
+            <div class="permission-actions"><button type="button" class="btn-secondary" id="resetPermissionsBtn" disabled>Khôi phục mặc định</button><button type="button" class="btn-secondary" id="cancelPermissionsBtn" disabled>Hủy</button><button type="button" class="btn-primary" id="savePermissionsBtn" disabled>Lưu quyền</button></div>
+          </div>
+          <p
+            id="permissionsMessage"
+            class="dashboard-message"
+            role="status"
+          ></p>
+          <button type="button" class="btn-secondary" id="retryPermissionsBtn" hidden>Tải lại cấu hình</button>
+        </section>
+      </main>
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+    </div>
+    <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script>
+    <script src="../js/permissions.js?v=20261022-1"></script>
+  </body>
+</html>

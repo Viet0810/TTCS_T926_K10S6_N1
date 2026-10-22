@@ -4,36 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Quản lý thực tập sinh | Intern Management System</title>
+    <title>Quản lý thực tập sinh | Hệ thống quản lý thực tập sinh</title>
 
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/style.css?v=20261022-13" />
     <link rel="stylesheet" href="../css/intern.css" />
-  </head>
+  <link rel="stylesheet" href="../css/auth.css">    <link rel="stylesheet" href="../css/ui.css">
+<link rel="stylesheet" href="../css/visuals.css">
+<link rel="stylesheet" href="../css/tables.css?v=20261022-7">
+</head>
 
-  <body>
-    <div class="page-container">
-
+  <body class="intern-page">
+    <div class="dashboard">
       <!-- HEADER -->
-      <header class="header">
-        <div class="brand">
-          <div class="brand-logo">IM</div>
+      <header class="dashboard-header">
+        <div class="dashboard-brand">
+          <div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div>
 
-          <div>
-            <p class="brand-subtitle">INTERN MANAGEMENT SYSTEM</p>
+          <div class="dashboard-title">
+            <p class="section-label">HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</p>
             <h1>Hệ thống quản lý Thực tập sinh</h1>
           </div>
         </div>
 
-        <div class="header-actions">
-          <span class="user-role">HR</span>
-          <button id="logoutBtn" class="btn-logout">
-            Đăng xuất
-          </button>
+        <div class="dashboard-session">
+          <a id="searchInternLink" href="hr-search-filter.html" class="btn-secondary" hidden>Tìm kiếm & Lọc</a>
+          <span id="roleBadge" class="badge"></span>
+          <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+<button id="logoutBtn" class="btn-danger">Đăng xuất</button>
         </div>
       </header>
+      <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
 
       <!-- MAIN -->
-      <main>
-
+      <main class="dashboard-main">
         <!-- TIÊU ĐỀ -->
         <section class="page-heading">
           <div>
@@ -41,20 +45,17 @@
             <p>Quản lý và lưu trữ hồ sơ thực tập sinh.</p>
           </div>
 
-          <button id="openFormBtn" class="btn-primary">
-            + Thêm hồ sơ
-          </button>
+          <button id="openFormBtn" class="btn-primary">+ Thêm hồ sơ</button>
         </section>
 
         <!-- THÔNG BÁO -->
-        <div id="messageBox" class="message-box"></div>
+        <div id="messageBox" class="message-box" role="status" aria-live="polite"></div>
 
         <!-- FORM THÊM HỒ SƠ -->
         <section id="internFormSection" class="card form-card hidden">
-
           <div class="card-header">
             <div>
-              <h3>Thêm hồ sơ thực tập sinh</h3>
+              <h3 id="internFormTitle">Thêm hồ sơ thực tập sinh</h3>
               <p>Nhập thông tin của thực tập sinh.</p>
             </div>
 
@@ -69,356 +70,68 @@
           </div>
 
           <form id="createInternForm">
-
-            <div class="form-grid">
-
-              <!-- HỌ TÊN -->
-              <div class="form-group">
-                <label for="fullName">
-                  Họ và tên <span>*</span>
-                </label>
-
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  placeholder="Nhập họ và tên"
-                  required
-                />
-
-                <small class="error-message" id="fullNameError"></small>
-              </div>
-
-              <!-- EMAIL -->
-              <div class="form-group">
-                <label for="email">
-                  Email <span>*</span>
-                </label>
-
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  placeholder="example@email.com"
-                  required
-                />
-
-                <small class="error-message" id="emailError"></small>
-              </div>
-
-              <!-- SỐ ĐIỆN THOẠI -->
-              <div class="form-group">
-                <label for="phone">
-                  Số điện thoại <span>*</span>
-                </label>
-
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  placeholder="Nhập số điện thoại"
-                  required
-                />
-
-                <small class="error-message" id="phoneError"></small>
-              </div>
-
-              <!-- TRƯỜNG -->
-              <div class="form-group">
-                <label for="school">
-                  Trường <span>*</span>
-                </label>
-
-                <input
-                  type="text"
-                  id="school"
-                  name="school"
-                  placeholder="Nhập tên trường"
-                  required
-                />
-
-                <small class="error-message" id="schoolError"></small>
-              </div>
-
-              <!-- CHUYÊN NGÀNH -->
-              <div class="form-group full-width">
-                <label for="major">
-                  Chuyên ngành <span>*</span>
-                </label>
-
-                <input
-                  type="text"
-                  id="major"
-                  name="major"
-                  placeholder="Nhập chuyên ngành"
-                  required
-                />
-
-                <small class="error-message" id="majorError"></small>
-              </div>
-
-            </div>
-
+<p class="form-hint">Các mục có dấu * là bắt buộc. Có thể bổ sung các thông tin còn lại khi tiếp nhận hồ sơ.</p><fieldset class="profile-fieldset"><legend>Thông tin cá nhân</legend><div class="form-grid"><div class="form-group"><label for="fullName">Họ và tên <span>*</span></label><input type="text" id="fullName" name="fullName" required maxlength="200"><small class="error-message" id="fullNameError"></small></div><div class="form-group"><label for="dateOfBirth">Ngày sinh</label><input type="date" id="dateOfBirth" name="dateOfBirth"><small class="error-message" id="dateOfBirthError"></small></div><div class="form-group auth-field"><label for="email">Email <span>*</span></label><input placeholder="Nhập email" type="email" id="email" name="email" required maxlength="254"><small class="error-message" id="emailError"></small></div><div class="form-group"><label for="phone">Số điện thoại <span>*</span></label><input type="tel" id="phone" name="phone" required maxlength="20"><small class="error-message" id="phoneError"></small></div><div class="form-group full-width"><label for="address">Địa chỉ liên hệ</label><textarea id="address" name="address" maxlength="500" rows="3"></textarea><small class="error-message" id="addressError"></small></div></div></fieldset><fieldset class="profile-fieldset"><legend>Thông tin đào tạo</legend><div class="form-grid"><div class="form-group"><label for="studentCode">Mã sinh viên</label><input type="text" id="studentCode" name="studentCode" maxlength="50"><small class="error-message" id="studentCodeError"></small></div><div class="form-group"><label for="className">Lớp</label><input type="text" id="className" name="className" maxlength="100"><small class="error-message" id="classNameError"></small></div><div class="form-group"><label for="school">Trường đào tạo <span>*</span></label><input type="text" id="school" name="school" required maxlength="200"><small class="error-message" id="schoolError"></small></div><div class="form-group"><label for="faculty">Khoa</label><input type="text" id="faculty" name="faculty" maxlength="200"><small class="error-message" id="facultyError"></small></div><div class="form-group"><label for="major">Chuyên ngành <span>*</span></label><input type="text" id="major" name="major" required maxlength="200"><small class="error-message" id="majorError"></small></div></div></fieldset><details class="profile-optional"><summary>Thông tin thực tập và người hướng dẫn (không bắt buộc)</summary><fieldset class="profile-fieldset"><legend>Thông tin thực tập</legend><div class="form-grid"><div class="form-group"><label for="organization">Đơn vị thực tập</label><input type="text" id="organization" name="organization" maxlength="200"><small class="error-message" id="organizationError"></small></div><div class="form-group full-width"><label for="organizationAddress">Địa chỉ đơn vị</label><textarea id="organizationAddress" name="organizationAddress" maxlength="500" rows="3"></textarea><small class="error-message" id="organizationAddressError"></small></div><div class="form-group"><label for="department">Bộ phận thực tập</label><input type="text" id="department" name="department" maxlength="200"><small class="error-message" id="departmentError"></small></div><div class="form-group"><label for="position">Vị trí thực tập</label><input type="text" id="position" name="position" maxlength="200"><small class="error-message" id="positionError"></small></div><div class="form-group full-width"><label for="internshipTopic">Đề tài / nội dung thực tập</label><textarea id="internshipTopic" name="internshipTopic" maxlength="500" rows="3"></textarea><small class="error-message" id="internshipTopicError"></small></div><div class="form-group"><label for="startDate">Ngày bắt đầu</label><input type="date" id="startDate" name="startDate"><small class="error-message" id="startDateError"></small></div><div class="form-group"><label for="endDate">Ngày kết thúc</label><input type="date" id="endDate" name="endDate"><small class="error-message" id="endDateError"></small></div><div class="form-group"><label for="status">Trạng thái thực tập</label><select id="status" name="status" maxlength="50"><option value="">Chưa xác định</option><option>Chờ tiếp nhận</option><option>Đang thực tập</option><option>Đã hoàn thành</option><option>Đã dừng</option></select><small class="error-message" id="statusError"></small></div></div></fieldset><fieldset class="profile-fieldset"><legend>Người hướng dẫn và ghi chú</legend><div class="form-grid"><div class="form-group"><label for="mentor">Người hướng dẫn tại đơn vị</label><input type="text" id="mentor" name="mentor" maxlength="200"><small class="error-message" id="mentorError"></small></div><div class="form-group auth-field"><label for="mentorEmail">Email người hướng dẫn</label><input placeholder="Nhập email" type="email" id="mentorEmail" name="mentorEmail" maxlength="254"><small class="error-message" id="mentorEmailError"></small></div><div class="form-group"><label for="mentorPhone">Số điện thoại người hướng dẫn</label><input type="tel" id="mentorPhone" name="mentorPhone" maxlength="20"><small class="error-message" id="mentorPhoneError"></small></div><div class="form-group"><label for="academicSupervisor">Giảng viên hướng dẫn</label><input type="text" id="academicSupervisor" name="academicSupervisor" maxlength="200"><small class="error-message" id="academicSupervisorError"></small></div><div class="form-group full-width"><label for="notes">Ghi chú</label><textarea id="notes" name="notes" maxlength="2000" rows="3"></textarea><small class="error-message" id="notesError"></small></div></div></fieldset>
+</details>
             <!-- BUTTON -->
             <div class="form-actions">
-
-              <button
-                type="button"
-                id="cancelBtn"
-                class="btn-secondary"
-              >
+              <button type="button" id="cancelBtn" class="btn-secondary">
                 Hủy
               </button>
 
-              <button
-                type="submit"
-                class="btn-primary"
-              >
-                Thêm hồ sơ
-              </button>
-
+              <button id="saveInternBtn" type="submit" class="btn-primary">Thêm hồ sơ</button>
             </div>
-
           </form>
         </section>
 
         <!-- DANH SÁCH -->
         <section class="card">
-
           <div class="list-header">
-
             <div>
               <h3>Danh sách thực tập sinh</h3>
               <p>Danh sách hồ sơ hiện có trong hệ thống.</p>
             </div>
 
-            <div class="search-box">
+            <div class="user-search">
               <input
                 type="search"
                 id="searchInput"
-                placeholder="Tìm theo tên hoặc email..."
+                placeholder="Tìm tên, mã sinh viên hoặc email..."
               />
             </div>
-
           </div>
 
           <!-- TABLE -->
-          <div class="table-wrapper">
-
-            <table>
-
+          <div class="table-container">
+            <table class="user-table">
               <thead>
                 <tr>
-                  <th>Họ và tên</th>
+                  <th>Mã sinh viên</th><th>Họ và tên</th>
                   <th>Email</th>
                   <th>Số điện thoại</th>
                   <th>Trường</th>
                   <th>Chuyên ngành</th>
-                  <th>Hành động</th>
+                  <th>Đơn vị thực tập</th><th>Trạng thái</th><th>Hành động</th>
                 </tr>
               </thead>
 
               <tbody id="internTableBody">
-
                 <tr id="emptyRow">
-                  <td colspan="6" class="empty-state">
-                    Chưa có hồ sơ thực tập sinh.
+                  <td colspan="9" class="empty-state">
+                    Đang tải hồ sơ thực tập sinh…
                   </td>
                 </tr>
-
               </tbody>
-
             </table>
-
           </div>
-
         </section>
-
       </main>
 
       <!-- FOOTER -->
-      <footer>
-        © 2026 Intern Management System
-      </footer>
-
+      <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
     </div>
 
-    <!-- ============================= -->
-    <!-- MODAL CHỈNH SỬA THỰC TẬP SINH -->
-    <!-- ============================= -->
-
-    <div id="editInternModal" class="edit-modal hidden">
-
-      <!-- Lớp nền tối -->
-      <div
-        class="edit-modal-overlay"
-        id="editModalOverlay"
-      ></div>
-
-      <!-- Nội dung Modal -->
-      <div class="edit-modal-content">
-
-        <!-- Header -->
-        <div class="edit-modal-header">
-
-          <div>
-            <span class="edit-label">
-              INTERN MANAGEMENT SYSTEM
-            </span>
-
-            <h2>Chỉnh sửa hồ sơ thực tập sinh</h2>
-
-            <p>
-              Cập nhật những thông tin đã thay đổi.
-            </p>
-          </div>
-
-          
-          <button
-            type="button"
-            id="closeEditModal"
-            class="edit-close-btn"
-          >
-            &times;
-          </button>
-
-        </div>
-
-
-        <!-- Form chỉnh sửa -->
-        <form id="editInternForm">
-
-          <!-- Lưu ID của thực tập sinh -->
-          <input
-            type="hidden"
-            id="editInternId"
-          />
-
-
-          <div class="form-grid">
-
-            <!-- Họ tên -->
-            <div class="form-group">
-
-              <label for="editFullName">
-                Họ và tên *
-              </label>
-
-              <input
-                type="text"
-                id="editFullName"
-                placeholder="Nhập họ và tên"
-                required
-              />
-
-            </div>
-
-
-            <!-- Email -->
-            <div class="form-group">
-
-              <label for="editEmail">
-                Email *
-              </label>
-
-              <input
-                type="email"
-                id="editEmail"
-                placeholder="Nhập email"
-                required
-              />
-
-            </div>
-
-
-            <!-- Số điện thoại -->
-            <div class="form-group">
-
-              <label for="editPhone">
-                Số điện thoại
-              </label>
-
-              <input
-                type="text"
-                id="editPhone"
-                placeholder="Nhập số điện thoại"
-              />
-
-            </div>
-
-
-            <!-- Trường -->
-            <div class="form-group">
-
-              <label for="editSchool">
-                Trường
-              </label>
-
-              <input
-                type="text"
-                id="editSchool"
-                placeholder="Nhập tên trường"
-              />
-
-            </div>
-
-
-            <!-- Chuyên ngành -->
-            <div class="form-group full-width">
-
-              <label for="editMajor">
-                Chuyên ngành
-              </label>
-
-              <input
-                type="text"
-                id="editMajor"
-                placeholder="Nhập chuyên ngành"
-              />
-
-            </div>
-
-          </div>
-
-
-          <!-- Thông báo -->
-          <div
-            id="editMessage"
-            class="edit-message"
-          ></div>
-
-
-          <!-- Các nút -->
-          <div class="edit-actions">
-
-            <button
-              type="button"
-              id="cancelEditBtn"
-              class="btn-cancel"
-            >
-              Hủy
-            </button>
-
-            <button
-              type="submit"
-              class="btn-save"
-            >
-              Lưu thay đổi
-            </button>
-
-          </div>
-
-        </form>
-
-      </div>
-
-    </div>
-
-
-    <!-- JavaScript -->
-    <script src="../js/intern.js"></script>
-
-  </body>
+    <script src="../js/api.js"></script><script src="../js/ui.js"></script><script src="../js/tables.js?v=20261022-7"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script><script src="../js/intern-profile.js"></script>
+    <script src="../js/intern.js?v=20261022-1"></script>
+  <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogTitle"><div class="card-header"><h2 id="profileDialogTitle">Hồ sơ thực tập sinh</h2><button type="button" id="closeProfileDialog" class="btn-secondary">Đóng</button></div><div id="profileDialogDetails"></div></dialog>
+</body>
 </html>
-
- 

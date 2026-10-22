@@ -1,6 +1,11 @@
-<<<<<<< HEAD
 
 # HỆ THỐNG QUẢN LÝ THỰC TẬP SINH
+
+Hướng dẫn cấu hình đăng nhập và email đặt lại mật khẩu: [docs/password-recovery.md](docs/password-recovery.md).
+
+Cấu trúc backend, API hồ sơ và quyền HR: [docs/backend-frontend-contract.md](docs/backend-frontend-contract.md).
+
+Phân quyền động trên website, migration và bằng chứng kiểm thử: [docs/dynamic-rbac-2026-10-11.md](docs/dynamic-rbac-2026-10-11.md). Admin đổi quyền qua trang **Phân quyền hệ thống**, không cần sửa source; quyền trong các tài liệu cũ là template mặc định.
 
 ## 1. Tổng quan dự án
 
@@ -186,3 +191,34 @@ Hệ thống tập trung giải quyết các vấn đề về:
 - Báo cáo và thống kê.
 
 Với các actor chính gồm **sinh viên, giảng viên, người hướng dẫn, đơn vị thực tập và quản trị viên**, hệ thống hướng tới việc tạo ra một môi trường quản lý thực tập tập trung, minh bạch và thuận tiện cho các bên liên quan.
+
+### Sprint 2
+
+Hồ sơ tiếp nhận dùng bản ghi Intern và đơn thực tập (`application`) hiện có. Đơn phải được duyệt, không có tài liệu bị từ chối, trước khi tải hợp đồng/phân công. Phân công cần hợp đồng và chương trình; đổi Mentor giữ chương trình khi request không gửi ProgramId. Check-in cần thực tập đang hoạt động trong kỳ chương trình. Lịch sử chấm công lấy theo user đăng nhập; báo cáo hỗ trợ ProgramId và đếm bản ghi hoàn thành/đang check-in.
+
+Admin có thể cấp/thu hồi riêng `REJECT_DOCUMENTS`, `ATTENDANCE_CHECK_IN`, `ATTENDANCE_CHECK_OUT`. Migration mới chỉ chuyển quyền gộp một lần, không phục hồi quyền đã bị thu hồi khi restart. Nghỉ phép chỉ tổng hợp trạng thái chấm công đã lưu; chưa triển khai Leave Request (US24).
+
+Kiểm thử riêng: `dotnet run --project Backend/InternManagement.Tests -- --sprint2-only`. Kiểm thử đầy đủ: `dotnet run --project Backend/InternManagement.Tests` (SQL database tạm được xóa sau test).
+
+# Demo Seeder
+
+Seeder tạo bộ dữ liệu trình diễn gồm 1 Admin, 1 HR, 5 Mentor, 50 Intern và các dữ liệu liên kết về chương trình, phân công, hợp đồng, điểm danh, tài liệu và đánh giá. Seeder idempotent và không xóa dữ liệu người dùng.
+
+Chạy trong môi trường Development:
+
+```powershell
+dotnet run --project Backend/InternManagement/InternManagement.csproj -- --seed-demo
+```
+
+Ngoài Development, phải bật cờ rõ ràng:
+
+```powershell
+$env:ENABLE_DEMO_SEED = "true"
+dotnet run --project Backend/InternManagement/InternManagement.csproj -- --seed-demo
+```
+
+Sau khi seed thành công, danh sách đăng nhập được ghi vào `docs/demo-accounts.md`. File này bị bỏ qua bởi Git. Tài khoản mặc định: `admin@demo.intern.local` / `Admin@123`.
+
+Admin có thể xem danh sách an toàn qua `GET /api/admin/demo-accounts` và đặt lại mật khẩu theo vai trò qua `POST /api/admin/demo-accounts/{id}/reset-password`. API không trả mật khẩu hay hash.
+
+> Không bật Demo Seeder và không dùng tài khoản/mật khẩu demo trên Production.

@@ -1,0 +1,102 @@
+using InternManagement.DTOs;
+using InternManagement.Services;
+using Microsoft.AspNetCore.Mvc;
+using InternManagement.Infrastructure;
+
+namespace InternManagement.Controllers;
+
+[ApiController]
+[Route("api/document-reviews")]
+public sealed class DocumentReviewsController(InternDocumentService documents, RequestAuthorizationService authorization,
+    IInternService interns, PasswordResetService email, ILogger<DocumentReviewsController> logger) : ControllerBase
+{
+    private AuthorizationDecision Access(bool review = false)
+    {
+        var decision = authorization.Evaluate(Request, review ? PermissionNames.ApproveDocuments : PermissionNames.ReadDocumentReviews);
+        return decision;
+    }
+
+    private IActionResult Denied(AuthorizationDecision decision) => AuthorizationResponses.Denied(decision.Status);
+
+    [HttpGet]
+    public async Task<IActionResult> List(CancellationToken cancellationToken)
+    {
+        var decision = Access();
+        if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
+        return Ok(await documents.ListReviewsAsync(cancellationToken));
+    }
+
+    [HttpGet("{id:int}/{kind}")]
+    public async Task<IActionResult> Download(int id, string kind, CancellationToken cancellationToken)
+    {
+        var decision = Access();
+        if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
+        if (!InternDocumentService.ValidKind(kind)) return BadRequest(new { message = "Loại tài liệu không hợp lệ." });
+        var document = await documents.DownloadAsync(id, kind, cancellationToken);
+        if (document is null) return NotFound(new { message = "Không tìm thấy tài liệu." });
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(document.Content, "application/pdf", document.FileName);
+    }
+
+    [HttpPut("{id:int}/{kind}")]
+    public async Task<IActionResult> Review(int id, string kind, ReviewDocumentRequest request, CancellationToken cancellationToken)
+    {
+        var decision = authorization.Evaluate(Request, request.Status == "rejected" ? PermissionNames.RejectDocuments : PermissionNames.ApproveDocuments);
+        if (decision.Status != AuthorizationStatus.Authorized) return Denied(decision);
+        if (!InternDocumentService.ValidKind(kind)) return BadRequest(new { message = "Loại tài liệu không hợp lệ." });
+        if (request.Status == "rejected" && string.IsNullOrWhiteSpace(request.Comment))
+            return BadRequest(new { message = "Vui lòng nhập lý do từ chối." });
+        if (!TryVersion(request.Version, out var version))
+            return BadRequest(new { message = "Phiên bản tài liệu không hợp lệ." });
+
+        var result = await documents.ReviewAsync(id, kind, decision.User!.Id, request, version, cancellationToken);
+        if (result == DocumentReviewResult.Updated)
+        {
+            var emailSent = false;
+            try
+            {
+                var owner = await interns.GetByIdAsync(id, cancellationToken);
+                if (owner is not null)
+                {
+                    await email.SendReviewResultAsync(owner.Email, owner.FullName, kind, request.Status, request.Comment, cancellationToken);
+                    emailSent = true;
+                }
+            }
+            catch (Exception error)
+            {
+                logger.LogWarning("Review result email failed for intern {InternId}, type {FailureType}.", id, error.GetType().Name);
+            }
+            return Ok(new { emailSent, message = emailSent ? "Đã lưu kết quả duyệt và gửi email thông báo."
+                : "Đã lưu kết quả duyệt nhưng chưa gửi được email thông báo." });
+        }
+        return result switch
+        {
+            DocumentReviewResult.NotFound => NotFound(new { message = "Không tìm thấy tài liệu. Vui lòng tải lại danh sách." }),
+            DocumentReviewResult.AlreadyReviewed => Conflict(new { message = "Tài liệu đã được xử lý, không thể xét duyệt lại." }),
+            _ => Conflict(new { message = "Tài liệu đã thay đổi. Vui lòng tải lại trước khi duyệt." })
+        };
+    }
+
+    [HttpPut("{id:int}/{kind}/approve")]
+    public Task<IActionResult> Approve(int id, string kind, DocumentDecisionRequest request, CancellationToken cancellationToken)
+        => Review(id, kind, new ReviewDocumentRequest("approved", request.Comment, request.Version), cancellationToken);
+
+    [HttpPut("{id:int}/{kind}/reject")]
+    public Task<IActionResult> Reject(int id, string kind, DocumentDecisionRequest request, CancellationToken cancellationToken)
+        => Review(id, kind, new ReviewDocumentRequest("rejected", request.Comment, request.Version), cancellationToken);
+
+    private static bool TryVersion(string value, out byte[] version)
+    {
+        try
+        {
+            version = Convert.FromBase64String(value);
+            return version.Length == 8;
+        }
+        catch (FormatException)
+        {
+            version = [];
+            return false;
+        }
+    }
+}

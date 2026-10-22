@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhiệm vụ | Hệ thống quản lý thực tập sinh</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/style.css?v=20261022-13">
+  <link rel="stylesheet" href="../css/visuals.css"><link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/tasks.css?v=20261022-2"><link rel="stylesheet" href="../css/meeting-datetime.css?v=20261021-2">
+</head>
+<body class="tasks-page">
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand"><div class="dashboard-logo"><img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312"></div><div class="dashboard-title"><span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span><h1>Nhiệm vụ</h1></div></div>
+      <div class="dashboard-session"><span id="roleBadge" class="role-badge"></span><button type="button" id="logoutBtn" class="btn-danger">Đăng xuất</button></div>
+    </header>
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+    <main class="dashboard-main">
+      <p id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite">Đang tải nhiệm vụ...</p>
+      <section id="createTaskSection" class="card" hidden>
+        <h2>Giao nhiệm vụ</h2>
+        <form id="taskForm" class="create-user-form">
+          <div class="form-group"><label for="taskIntern">Thực tập sinh đang hướng dẫn</label><select id="taskIntern" required><option value="">Chọn thực tập sinh</option></select></div>
+          <div class="form-group meeting-datetime-field"><label for="taskDeadline">Deadline (giờ Việt Nam)</label><input id="taskDeadline" type="datetime-local" required></div>
+          <div class="form-group task-content-field"><label for="taskContent">Nội dung nhiệm vụ</label><textarea id="taskContent" required maxlength="2000" rows="3" placeholder="Nhập nội dung và yêu cầu cần hoàn thành"></textarea></div>
+          <div class="form-actions"><button id="saveTask" class="btn-primary" type="submit">Giao nhiệm vụ</button></div>
+        </form>
+      </section>
+      <section id="updateProgressSection" class="card" hidden>
+        <h2>Cập nhật tiến độ</h2>
+        <form id="progressForm" class="create-user-form">
+          <div class="form-group"><label for="progressTask">Nhiệm vụ của tôi</label><select id="progressTask" required><option value="">Chọn nhiệm vụ</option></select></div>
+          <div class="form-group"><label for="taskProgress">Tiến độ (%)</label><input id="taskProgress" type="number" min="0" max="100" step="1" required></div>
+          <div class="form-group"><label for="progressStatus">Trạng thái (theo tiến độ)</label><input id="progressStatus" readonly value="Đã giao" aria-describedby="progressStatusHelp"><small id="progressStatusHelp">0%: Đã giao · 1–99%: Đang thực hiện · 100%: Hoàn thành</small></div>
+          <div class="form-group task-content-field"><label for="progressNote">Ghi chú tiến độ</label><textarea id="progressNote" rows="3" maxlength="2000"></textarea></div>
+          <div class="form-actions"><button id="saveProgress" type="submit" class="btn-primary">Lưu tiến độ</button></div>
+        </form>
+      </section>
+      <section id="taskListSection" class="card" hidden>
+        <div class="section-heading"><h2 id="taskListTitle">Danh sách nhiệm vụ</h2><button type="button" id="refreshTasks" class="btn-secondary">Tải lại</button></div>
+        <div class="table-container" tabindex="0" role="region" aria-label="Danh sách nhiệm vụ, có thể cuộn ngang trên màn hình nhỏ"><table class="task-table"><colgroup><col class="task-person-col"><col class="task-person-col"><col class="task-content-col"><col class="task-deadline-col"><col class="task-status-col"></colgroup><thead><tr><th scope="col">Intern</th><th scope="col">Mentor</th><th scope="col">Nội dung</th><th scope="col">Deadline</th><th scope="col">Trạng thái</th></tr></thead><tbody id="taskRows" aria-live="polite"></tbody></table></div>
+      </section>
+    </main>
+    <footer class="dashboard-footer">© 2026 Hệ thống quản lý thực tập sinh</footer>
+  </div>
+  <script src="../js/ui.js?v=20261021-6"></script><script src="../js/api.js"></script><script src="../js/visuals.js"></script><script src="../js/navigation.js?v=20261022-15"></script><script src="../js/meeting-datetime.js?v=20261021-2"></script><script src="../js/tasks.js?v=20261022-3"></script>
+</body>
+</html>

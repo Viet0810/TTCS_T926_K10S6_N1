@@ -1,30 +1,210 @@
-document
-  .getElementById("createUserForm")
-  .addEventListener("submit", async function (event) {
+const tableBody = document.getElementById("userTableBody");
+const searchInput = document.getElementById("userSearchInput");
+const createForm = document.getElementById("createUserForm");
+const createLink = document.getElementById("createUserLink");
+let users = [];
+let creatingUser = false;
+let canCreateUser = false;
+let canDeleteUser = false;
+let mentorOnly = false;
+
+function accountMessage(text, type = "error") {
+  let box = document.getElementById("accountMessage");
+  if (!box) {
+    box = document.createElement("p"); box.id = "accountMessage"; box.className = "inline-notice";
+    box.setAttribute("role", "status"); box.setAttribute("aria-live", "polite");
+    const content = document.querySelector(".dashboard-main .card"); content.append(box);
+  }
+  AppUI.feedback(box, text, type);
+}
+
+function updateAccountPasswordFields() {
+  if (!createForm) return;
+  const automatic = document.getElementById("role").value !== "INTERN";
+  for (const id of ["password", "confirmPassword"]) {
+    const input = document.getElementById(id);
+    input.closest(".form-group").hidden = automatic; input.required = !automatic;
+    if (automatic) { input.value = ""; Validation.clearFieldError(input); }
+  }
+  document.getElementById("temporaryPasswordNotice").hidden = !automatic;
+}
+if (createForm) { document.getElementById("role").addEventListener("change", updateAccountPasswordFields); updateAccountPasswordFields(); }
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function roleClass(userRole) {
+  return String(userRole).toLowerCase();
+}
+
+const userPager = tableBody ? TableUI.server(tableBody,
+  (page,pageSize) => API.getUsers({page,pageSize,search:searchInput.value.trim()}),
+  items => {users=items;renderUsers();}) : null;
+async function loadUsers() { return userPager.load(); }
+
+function renderUsers() {
+  const keyword = searchInput.value.trim().toLowerCase();
+  const visibleUsers = users.filter(user => user.role !== "ADMIN");
+
+  tableBody.innerHTML = visibleUsers
+    .map(
+      (user) => `
+        <tr>
+          <td>${escapeHtml(user.fullName)}</td>
+          <td>${escapeHtml(user.email)}</td>
+          <td><span class="badge ${roleClass(user.role)}">${escapeHtml(user.role)}</span></td>
+          <td>${escapeHtml(user.employeeCode || user.studentCode || "-")}</td>
+          ${canDeleteUser ? `<td>${user.role === "ADMIN" ? "—" : `<button type="button" class="btn-delete" data-user-id="${user.id}">Xóa</button>`}</td>` : ""}
+        </tr>`,
+    )
+    .join("");
+  if (!visibleUsers.length) {
+    const cell = tableBody.insertRow().insertCell(); cell.colSpan = canDeleteUser ? 5 : 4; cell.className = "empty-state";
+    cell.textContent = keyword ? "Không tìm thấy tài khoản phù hợp." : "Chưa có tài khoản.";
+  }
+}
+
+async function initializePage() {
+  if (!localStorage.getItem("token")) {
+    window.location.href = "../index.html";
+    return;
+  }
+
+  try {
+    const session = await API.getCurrentUser();
+    if (!Session.hasPermission(session, "MANAGE_USERS")) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+    canCreateUser = Session.hasPermission(session, "CREATE_USER");
+    canDeleteUser = Session.hasPermission(session, "DELETE_USER");
+    document.getElementById("deleteColumnHeader").hidden = !canDeleteUser;
+    if (createForm && session.user?.role !== "ADMIN") {
+      const adminOption = document.querySelector('#role option[value="ADMIN"]');
+      if (adminOption) adminOption.remove();
+    }
+    mentorOnly = session.user?.role === "HR";
+    if (mentorOnly) {
+      document.title = "Quản lý Mentor | Hệ thống quản lý thực tập sinh";
+      const pageTitle = document.querySelector(".dashboard-title h1");
+      const listTitle = document.querySelector(".user-list-heading h2");
+      const listDescription = document.querySelector(".user-list-heading p");
+      if (pageTitle) pageTitle.textContent = "Quản lý Mentor";
+      if (listTitle) listTitle.textContent = "Quản lý Mentor";
+      if (listDescription) listDescription.textContent = "Danh sách Mentor đang được quản lý trong hệ thống.";
+      if (searchInput) {
+        searchInput.placeholder = "Tìm Mentor theo tên hoặc email...";
+        searchInput.setAttribute("aria-label", "Tìm Mentor");
+      }
+      if (createLink) createLink.textContent = "+ Thêm Mentor";
+    }
+    if (createForm && session.user?.role === "HR") {
+      const roleSelect = document.getElementById("role");
+      [...roleSelect.options].forEach(option => { option.disabled = option.value !== "MENTOR"; });
+      roleSelect.value = "MENTOR"; updateAccountPasswordFields();
+    }
+    if (createForm && !canCreateUser) {
+      window.location.href = "user-manage.html";
+      return;
+    }
+    if (createLink) createLink.hidden = !canCreateUser;
+    if (tableBody) await loadUsers();
+  } catch (error) {
+    if (tableBody && !users.length) {
+      tableBody.replaceChildren(); const cell = tableBody.insertRow().insertCell();
+      cell.colSpan = canDeleteUser ? 5 : 4; cell.className = "empty-state"; cell.textContent = "Chưa thể tải danh sách tài khoản.";
+    }
+    if (!Session.redirectIfExpired(error)) accountMessage(error.message);
+  }
+}
+
+
+let userSearchTimer;searchInput?.addEventListener("input",()=>{clearTimeout(userSearchTimer);userSearchTimer=setTimeout(()=>userPager.load(true).catch(error=>accountMessage(error.message)),250);});
+
+tableBody?.addEventListener("click", async event => {
+  const button = event.target.closest("[data-user-id]");
+  if (!button || button.disabled || !canDeleteUser) return;
+  if (!await AppUI.confirm("Bạn có chắc muốn xóa tài khoản này?", "Xóa tài khoản", "Xóa tài khoản")) return;
+  button.disabled = true;
+  try {
+    await API.deleteUser(button.dataset.userId);
+    accountMessage("Đã xóa tài khoản.", "success");
+    await loadUsers();
+  } catch (error) {
+    accountMessage(error.message);
+    Session.redirectIfExpired(error);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+initializePage();
+
+createForm?.addEventListener("submit", async function (event) {
     event.preventDefault();
+    if (creatingUser || !canCreateUser) return;
 
     const fullName = document.getElementById("fullName").value.trim();
 
     const email = document.getElementById("email").value.trim();
 
     const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
 
     const role = document.getElementById("role").value;
 
+    for (const id of ["password", "confirmPassword"]) Validation.clearFieldError(document.getElementById(id));
+    const passwordError = role === "INTERN" ? Validation.validatePassword(password) : "";
+    if (passwordError) { Validation.showFieldError(document.getElementById("password"), passwordError); document.getElementById("password").focus(); return; }
+
+    if (role === "INTERN" && password !== confirmPassword) {
+      Validation.showFieldError(document.getElementById("confirmPassword"), "Mật khẩu xác nhận không khớp.");
+      document.getElementById("confirmPassword").focus();
+      return;
+    }
+
+    creatingUser = true;
+    const submitButton = this.querySelector('[type="submit"]');
+    const submitContent = submitButton.innerHTML;
+    submitButton.textContent = "Đang tạo tài khoản…";
+    this.setAttribute("aria-busy", "true");
+    [...this.elements].forEach((control) => control.disabled = true);
     try {
       const result = await API.createUser({
         fullName,
         email,
-        password,
+        ...(role === "INTERN" ? { password } : {}),
         role,
       });
 
-      alert(result.message);
+      accountMessage(result.message, result.emailSent === false ? "warning" : "success");
 
       this.reset();
+      if (mentorOnly) document.getElementById("role").value = "MENTOR";
+      updateAccountPasswordFields();
 
-      await loadUsers();
+      if (tableBody) {
+        try { await loadUsers(); }
+        catch (error) { accountMessage(`Đã tạo tài khoản, nhưng chưa thể tải lại danh sách: ${error.message}`); }
+      }
     } catch (error) {
-      alert(error.message);
+      accountMessage(error.message);
+    }
+    finally {
+      creatingUser = false;
+      this.setAttribute("aria-busy", "false");
+      submitButton.innerHTML = submitContent;
+      [...this.elements].forEach((control) => control.disabled = false);
     }
   });
+
+if (createForm) for (const id of ["password", "confirmPassword"]) {
+  const input = document.getElementById(id);
+  input.addEventListener("input", () => Validation.clearFieldError(input));
+}

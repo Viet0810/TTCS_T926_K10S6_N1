@@ -1,0 +1,111 @@
+
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Bảng điều khiển | Hệ thống quản lý thực tập sinh</title>
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/style.css?v=20261022-13" />
+  <link rel="stylesheet" href="../css/ui.css" />
+  <link rel="stylesheet" href="../css/visuals.css" />
+</head>
+
+<body>
+  <div class="dashboard">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+      <div class="dashboard-brand">
+        <div class="dashboard-logo">
+          <img
+            src="../assets/codegym-logo.webp"
+            alt="CODEGYM"
+            width="1437"
+            height="312"
+          />
+        </div>
+
+        <div class="dashboard-title">
+          <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+          <h1>Bảng điều khiển</h1>
+        </div>
+      </div>
+
+      <div class="dashboard-session">
+        <span id="roleBadge" class="badge"></span>
+
+        <a
+          class="btn-secondary topbar-dashboard-link"
+          href="dashboard.html"
+        >
+          Bảng điều khiển
+        </a>
+
+        <button
+          type="button"
+          id="logoutBtn"
+          class="btn-danger"
+        >
+          Đăng xuất
+        </button>
+      </div>
+    </header>
+
+    <!-- MENU ĐIỀU HƯỚNG CHUNG -->
+    <nav
+      id="roleMenu"
+      class="role-menu"
+      aria-label="Điều hướng chính"
+    ></nav>
+
+    <!-- NỘI DUNG DASHBOARD -->
+    <main class="dashboard-main">
+
+      <!-- LỜI CHÀO -->
+      <section class="card dashboard-welcome">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">XIN CHÀO</span>
+            <h2 id="welcomeTitle">Đang tải lời chào…</h2>
+          </div>
+        </div>
+
+        <p
+          id="dashboardMessage"
+          class="dashboard-message"
+          role="status"
+          hidden
+        ></p>
+      </section>
+
+      <!-- THỐNG KÊ -->
+      <div
+        id="dashboardKpis"
+        class="dashboard-kpis"
+        aria-label="Tổng quan dữ liệu"
+      ></div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="dashboard-footer">
+      © 2026 Hệ thống quản lý thực tập sinh
+    </footer>
+
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script src="../js/api.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/visuals.js"></script>
+
+  <!-- Tải phiên bản navigation.js mới -->
+  <script src="../js/navigation.js?v=20261022-15"></script>
+
+  <script src="../js/dashboard.js"></script>
+
+</body>
+</html>

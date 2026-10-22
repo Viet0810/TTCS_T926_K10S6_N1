@@ -1,0 +1,34 @@
+.meeting-datetime-field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.meeting-datetime{position:relative;display:flex;align-items:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.meeting-datetime:hover{border-color:#94a3b8}
+.meeting-datetime:focus-within{border-color:#3568e8;box-shadow:0 0 0 3px #3568e81c}
+.meeting-datetime>input[type=text]{height:46px;min-width:0;padding:12px;border:0;background:transparent;border-radius:10px;outline:none;box-shadow:none;font-variant-numeric:tabular-nums}
+.meeting-datetime-trigger{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border:0;border-radius:9px;background:transparent;color:#526782;cursor:pointer}
+.meeting-datetime-trigger svg{width:23px;height:23px}
+.meeting-datetime-clock{display:grid;place-items:center;width:42px;height:44px;flex-shrink:0;border:0;border-radius:9px;background:transparent;color:#8897ad;cursor:pointer}
+.meeting-datetime-clock:hover{background:#eff5ff;color:#3568e8}
+.meeting-datetime-clock svg,.meeting-datetime-trigger svg{pointer-events:none}
+.meeting-datetime-clock svg{width:20px;height:20px}
+.meeting-datetime>input[type=text]{padding-left:0;font-size:14px;font-weight:400}
+.meeting-datetime-trigger{margin-right:3px}
+.meeting-datetime-trigger:hover{background:#eff5ff;color:#3568e8}
+.meeting-datetime button:focus-visible,.meeting-datetime-panel input:focus-visible{outline:2px solid #3568e8;outline-offset:2px}
+.meeting-datetime-panel{position:absolute;z-index:50;top:calc(100% + 8px);left:0;width:min(320px,100%);box-sizing:border-box;padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 12px 36px #0f172a24;color:#334155}
+.meeting-calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px}
+.meeting-calendar-heading button,.meeting-calendar-days button,.meeting-calendar-actions button{border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer;font:inherit}
+.meeting-calendar-heading button{width:36px;height:36px;font-size:24px}
+.meeting-calendar-week,.meeting-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:13px}
+.meeting-calendar-week{color:#718096;margin-bottom:6px;font-weight:600}
+.meeting-calendar-days button{min-height:36px;padding:0;font-variant-numeric:tabular-nums}
+.meeting-calendar-days button[aria-current=date]{box-shadow:inset 0 0 0 1px #3568e8;color:#3568e8}
+.meeting-calendar-days button[aria-pressed=true]{background:#3568e8;color:#fff;font-weight:600}
+.meeting-calendar-days button:hover,.meeting-calendar-heading button:hover{background:#edf3ff;color:#2453bb}
+.meeting-time-row{display:flex;align-items:center;gap:8px;padding-top:14px;margin-top:12px;border-top:1px solid #e2e8f0;font-size:13px}
+.meeting-time-row>span:first-child{margin-right:auto}
+.meeting-time-row input{width:64px;min-width:0;height:42px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:#334155;font:inherit;font-variant-numeric:tabular-nums}
+.meeting-calendar-actions{display:flex;justify-content:space-between;gap:12px;margin-top:14px}
+.meeting-calendar-actions button{min-height:40px;padding:8px 14px;color:#3568e8}
+.meeting-calendar-actions [data-apply]{background:#3568e8;color:#fff;font-weight:600}
+.meeting-calendar-actions button:hover{filter:brightness(.94)}
+.meeting-datetime:has(>input:disabled){background:#f8fafc;opacity:.7}
+@media(max-width:700px){.meeting-calendar-days button{min-height:40px}.meeting-datetime-panel{width:100%}}

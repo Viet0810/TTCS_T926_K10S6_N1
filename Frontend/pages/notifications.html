@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trung tâm thông báo - HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/style.css?v=20261022-13">
+  <link rel="stylesheet" href="../css/visuals.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="../css/notifications.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-brand">
+        <div class="dashboard-logo">
+          <img src="../assets/codegym-logo.webp" alt="CODEGYM" width="1437" height="312">
+        </div>
+        <div class="dashboard-title">
+          <span>HỆ THỐNG QUẢN LÝ THỰC TẬP SINH</span>
+          <h1>Trung tâm thông báo</h1>
+        </div>
+      </div>
+      <div class="dashboard-session">
+        <a class="btn-secondary topbar-dashboard-link" href="dashboard.html">Bảng điều khiển</a>
+        <button id="logoutBtn" type="button" class="btn-danger">Đăng xuất</button>
+      </div>
+    </header>
+
+    <nav id="roleMenu" class="role-menu" aria-label="Điều hướng chính"></nav>
+
+    <main class="dashboard-main">
+      <!-- 3 thẻ thống kê -->
+      <section class="notifications-stats-grid">
+        <div class="card" style="margin-bottom: 0;">
+          <span class="section-label">TỔNG SỐ</span>
+          <h2 id="totalNotifsCount" style="font-size: 28px; margin: 8px 0 0; color: #3568e8;">0</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);">Tất cả thông báo đã nhận</p>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <span class="section-label">CHƯA ĐỌC</span>
+          <h2 id="unreadNotifsCount" style="font-size: 28px; margin: 8px 0 0; color: #ef4444;">0</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);">Cần xem hoặc xử lý</p>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <span class="section-label">ĐÃ ĐỌC</span>
+          <h2 id="readNotifsCount" style="font-size: 28px; margin: 8px 0 0; color: #16a34a;">0</h2>
+          <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted);">Đã hoàn tất theo dõi</p>
+        </div>
+      </section>
+
+      <!-- Thanh công cụ lọc & tìm kiếm -->
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <span class="section-label">BỘ LỌC THÔNG BÁO</span>
+            <h2>Lọc và tìm kiếm</h2>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="pageMarkAllReadBtn" type="button" class="btn-secondary">✓ Đánh dấu tất cả đã đọc</button>
+            <button id="pageRefreshBtn" type="button" class="btn-secondary">↻ Làm mới</button>
+          </div>
+        </div>
+
+        <form id="filterNotifsForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 14px;">
+          <div>
+            <label for="filterCategory" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Danh mục</label>
+            <select id="filterCategory" class="input-field" style="width: 100%;">
+              <option value="ALL">Tất cả danh mục</option>
+              <option value="ATTENDANCE">Chấm công & Điểm danh</option>
+              <option value="DOCUMENT">Hồ sơ & Tài liệu</option>
+              <option value="CONTRACT">Hợp đồng thực tập</option>
+              <option value="ASSIGNMENT">Phân công Mentor</option>
+              <option value="SYSTEM">Hệ thống</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterStatus" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Trạng thái</label>
+            <select id="filterStatus" class="input-field" style="width: 100%;">
+              <option value="ALL">Tất cả thông báo</option>
+              <option value="UNREAD">Chỉ thông báo chưa đọc</option>
+              <option value="READ">Chỉ thông báo đã đọc</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterSearch" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Tìm kiếm từ khóa</label>
+            <input id="filterSearch" type="search" class="input-field" placeholder="Nhập từ khóa cần tìm..." style="width: 100%;">
+          </div>
+        </form>
+      </section>
+
+      <!-- Danh sách thông báo -->
+      <section class="card">
+        <div class="section-heading">
+          <h2>Danh sách thông báo</h2>
+          <span id="notifsLoadedInfo" style="font-size: 13px; color: var(--muted);">Đang tải…</span>
+        </div>
+
+        <ul id="fullNotificationList" class="notification-list" style="max-height: none; padding: 0;">
+          <li class="notification-empty">
+            <p>Đang tải danh sách thông báo…</p>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="dashboard-footer">
+      © 2026 Hệ thống quản lý thực tập sinh
+    </footer>
+  </div>
+
+  <script src="../js/ui.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/visuals.js"></script>
+  <script src="../js/navigation.js?v=20261022-15"></script>
+  <script src="../js/notification-service.js"></script>
+  <script src="../js/notification-ui.js"></script>
+  <script src="../js/notifications-page.js"></script>
+</body>
+</html>

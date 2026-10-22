@@ -1,0 +1,92 @@
+(() => {
+  const hr = !!document.getElementById("contractForm");
+  const message = document.getElementById("contractMessage");
+  let current = null, busy = false, allowed = false;
+  let grants = [], contracts = [];
+  const has = code => grants.includes(code);
+  const canUpload = id => has(contracts.some(item=>item.internId===Number(id)) ? 'CONTRACT_UPDATE' : 'CONTRACT_CREATE');
+  document.addEventListener('session-permissions-updated',event=>{
+    grants=event.detail.permissions||[];allowed=has(hr?'MANAGE_CONTRACTS':'VIEW_OWN_CONTRACT');
+    if(hr){const form=document.getElementById('contractForm');form.hidden=!allowed||(!has('CONTRACT_CREATE')&&!has('CONTRACT_UPDATE'));form.querySelector('[type=submit]').disabled=!allowed||!canUpload(document.getElementById('contractInternId').value);document.querySelectorAll('#contractRows .btn-danger').forEach(button=>button.hidden=!has('CONTRACT_DELETE'));if(!allowed)document.getElementById('contractRows').replaceChildren();}else if(!allowed){current=null;document.getElementById('contractDetails').hidden=true;notice('Bạn không còn quyền xem hợp đồng.');}
+  });
+  const date = value => value ? new Date(value + (/[Z+]/.test(value) ? "" : "Z")).toLocaleString("vi-VN") : "Chưa xác nhận";
+  const notice = (text, type = "error") => { if (text.startsWith("Đang ")) { message.hidden = false; message.textContent = text; } else AppUI.feedback(message, text, type); };
+  async function download(item, button) {
+    button.disabled = true;
+    try { saveDownload(await requestApi(hr ? `/contracts/${item.internId}/file` : "/interns/me/contract/file", {headers:getAuthHeader()}, "blob"), item.fileName); }
+    catch(error) { notice(error.message); Session.redirectIfExpired(error); }
+    finally { button.disabled = false; }
+  }
+  async function load() {
+    if (!allowed) return;
+    if (hr) {
+      const items = await requestApi("/contracts", {headers:getAuthHeader()});
+      contracts = items;
+      const rows = document.getElementById("contractRows"); rows.replaceChildren();
+      if (!items.length) {const cell=rows.insertRow().insertCell();cell.colSpan=5;cell.className="empty-state";cell.textContent="Chưa có hợp đồng.";}
+      for (const item of items) {
+        const row=rows.insertRow();
+        for (const text of [item.fullName,item.email,item.fileName,date(item.confirmedAt)]) {const cell=row.insertCell();cell.textContent=text;cell.title=text;}
+        const button=document.createElement("button");button.type="button";button.className="btn-secondary btn-compact";button.textContent="Tải để xem";button.onclick=()=>download(item,button);const actions=row.insertCell();actions.append(button);
+        if(has('CONTRACT_DELETE')) {const remove=document.createElement('button');remove.type='button';remove.className='btn-danger';remove.textContent='Xóa';remove.onclick=async()=>{if(!has('CONTRACT_DELETE')||busy||!await AppUI.confirm('Xóa hợp đồng của '+item.fullName+'?'))return;busy=true;remove.disabled=true;try{await requestApi('/contracts/'+item.internId,{method:'DELETE',headers:getAuthHeader()});await load();notice('Đã xóa hợp đồng.', "success");}catch(error){notice(error.message);}finally{busy=false;remove.disabled=false;}};actions.append(remove);}
+      }
+    } else {
+      current = await requestApi("/interns/me/contract", {headers:getAuthHeader()});
+      document.getElementById("contractDetails").hidden = !current;
+      if(!current){notice("Chưa có hợp đồng thực tập.");return;}
+      document.getElementById("contractFileName").textContent=current.fileName;
+      document.getElementById("contractFileName").title=current.fileName;
+      document.getElementById("contractUploaded").textContent=date(current.uploadedAt);
+      document.getElementById("contractConfirmed").textContent=date(current.confirmedAt);
+      const confirmed = !!current.confirmedAt;
+      const confirmButton = document.getElementById("confirmContractBtn");
+      const accept = document.getElementById("acceptContract");
+      const acceptRow = document.getElementById("contractAcceptRow");
+      const state = document.getElementById("contractState");
+      confirmButton.hidden = acceptRow.hidden = confirmed;
+      confirmButton.disabled = confirmed || !accept.checked;
+      state.textContent = confirmed ? "Đã xác nhận" : "Chờ xác nhận";
+      state.className = `contract-state ${confirmed ? "is-confirmed" : "is-pending"}`;
+      document.getElementById("contractStateText").textContent = confirmed
+        ? "Bạn đã hoàn tất xác nhận hợp đồng này."
+        : "Vui lòng đọc kỹ tài liệu trước khi xác nhận.";
+    }
+  }
+  document.getElementById("contractSearch")?.addEventListener("input",event=>{TableUI.filter(document.getElementById("contractRows"),event.target.value);});
+  const form=document.getElementById("contractForm");
+  form?.addEventListener("submit",async event=>{
+    event.preventDefault();if(busy||!allowed||!canUpload(document.getElementById('contractInternId').value)||!form.reportValidity())return;
+    const input=document.getElementById("contractFile"),file=input.files[0];
+    if(!file||!file.name.toLowerCase().endsWith(".pdf")||!file.size||file.size>5*1024*1024){notice("Vui lòng chọn PDF có nội dung, tối đa 5 MB.");return;}
+    busy=true;const button=form.querySelector('[type=submit]');button.disabled=input.disabled=true;button.textContent="Đang tải lên…";
+    try{const body=new FormData();body.append("file",file);await requestApi(`/contracts/${encodeURIComponent(document.getElementById("contractInternId").value)}`,{method:"PUT",headers:{Authorization:getAuthHeader().Authorization},body});form.reset();document.getElementById("contractSelected").textContent="";notice("Đã lưu hợp đồng.", "success");await load();}
+    catch(error){notice(error.message);Session.redirectIfExpired(error);}
+    finally{busy=false;button.disabled=!canUpload(document.getElementById('contractInternId').value);input.disabled=false;button.textContent="Tải lên hợp đồng";}
+  });
+  const fileInput=document.getElementById("contractFile");
+  fileInput?.addEventListener("change",()=>{const file=fileInput.files[0];document.getElementById("contractSelected").textContent=file?`${file.name} · ${(file.size/1024/1024).toFixed(2)} MB`:"";});
+  document.getElementById("contractDownloadBtn")?.addEventListener("click",event=>{if(current&&allowed)download(current,event.currentTarget);});
+  document.getElementById("acceptContract")?.addEventListener("change", event => {
+    document.getElementById("confirmContractBtn").disabled = !event.currentTarget.checked || !!current?.confirmedAt;
+  });
+  document.getElementById("confirmContractBtn")?.addEventListener("click",async event=>{
+    if(!allowed||busy||!current||current.confirmedAt||!document.getElementById("acceptContract").checked){notice("Vui lòng đọc và đánh dấu đồng ý trước khi xác nhận.");return;}
+    busy=true;const button=event.currentTarget;button.disabled=true;button.textContent="Đang xác nhận…";
+    try{await requestApi("/interns/me/contract/confirm",{method:"PUT",headers:getAuthHeader(),body:JSON.stringify({version:current.version})});current.confirmedAt=new Date().toISOString();notice("Đã xác nhận hợp đồng.", "success");await load();}
+    catch(error){notice(error.message);Session.redirectIfExpired(error);}
+    finally{busy=false;button.disabled=!!current?.confirmedAt;button.textContent="Xác nhận hợp đồng";}
+  });
+  document.getElementById("contractRefreshBtn").addEventListener("click",async event=>{
+    if(busy||!allowed)return;const button=event.currentTarget;button.disabled=true;notice("Đang tải hợp đồng…");
+    try{await load();if(hr||current)notice("Đã tải lại hợp đồng.", "success");}catch(error){notice(error.message);}finally{button.disabled=false;}
+  });
+  (async()=>{
+    if(!localStorage.getItem("token"))return;
+    try{
+      const session=await API.getCurrentUser();grants=session.permissions||[];allowed=Session.hasPermission(session,hr?"MANAGE_CONTRACTS":"VIEW_OWN_CONTRACT");
+      if(!allowed){notice("Bạn không có quyền truy cập hợp đồng.");return;}
+      if(hr){form.hidden=!has('CONTRACT_CREATE')&&!has('CONTRACT_UPDATE');if(!form.hidden){const interns=await requestApi('/contracts/interns',{headers:getAuthHeader()});const select=document.getElementById("contractInternId");for(const intern of interns)select.add(new Option(`${intern.fullName} (${intern.email})`,intern.id));select.addEventListener('change',()=>form.querySelector('[type=submit]').disabled=!canUpload(select.value));form.querySelector('[type=submit]').disabled=!interns.length;}}
+      await load();if(hr||current)notice("");
+    }catch(error){notice(error.message);Session.redirectIfExpired(error);}
+  })();
+})();
